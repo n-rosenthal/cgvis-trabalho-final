@@ -1,0 +1,82 @@
+:PROPERTIES:
+:ID:       ce74f5e1-be50-4e6f-9183-a23b27f84e0f
+:aliases:  [OpenGL-guide-chap-1] Introduction to OpenGL
+:projeto:  computer-graphics-visualization
+:zid:      202604200952
+:END:
+#+title: [OpenGL-guide-chap-1] Introdução à OpenGL
+#+filetags: :computer-graphics-visualization:draft:
+
+Este documento reúne anotações sobre o capítulo 1 (/Introduction to OpenGL/) de [[id:429fbec4-c22b-4f99-b5b6-d821cec48854][OpenGL Programming Guide, /Shreiner/, Dave. 7ª ed. (The Khronos OpenGL ARB Working Group). Ed. (2010)]].
+
+* O que é /OpenGL/?
+  *OpenGL* é uma interface de software para /hardware/ gráfico. Esta interface é composta por mais de 700 comandos que são usados para *especificar /objetos e operações/ necessárias para produzir aplicações tridimensionais interativas*. OpenGL *não* fornece operações para definir /janelas/ ou para /obter input do usuário/; isto é assim feito para que o programador use o sistema operacional especificado para tais operações. O objetivo do OpenGL é *fornecer um pequeno conjunto de /primitivas geométricas/ através das quais é possível desenvolver modelos e aplicações complexas*.
+
+  Os /geometric primitives/ do OpenGL são *points*, *lines* e *polygons*.
+
+  Existem *bibliotecas construídas /sobre/ o OpenGL* e que fornecem /features/ de mais alto nível. Este é o caso da *GLU* (/OpenGL Utility Library/) para /features/ de modelagem (como /superfícies quadráticas/ e /NURBS curves and surfaces/). *GLU é parte padrão de toda implementação do OpenGL*.
+
+** Alguns Conceitos Iniciais
+- *renderizar* ("/Rendering/","/to render [something]/"): renderização é o processo através do qual o computador *cria imagens a partir de modelos*.
+- *modelos* ou *objetos*, em OpenGL, são construídos a partir de *primitivas geométricas* (pontos, linhas, polígonos). As primitivas geométricas sempre são definidas a partir de *vértices*.
+- *pixel* (/picture element/) é o menor elemento visível representável por /hardware/ na tela.
+- *bitplanes* são /áreas da memória/ utilizadas *para representar pixels*. Quando definimos a /cor/ ou a /posição/ de um pixel, esta informação é organizada em /bitplanes/. Em um /bitplane/, cada *bit* é responsável por armazenar informação sobre *um pixel* da tela. *Os bitplanes são organizados em um /framebuffer/, que armazena /toda/ informação que o sistema de exibição gráfica precisa para controlar /cor/ e /intensidade/ dos pixels na tela.*
+  
+* Um primeiro exemplo de código OpenGL
+Em todo código OpenGL será necessário *inicializar certos /estados/* que definem como o OpenGL irá *especificar objetos* e *como renderizá-los.* O primeiro código descrito no livro é bastante simples: trata-se de um quadrado branco à frente de um quadrado preto.
+
+#+ATTR_ORG: :width 600
+[[file:opengl-guide-example-1.png]]
+
+Para produzir esta visualização, o seguinte código é fornecido. Note que =#include <whateverYouNeed.h>= é uma simplificação de todos as diretrizes de =include= necessárias para utilizar OpenGL + GLU.
+
+#+BEGIN_SRC cpp
+#include <whateverYouNeed.h>
+
+main() {
+ /* função-fantasia para inicializar a janela de exibição */
+ InitializeAWindowPlease();
+
+ // define a cor que a janela terá, quando for limpa
+ glClearColor(0.0, 0.0, 0.0, 0.0);
+
+ // limpa a janela propriamente
+ glColor(GL_COLOR_BUFFER_BIT);
+
+ // definimos a cor que usaremos para desenhar objetos
+ glColor3f(1.0, 1.0, 1.0);
+
+ // definimos o sistema de coordenadas
+ glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
+
+ // incío do bloco de renderização de um POLÍGONO
+ glBegin(GL_POLYGON);
+  // definir um vértice na posição (0.25, 0.25, 0.0)
+  glVertex3f(0.25, 0.25, 0.0);
+  glVertex3f(0.75, 0.25, 0.0);
+  glVertex3f(0.75, 0.75, 0.0);
+  glVertex3f(0.25, 0.75, 0.0);
+ // fim da definição do POLÍGONO a ser renderizado
+ glEnd();
+
+ // garanta que os comandos OpenGL sejam executados *agora*
+ glFlush();
+
+ // função fantasia para atualizar janela e lidar com eventos do SO
+ UpdateThenWindowAndCheckForEvents();
+}
+#+END_SRC
+
++ Usamos a função fantasia =InitializeAWindowPlease()= porque cada sistema operacional possui as suas diretivas para abrir janelas. Isto não é competência do OpenGL e sim de chamadas ao sistema operacional.
++ Em seguida, queremos *limpar a janela e pintá-la de certa cor*. Para tanto, definimos a cor da janela com =glClearColor()=, que recebe como parâmetro /uma cor/ (neste caso, são quatro parâmetros (=red=, =blue=, =green=, =intensity=). Em seguida, usamos =glClear()= para limpar (e trocar a cor) da janela.
++ Neste exemplo, pintaremos todos os objetos da mesma cor (preta). Definimos a cor usando =glColor3f()=. Esta função recebe apenas três argumentos: (=red=, =blue=, =green=).
++ Antes de desenhar os objetos, é preciso definir o plano de coordenadas da nossa aplicação. Isto é feito com =glOrtho()=.
++ Agora vamos desenhar propriamente os objetos. OpenGL fornece funções para gerar um /bloco/ de operações com =glBegin()= e =glEnd()=. Podemos entender isto como "desenhe os objetos definidos entre este /início/ e o /fim/ deste bloco." Neste caso, vamos desenhar um polígono de quatro vértices. Definimos cada vértice com =glVertex3f()=, que recebe a /posição/ (=x=, =y=, =z=) do vértice a ser desenhado. Perceba que a coordenada =z= é nula em todos os vértices: estamos desenhando uma figura bidimensional.
++ Usamos =glFlush()= para garantir que os comandos OpenGL sejam mesmo executados (ao invés de somente armazenados em algum /buffer/, por exemplo, enquanto o OpenGL aguarda outros comandos; isto é semalhante ao tratamento de arquivos em C); a partir daqui, já desenhamos o polígono que queríamos. Note também que este código /pinta a janela toda de preto/ e /desenha um quadrado branco/ à frente. Não se trata do desenho de dois quadrados (preto atrás, branco à frente), mas sim de /pintar a janela e desenhar um polígono/.
++ =UpdateTheWindowAndCheckForEvents()= é outra função-fantasia, usada para representar diversos casos que podem ocorrer com a aplicação. O que acontece se mudarmos o tamanho da janela, ou mover a janela de lugar? Isto tambeḿ é responsabilidade do sistema operional e não é definido aqui, neste primeiro código.
+
+* Sintaxe dos Comandos OpenGL
+- Comandos OpenGL normalmente possuem o *prefixo* =gl= (=glColor3f=, =glBegin=, ...);
+- As *constantes* do OpenGL possuem o *prefixo* =GL= (=GL_COLOR_BUFFER_BIT=, =GL_POLYGON=);
+- 
+
