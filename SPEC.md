@@ -9,13 +9,13 @@
 - **Aluno 1 - Nome**: <mark>`<preencher>`</mark>
 - **Aluno 1 - Cartão UFRGS**: <mark>`<preencher>`</mark>
 
-- **Aluno 2 - Nome**: <mark>`<preencher>`</mark>
-- **Aluno 2 - Cartão UFRGS**: <mark>`<preencher>`</mark>
+- **Aluno 2 - Nome**: Joana Oliveira DAvila
+- **Aluno 2 - Cartão UFRGS**: 00274739
 
 ## Detalhes do que será implementado
 
-- **Título do trabalho**: <mark>`<preencher>`</mark>
-- **Parágrafo curto descrevendo o que será implementado**: <mark>`<preencher>`</mark>
+- **Título do trabalho**: Carrier Birds Simulator (nome temporário) <mark>`<check>`</mark>
+- **Parágrafo curto descrevendo o que será implementado**: Será implementado um simulador no qual aves transportam objetos de um ponto iicial até um destino definido, desviando de obstáculos, como árvores, paredes e estruturas sólidas, e atravessando ambientes com superfícies flexiveis como folhagem, rios, lago, nuvens. O usuário poderá controlar o voo da ave e o momento de entrega do objeto. <mark>`<preencher>`</mark>
 
 ## Especificação visual
 
@@ -34,7 +34,8 @@
 >   do próprio repositório. Mas, garanta que qualquer um tenha
 >   permissão de acesso ao vídeo através deste link.
 
-<mark>`<preencher>`</mark>
+[Flying Bird Simulator](https://www.youtube.com/watch?v=zi2BpBqko0E)
+[Drone Delivery Simulator](https://youtu.be/QvNqsuou13Y?si=Y6hbDeq5WjAfH7RY)
 
 ### Vídeo - Timestamp
 
@@ -59,31 +60,31 @@
 Para cada um dos requisitos abaixo (detalhados no [Enunciado do Trabalho final - Moodle](https://moodle.ufrgs.br/mod/assign/view.php?id=6018620)), escreva um parágrafo **curto** explicando como este requisito será atendido, apontando itens específicos do vídeo/imagens que você incluiu acima que atendem estes requisitos.
 
 ### Malhas poligonais complexas
-<mark>`<preencher>`</mark>
+Aves e objetos de entrega e cenário, como árvores, pedras e outros obstáculos, serão representados por malhas de polignos. 
 
 ### Transformações geométricas controladas pelo usuário
-<mark>`<preencher>`</mark>
+Como o usuário irá controlar uma ave, as transformações serão aplicadas nela, para o controle por teclado e mouse, permitindo controlar a dinâmica do voo.
 
 ### Diferentes tipos de câmeras
-<mark>`<preencher>`</mark>
+Ao menos duas cameras, terceira pessoa, atrás da ave, e primeira pessoa, visão da ave. O usuario poderá alternar entre elas.
 
 ### Instâncias de objetos
-<mark>`<preencher>`</mark>
+Elementos de obstaculos, arvores, nuvens, serão instanciados multiplas vezes no cenario.
 
 ### Testes de intersecção
-<mark>`<preencher>`</mark>
+Haverá teste de colisão entre ave e obstaculos, e pacote e solo. Aves não podem ultrapassar arvores, mas poderia ultrapassar agua e folhas esparsas. Pacote caso esteja numa altura indesejada pode sofrer dano se soltado longe do chão.
 
 ### Modelos de Iluminação em todos os objetos
-<mark>`<preencher>`</mark>
+O modelo de iluminação deve permitir que haja sombra da ave no solo, assim como de nuvens. Sombras devem ser mais detalhadas quanto mais longe da luz.
 
 ### Mapeamento de texturas em todos os objetos
-<mark>`<preencher>`</mark>
+Todos os objetos pensados tem texturas, terrenos, árvores, ave, água.
 
 ### Movimentação com curva Bézier cúbica
-<mark>`<preencher>`</mark>
+Alguns movimentos da ave pode ser automatizado para a aplicação das curvas. No entanto, se um dos objetos for leve suficiente como carta, deve haver um deslizamento suave.
 
 ### Animações baseadas no tempo ($\Delta t$)
-<mark>`<preencher>`</mark>
+A movimentação da ave, enquanto voa é baseada no tempo, removendo a necessidade de pressionar algum botão para a ave se manter voando.
 
 ## Limitações esperadas
 
@@ -94,4 +95,6 @@ Para cada um dos requisitos abaixo (detalhados no [Enunciado do Trabalho final -
 > - Para cada item, **explique por que** não será implementado ou por
 >   que será implementado parcialmente.
 
-<mark>`<preencher>`</mark>
+- **Física de voo** não iremos implementar toda a aerodinâmica de voar, mas quanto mais perto melhor
+- **Animação das asas** o ideal seria simular a ação do vento nas penas e ajustes naturais enquanto a ave voa, mas isso exigiria maior complexidade
+- **Aplicação de dano** quando objeto cair de uma altura maior do que o esperado será aplicado uma deformação simbolica.
