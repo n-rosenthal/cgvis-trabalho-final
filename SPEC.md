@@ -14,13 +14,12 @@
 
 ## Detalhes do que será implementado
 
-- **Título do trabalho**: Carrier Birds Simulator (nome temporário) <mark>`<check>`</mark>
-- **Parágrafo curto descrevendo o que será implementado**: Será implementado um simulador no qual aves transportam objetos de um ponto inicial até um destino definido, desviando de obstáculos, como árvores, paredes e estruturas sólidas, e atravessando ambientes com superfícies flexiveis como folhagem, rios, lago, nuvens. O usuário poderá controlar o voo da ave e o momento de entrega do objeto.
-
+- **Título do trabalho**: _Carrier Birds Simulator_ (nome temporário)
+- **Parágrafo curto descrevendo o que será implementado**:
+Será implementado um simulador no qual aves transportam objetos de um ponto inicial até um destino definido, desviando de obstáculos, como árvores, paredes e estruturas sólidas, e atravessando ambientes com superfícies flexiveis como folhagem, rios, lago, nuvens. O usuário poderá controlar o voo da ave e o momento de entrega do objeto.
 Serão implementadas colisões entre o jogador e outras aves, bem como em relação ao ambiente.
 
 ## Especificação visual
-
 ### Vídeo - Link
 
 > [!IMPORTANT]
@@ -36,32 +35,30 @@ Serão implementadas colisões entre o jogador e outras aves, bem como em relaç
 >   do próprio repositório. Mas, garanta que qualquer um tenha
 >   permissão de acesso ao vídeo através deste link.
 
-[Flying Bird Simulator](https://www.youtube.com/watch?v=zi2BpBqko0E)
-[Drone Delivery Simulator](https://youtu.be/QvNqsuou13Y?si=Y6hbDeq5WjAfH7RY)
-[Harry Potter and the Prisioner of Azkaban (PS2) Owl Racing minigame](https://www.youtube.com/watch?v=WKa6vVh3TXg)
+1. [Flying Bird Simulator](https://www.youtube.com/watch?v=zi2BpBqko0E)
+2. [Drone Delivery Simulator](https://youtu.be/QvNqsuou13Y?si=Y6hbDeq5WjAfH7RY)
+3. [Harry Potter and the Prisioner of Azkaban (PS2) Owl Racing minigame](https://www.youtube.com/watch?v=WKa6vVh3TXg)
 
 ### Vídeo - Timestamp
-
-> [!IMPORTANT]
-> - Coloque aqui um **intervalo de ~30 segundos** do vídeo acima, que
->   será a base de comparação para avaliar se o seu trabalho final
->   conseguiu ou não reproduzir a referência.
-
 [Harry Potter and the Prisioner of Azkaban (PS2) Owl Racing minigame](https://www.youtube.com/watch?v=WKa6vVh3TXg)
 - **Timestamp inicial**: `00:03`
 - **Timestamp final**: `00:33`
 
 ### Imagens
+Coruja voando sobre água e rochas.
 ![Screeshot da ave voando sobre água e rochas](documentação/harry-potter-owl-racing-image-1.png)
+
+Coruja sobrevoando edifícios do castelo.
 ![Screenshot da ave voando sobre edifícios do castelo](documentação/harry-potter-owl-racing-image-3.png)
+
+Coruja atingindo seu objetivo, destacando câmera distinta da anterior.
 ![Screenshot da ave atingindo seu objetivo, em câmera distinta](documentação/harry-potter-owl-racing-image-5.png)
 
 ## Especificação textual
-
 Para cada um dos requisitos abaixo (detalhados no [Enunciado do Trabalho final - Moodle](https://moodle.ufrgs.br/mod/assign/view.php?id=6018620)), escreva um parágrafo **curto** explicando como este requisito será atendido, apontando itens específicos do vídeo/imagens que você incluiu acima que atendem estes requisitos.
 
 ### Malhas poligonais complexas
-Aves e objetos de entrega e cenário, como árvores, pedras e outros obstáculos, serão representados por malhas de polignos. 
+Aves e objetos de entrega e cenário, como árvores, pedras e outros obstáculos, serão representados por malhas de polígonos.
 
 ### Transformações geométricas controladas pelo usuário
 Como o usuário irá controlar uma ave, as transformações serão aplicadas nela, para o controle por teclado e mouse, permitindo controlar a dinâmica do voo.
