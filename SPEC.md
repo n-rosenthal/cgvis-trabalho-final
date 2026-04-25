@@ -6,8 +6,8 @@
 
 ## Integrantes da dupla
 
-- **Aluno 1 - Nome**: <mark>`<preencher>`</mark>
-- **Aluno 1 - Cartão UFRGS**: <mark>`<preencher>`</mark>
+- **Aluno 1 - Nome**: Nícolas Rosenthal Dal Corso
+- **Aluno 1 - Cartão UFRGS**: 00304709
 
 - **Aluno 2 - Nome**: Joana Oliveira DAvila
 - **Aluno 2 - Cartão UFRGS**: 00274739
@@ -15,7 +15,9 @@
 ## Detalhes do que será implementado
 
 - **Título do trabalho**: Carrier Birds Simulator (nome temporário) <mark>`<check>`</mark>
-- **Parágrafo curto descrevendo o que será implementado**: Será implementado um simulador no qual aves transportam objetos de um ponto iicial até um destino definido, desviando de obstáculos, como árvores, paredes e estruturas sólidas, e atravessando ambientes com superfícies flexiveis como folhagem, rios, lago, nuvens. O usuário poderá controlar o voo da ave e o momento de entrega do objeto. <mark>`<preencher>`</mark>
+- **Parágrafo curto descrevendo o que será implementado**: Será implementado um simulador no qual aves transportam objetos de um ponto inicial até um destino definido, desviando de obstáculos, como árvores, paredes e estruturas sólidas, e atravessando ambientes com superfícies flexiveis como folhagem, rios, lago, nuvens. O usuário poderá controlar o voo da ave e o momento de entrega do objeto.
+
+Serão implementadas colisões entre o jogador e outras aves, bem como em relação ao ambiente.
 
 ## Especificação visual
 
@@ -36,6 +38,7 @@
 
 [Flying Bird Simulator](https://www.youtube.com/watch?v=zi2BpBqko0E)
 [Drone Delivery Simulator](https://youtu.be/QvNqsuou13Y?si=Y6hbDeq5WjAfH7RY)
+[Harry Potter and the Prisioner of Azkaban (PS2) Owl Racing minigame](https://www.youtube.com/watch?v=WKa6vVh3TXg)
 
 ### Vídeo - Timestamp
 
@@ -44,16 +47,14 @@
 >   será a base de comparação para avaliar se o seu trabalho final
 >   conseguiu ou não reproduzir a referência.
 
-- **Timestamp inicial**: <mark>`<preencher>`</mark>
-- **Timestamp final**: <mark>`<preencher>`</mark>
+[Harry Potter and the Prisioner of Azkaban (PS2) Owl Racing minigame](https://www.youtube.com/watch?v=WKa6vVh3TXg)
+- **Timestamp inicial**: `00:03`
+- **Timestamp final**: `00:33`
 
 ### Imagens
-
-> [!IMPORTANT]
-> - Coloque aqui **três imagens** capturadas do vídeo acima, que você
->   irá usar como ilustração para as explicações que vêm abaixo.
-
-<mark>`<preencher>`</mark>
+![Screeshot da ave voando sobre água e rochas](documentação/harry-potter-owl-racing-image-1.png)
+![Screenshot da ave voando sobre edifícios do castelo](documentação/harry-potter-owl-racing-image-3.png)
+![Screenshot da ave atingindo seu objetivo, em câmera distinta](documentação/harry-potter-owl-racing-image-5.png)
 
 ## Especificação textual
 
@@ -69,7 +70,7 @@ Como o usuário irá controlar uma ave, as transformações serão aplicadas nel
 Ao menos duas cameras, terceira pessoa, atrás da ave, e primeira pessoa, visão da ave. O usuario poderá alternar entre elas.
 
 ### Instâncias de objetos
-Elementos de obstaculos, arvores, nuvens, serão instanciados multiplas vezes no cenario.
+Elementos de obstaculos, arvores, nuvens, prédios simples baseados no castelo visto no vídeo, serão instanciados multiplas vezes no cenario.
 
 ### Testes de intersecção
 Haverá teste de colisão entre ave e obstaculos, e pacote e solo. Aves não podem ultrapassar arvores, mas poderia ultrapassar agua e folhas esparsas. Pacote caso esteja numa altura indesejada pode sofrer dano se soltado longe do chão.
