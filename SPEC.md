@@ -54,6 +54,9 @@ Coruja sobrevoando edifícios do castelo.
 Coruja atingindo seu objetivo, destacando câmera distinta da anterior.
 ![Screenshot da ave atingindo seu objetivo, em câmera distinta](documentação/harry-potter-owl-racing-image-5.png)
 
+`Drone Delivery Simulator`: semelhante ao que desejamos implementar. Abaixo, o drone está indo recolher sua carga (uma caixa). Nossa intenção é que a coruja seja capaz de captar e entregar uma carta. A carta é extraída de uma localidade e _deixada cair_, em rota parabólica, até seu local objetivo.
+![Screenshot do drone indo obter sua entrega](documentação/drone-delivery-simulator-image-1.png)
+
 ## Especificação textual
 Para cada um dos requisitos abaixo (detalhados no [Enunciado do Trabalho final - Moodle](https://moodle.ufrgs.br/mod/assign/view.php?id=6018620)), escreva um parágrafo **curto** explicando como este requisito será atendido, apontando itens específicos do vídeo/imagens que você incluiu acima que atendem estes requisitos.
 
