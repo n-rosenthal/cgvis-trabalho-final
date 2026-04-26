@@ -23,16 +23,16 @@ Será implementado um simulador no qual aves transportam objetos de um ponto ini
 
 ### Imagens
 Coruja voando sobre água e rochas.
-![Screeshot da ave voando sobre água e rochas](documentação/harry-potter-owl-racing-image-1.png)
+![Screeshot da ave voando sobre água e rochas](documentação/imagens/harry-potter-owl-racing-image-1.png)
 
 Coruja sobrevoando edifícios do castelo.
-![Screenshot da ave voando sobre edifícios do castelo](documentação/harry-potter-owl-racing-image-3.png)
+![Screenshot da ave voando sobre edifícios do castelo](documentação/imagens/harry-potter-owl-racing-image-3.png)
 
 Coruja atingindo seu objetivo, destacando câmera distinta da anterior.
-![Screenshot da ave atingindo seu objetivo, em câmera distinta](documentação/harry-potter-owl-racing-image-5.png)
+![Screenshot da ave atingindo seu objetivo, em câmera distinta](documentação/imagens/harry-potter-owl-racing-image-5.png)
 
 `Drone Delivery Simulator`: semelhante ao que desejamos implementar. Abaixo, o drone está indo recolher sua carga (uma caixa). Nossa intenção é que a coruja seja capaz de captar e entregar uma carta. A carta é extraída de uma localidade e _deixada cair_, em rota parabólica, até seu local objetivo.
-![Screenshot do drone indo obter sua entrega](documentação/drone-delivery-simulator-image-1.png)
+![Screenshot do drone indo obter sua entrega](documentação/imagens/drone-delivery-simulator-image-1.png)
 
 ## Especificação textual
 ### Malhas poligonais complexas
