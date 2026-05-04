@@ -1,0 +1,84 @@
+*   implementando objetos
+**  implementar o /chão/ da cena do jogo
+
+1.      Definir um arquivo /header/ para conter os objetos a serem desenhados; talvez torne-se interessante implementar diversos /headers/ no futuro, armazenando objetos conforme sua natureza na cena;
+    1.  ver =./src/Objects.h/=
+    2.  =Objects.h= implementa: 
+        -   =VertexData=: estrutura {posição, vetor normal, coordenadas de  textura } para um vértice;
+        -   =Mesh=: vetor de vértices, índices de vértices, modo de renderização (em triângulos via =GL_TRIANGLES=), vetores 3-dimensionais para desenhar uma caixa ao redor do objeto (bbox_{min, max}), identificadores para VAO, VBO, EBO para desenhar o objeto; 
+        -   =SceneObject=: classe-base de alto-nível para representar um objeto na cena; contém o nome do objeto, transformações básicas (posição, rotação, escala), cor (ignorado se objeto tem textura), /flag/ booleana =visible= para indicar se o objeto é atualmente visível (renderizado) ou não;
+            -   permite que objetos sejam acessados por seu nome;
+        -   =Floor=: classe que herda de =SceneObject= para representar o /chão/ da cena. É inicializada com /length/ e /width/ para definir o tamanho do chão em relação aos eixos X, Z (?) respectivamente;
+        -   O arquivo, atualmente, também implementa classes para *esfera* e *coelho* vistos em aula;
+        -   =ObjectManager= permite gerenciar objetos na cena; adicionar e remover objetos, desenhar os objetos e obtê-los por nome.
+
+2.      Implementar as classes e seus métodos em =./src/Objects.cpp/=
+3.      Criar uma /factory/ para criação facilitada de objetos. A função da /factory/ é que poderemos fazer algo como =factory.createBirdObject(...params)= para criar um objeto do tipo =Bird=, e também =factory.createFloorObject(...params)= para criar um objeto do tipo chão (=Floor=). Uma /factory/ é uma abstração sobre o processo de criar novos objetos.
+   1. Criar o /header/ para a fábrica em =ObjectFactory.h=. O arquivo /header/ já contém as implementações necessárias para a fábrica. Atualmente, a fábrica só tem três métodos: =createFloor()=, =createCheckeredFloor()= (outro tipo de chão, para testes) e =createSphere()=, para criar esferas.
+4.       Em =main.cpp=, precisamos
+   1.    incluir os headers que fizemos, fazendo
+
+#+BEGIN_SRC cpp
+#include "Objects.h"
+#include "ObjectFactory.h"
+#+END_SRC
+
+    2.    inicializar um gerenciador de objetos
+
+#+BEGIN_SRC cpp
+ObjectManager& g_ObjectManager = ObjectManager::getInstance();
+#+END_SRC
+
+    3.    agora podemos criar os objetos /usando a fábrica/ ou /manualmente/:
+
+#+BEGIN_SRC cpp
+    // criar objetos usando a fábrica de objetos
+    Floor* mainFloor = ObjectFactory::createCheckeredFloor(10.0f, 10.0f, -1.1f);
+    g_ObjectManager.addObject(mainFloor);
+    
+    Sphere* redSphere = ObjectFactory::createSphere(0.5f, glm::vec3(-1.5f, 0.0f, 0.0f));
+    g_ObjectManager.addObject(redSphere);
+    
+    Sphere* blueSphere = ObjectFactory::createSphere(0.5f, glm::vec3(1.5f, 0.0f, 0.0f));
+    blueSphere->color = glm::vec4(0.2f, 0.2f, 0.8f, 1.0f);
+    g_ObjectManager.addObject(blueSphere);
+
+    // criar objetos manualmente
+    Floor* customFloor = new Floor("custom_floor", 5.0f, 5.0f, -0.5f);
+    customFloor->loadTexture("textures/wood.jpg");
+    customFloor->position = glm::vec3(3.0f, 0.0f, 2.0f);
+    g_ObjectManager.addObject(customFloor);
+#+END_SRC
+
+    4. dentro do /loop/ de renderização, usamos o método para desenhar objetos do gerenciador de objetos:
+
+#+BEGIN_SRC cpp
+g_ObjectManager.drawAllObjects(g_model_uniform);
+#+END_SRC
+
+    5.  após o término do /loop/ de renderização, isto é, quando fecharmos a janela do jogo, é de boa prática limpar a memória do gerenciador, fazendo:
+
+#+BEGIN_SRC cpp
+g_ObjectManager.clear();
+#+END_SRC
+
+* Organização dos Arquivos
+Uma possibilidade de /arquitetura de diretórios e de arquivos/ para o projeto é
+
+#+BEGIN_EXAMPLE
+project/
+├── src/
+│   ├── main.cpp
+│   ├── Objects.cpp
+│   └── ObjectFactory.cpp
+├── include/
+│   ├── Objects.h
+│   └── ObjectFactory.h
+├── shaders/
+│   ├── vertex.glsl
+│   └── fragment.glsl
+├── textures/
+│   └── floor_texture.jpg
+└── models/
+    └── bunny.obj
+#END_EXAMPLE
