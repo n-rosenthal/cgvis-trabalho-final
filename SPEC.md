@@ -53,6 +53,8 @@ Haverá teste de colisão entre ave e obstaculos, e pacote e solo. Aves não pod
 ### Modelos de Iluminação em todos os objetos
 O modelo de iluminação deve permitir que haja sombra da ave no solo, assim como de nuvens. Sombras devem ser mais detalhadas quanto mais longe da luz.
 
+> Comentário Professor: A ideia de reproduzir as sombras é legal, mas a implementação pode ser um desafio. As técnicas mais comuns para implementar sombras, em ordem de simplicidade, seriam: shadow maps, shadow volumes, ou ray tracing (requer hardware melhor). Também, não ficou claro o que querem dizer por "Sombras devem ser mais detalhadas quanto mais longe da luz."
+
 ### Mapeamento de texturas em todos os objetos
 Todos os objetos pensados têm texturas, terrenos, árvores, ave, água.
 
