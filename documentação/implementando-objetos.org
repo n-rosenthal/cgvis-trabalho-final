@@ -16,21 +16,19 @@
 3.      Criar uma /factory/ para criação facilitada de objetos. A função da /factory/ é que poderemos fazer algo como =factory.createBirdObject(...params)= para criar um objeto do tipo =Bird=, e também =factory.createFloorObject(...params)= para criar um objeto do tipo chão (=Floor=). Uma /factory/ é uma abstração sobre o processo de criar novos objetos.
    1. Criar o /header/ para a fábrica em =ObjectFactory.h=. O arquivo /header/ já contém as implementações necessárias para a fábrica. Atualmente, a fábrica só tem três métodos: =createFloor()=, =createCheckeredFloor()= (outro tipo de chão, para testes) e =createSphere()=, para criar esferas.
 4.       Em =main.cpp=, precisamos
-   1.    incluir os headers que fizemos, fazendo
 
+incluir os headers que fizemos, fazendo
 #+BEGIN_SRC cpp
 #include "Objects.h"
 #include "ObjectFactory.h"
 #+END_SRC
 
-    2.    inicializar um gerenciador de objetos
-
+inicializar um gerenciador de objetos
 #+BEGIN_SRC cpp
 ObjectManager& g_ObjectManager = ObjectManager::getInstance();
 #+END_SRC
 
-    3.    agora podemos criar os objetos /usando a fábrica/ ou /manualmente/:
-
+agora podemos criar os objetos /usando a fábrica/ ou /manualmente/:
 #+BEGIN_SRC cpp
     // criar objetos usando a fábrica de objetos
     Floor* mainFloor = ObjectFactory::createCheckeredFloor(10.0f, 10.0f, -1.1f);
@@ -50,14 +48,12 @@ ObjectManager& g_ObjectManager = ObjectManager::getInstance();
     g_ObjectManager.addObject(customFloor);
 #+END_SRC
 
-    4. dentro do /loop/ de renderização, usamos o método para desenhar objetos do gerenciador de objetos:
-
+dentro do /loop/ de renderização, usamos o método para desenhar objetos do gerenciador de objetos:
 #+BEGIN_SRC cpp
 g_ObjectManager.drawAllObjects(g_model_uniform);
 #+END_SRC
 
-    5.  após o término do /loop/ de renderização, isto é, quando fecharmos a janela do jogo, é de boa prática limpar a memória do gerenciador, fazendo:
-
+após o término do /loop/ de renderização, isto é, quando fecharmos a janela do jogo, é de boa prática limpar a memória do gerenciador, fazendo:
 #+BEGIN_SRC cpp
 g_ObjectManager.clear();
 #+END_SRC
@@ -81,4 +77,5 @@ project/
 │   └── floor_texture.jpg
 └── models/
     └── bunny.obj
-#END_EXAMPLE
+#+END_EXAMPLE
+#
