@@ -18,6 +18,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
 
 // Headers abaixo são específicos de C++
 #include <set>
@@ -207,6 +208,12 @@ float g_ForearmAngleX = 0.0f;
 float g_TorsoPositionX = 0.0f;
 float g_TorsoPositionY = 0.0f;
 
+// Variáveis que controlam posição e rotação do bunny
+float g_BunnyPositionX = 1.0f;
+float g_BunnyPositionY = 0.0f;
+float g_BunnyPositionZ = 0.0f;
+float g_BunnyRotationY = 0.0f;
+
 // Variável que controla o tipo de projeção utilizada: perspectiva ou ortográfica.
 bool g_UsePerspectiveProjection = true;
 
@@ -332,6 +339,14 @@ int main(int argc, char* argv[])
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+        // Obtém hora atual do computador
+        time_t now = time(0);
+        struct tm* currentTime = localtime(&now);
+        int hour = currentTime->tm_hour;
+
+        // Noite entre 18h e 6h, dia caso contrário
+        bool isDayTime = !(hour >= 18 || hour < 6);
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -343,7 +358,14 @@ int main(int argc, char* argv[])
         // Conversaremos sobre sistemas de cores nas aulas de Modelos de Iluminação.
         //
         //           R     G     B     A
-        glClearColor(0.9f, 0.9f, 1.0f, 1.0f);
+
+
+
+        if (isDayTime) {
+            glClearColor(0.9f, 0.9f, 1.0f, 1.0f); // Dia: céu claro
+        } else {
+            glClearColor(0.1f, 0.1f, 0.2f, 1.0f); // Noite: céu escuro
+        }
 
         // "Pintamos" todos os pixels do framebuffer com a cor definida acima,
         // e também resetamos todos os pixels do Z-buffer (depth buffer).
@@ -424,7 +446,8 @@ int main(int argc, char* argv[])
         DrawVirtualObject("the_sphere");
 
         // Desenhamos o modelo do coelho
-        model = Matrix_Translate(1.0f,0.0f,0.0f)
+        model = Matrix_Translate(g_BunnyPositionX, g_BunnyPositionY, g_BunnyPositionZ)
+              * Matrix_Rotate_Y(g_BunnyRotationY)
               * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, BUNNY);
@@ -1156,11 +1179,11 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
         // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
         float dx = xpos - g_LastCursorPosX;
         float dy = ypos - g_LastCursorPosY;
-    
-        // Atualizamos parâmetros da antebraço com os deslocamentos
-        g_ForearmAngleZ -= 0.01f*dx;
-        g_ForearmAngleX += 0.01f*dy;
-    
+
+        // Atualizamos parâmetros do bunny com os deslocamentos
+        g_BunnyRotationY -= 0.01f*dx;
+        g_BunnyPositionY += 0.01f*dy;
+
         // Atualizamos as variáveis globais para armazenar a posição atual do
         // cursor como sendo a última posição conhecida do cursor.
         g_LastCursorPosX = xpos;
@@ -1277,6 +1300,46 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         LoadShadersFromFiles();
         fprintf(stdout,"Shaders recarregados!\n");
         fflush(stdout);
+    }
+
+    // Controles do bunny com teclado
+    float moveSpeed = 0.1f;
+    float rotSpeed = 0.1f;
+
+    // WASD para mover o bunny
+    if (key == GLFW_KEY_W && action == GLFW_PRESS)
+    {
+        g_BunnyPositionZ -= moveSpeed;
+    }
+    if (key == GLFW_KEY_S && action == GLFW_PRESS)
+    {
+        g_BunnyPositionZ += moveSpeed;
+    }
+    if (key == GLFW_KEY_A && action == GLFW_PRESS)
+    {
+        g_BunnyPositionX -= moveSpeed;
+    }
+    if (key == GLFW_KEY_D && action == GLFW_PRESS)
+    {
+        g_BunnyPositionX += moveSpeed;
+    }
+    if (key == GLFW_KEY_Q && action == GLFW_PRESS)
+    {
+        g_BunnyPositionY += moveSpeed;
+    }
+    if (key == GLFW_KEY_E && action == GLFW_PRESS)
+    {
+        g_BunnyPositionY -= moveSpeed;
+    }
+
+    // Setas para rotacionar o bunny
+    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
+    {
+        g_BunnyRotationY += rotSpeed;
+    }
+    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
+    {
+        g_BunnyRotationY -= rotSpeed;
     }
 }
 
