@@ -1,10 +1,13 @@
 #ifndef OBJECTS_H
 #define OBJECTS_H
 
-#include <glm/glm.hpp>
+#include "glad/glad.h"
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 //  Estrutura para armazenar os dados de um vértice (posição, normal e coordenada de textura)
 struct VertexData {
@@ -69,10 +72,10 @@ public:
           color(1.0f), visible(true) {}
     
     //  Destrutor virtual para permitir a herança correta
-    virtual ~SceneObject() {}
+  virtual ~SceneObject() = default;
 
     //  Função virtual para obter a matriz de modelagem do objeto, combinando posição, rotação e escala
-    virtual glm::mat4 getModelMatrix() const;
+  virtual glm::mat4 getModelMatrix() const;
 
     //  Função virtual para desenhar o objeto, utilizando o shader program e enviando a matriz de modelagem como uniforme
     virtual void draw(GLuint model_uniform) const = 0;
@@ -86,9 +89,6 @@ public:
     
     //  Construtor para criar um objeto de chão com um nome, dimensões e posição vertical
     Floor(const std::string& name, float len, float wid, float y_pos = -1.1f);
-    
-    //  Função para obter a matriz de modelagem do chão, aplicando a translação vertical e escala para as dimensões do chão
-    virtual glm::mat4 getModelMatrix() const override;
 
     //  Função para desenhar o chão, utilizando o shader program e enviando a matriz de modelagem como uniforme
     virtual void draw(GLuint model_uniform) const override;
@@ -97,7 +97,10 @@ public:
     void createMesh();
 
     //  Função para carregar uma textura a partir de um arquivo, configurando o ID da textura e do sampler para uso na renderização
-    void loadTexture(const char* filename);
+  void loadTexture(const char* filename);
+
+  //  destruidor público
+  virtual ~Floor() = default;
     
 private:
     //  Mesh do chão
