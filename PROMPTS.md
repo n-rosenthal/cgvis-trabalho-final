@@ -19,7 +19,7 @@ Criar painel de interface do usuário/depuração exibindo métricas de voo em t
 
 **Observações/Resposta:**
 
-*Painel de depuração criado com sucesso! O painel exibe em tempo real:
+* Painel de depuração criado com sucesso! O painel exibe em tempo real:
 
 - **Posição do bunny**: X, Y, Z
 - **Rotação**: em radianos e graus
