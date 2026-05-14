@@ -49,6 +49,24 @@
 #include "utils.h"
 #include "matrices.h"
 
+
+
+/** função inline para obter o caminho para algum asset (textura, modelo) 
+    uso:
+    	// carregar uma textura
+    	LoadTextureImage(asset_path("textures/red_brick_diff_1k.jpg").c_str());
+    	
+    	// carregar um modelo
+	ObjModel spheremodel(asset_path("models/sphere.obj").c_str());
+*/
+inline std::string asset_path(const std::string& subpath) {
+    return std::string(ASSETS_DIR) + "/" + subpath;
+}
+
+
+
+
+
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
 struct ObjModel
@@ -298,22 +316,23 @@ int main(int argc, char* argv[])
     //
     LoadShadersFromFiles();
 
-    /* as texturas são armazenadas no diretório =textures/= */
+    /* as texturas são armazenadas no diretório =assets/textures/= */
     // Carregamos duas imagens para serem utilizadas como textura
-    LoadTextureImage("textures/red_brick_diff_1k.jpg");      // TextureImage0
-    LoadTextureImage("textures/rocky_terrain_02_diff_1k.jpg"); // TextureImage1
-
-    /* os objetos são armazenados no diretório =models/= */
+    std::string tex_path = std::string(ASSETS_DIR);
+    LoadTextureImage(asset_path("textures/red_brick_diff_1k.jpg").c_str());		// TextureImage0
+    LoadTextureImage(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str());	// TextureImage1
+    
+    /* os objetos são armazenados no diretório =assets/models/= */
     // Construímos a representação de objetos geométricos através de malhas de triângulos
-    ObjModel spheremodel("models/sphere.obj");
+    ObjModel spheremodel(asset_path("models/sphere.obj").c_str());
     ComputeNormals(&spheremodel);
     BuildTrianglesAndAddToVirtualScene(&spheremodel);
 
-    ObjModel bunnymodel("models/bunny.obj");
+    ObjModel bunnymodel(asset_path("models/bunny.obj").c_str());
     ComputeNormals(&bunnymodel);
     BuildTrianglesAndAddToVirtualScene(&bunnymodel);
 
-    ObjModel planemodel("models/plane.obj");
+    ObjModel planemodel(asset_path("models/plane.obj").c_str());
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
 
@@ -556,9 +575,16 @@ void DrawVirtualObject(const char* object_name)
     glBindVertexArray(0);
 }
 
+
+// Shaders agora dentro de assets/shaders/
+std::string vert_path = std::string(ASSETS_DIR) + "/shaders/shader_vertex.glsl";
+std::string frag_path = std::string(ASSETS_DIR) + "/shaders/shader_fragment.glsl";
 // Função que carrega os shaders de vértices e de fragmentos que serão
 // utilizados para renderização. Veja slides 180-200 do documento Aula_03_Rendering_Pipeline_Grafico.pdf.
 //
+/**
+	os shaders ficam em =assets/shaders/=
+*/
 void LoadShadersFromFiles()
 {
     // Note que o caminho para os arquivos "shader_vertex.glsl" e
@@ -573,14 +599,15 @@ void LoadShadersFromFiles()
     //    |     |
     //    |     o-- main.exe
     //    |
-    //    +--+ src/
+    //    +--+ assets/shaders/
     //       |
     //       o-- shader_vertex.glsl
     //       |
     //       o-- shader_fragment.glsl
     //
-    GLuint vertex_shader_id = LoadShader_Vertex("shaders/shader_vertex.glsl");
-    GLuint fragment_shader_id = LoadShader_Fragment("shaders/shader_fragment.glsl");
+    	GLuint vertex_shader_id   = LoadShader_Vertex(vert_path.c_str());
+	GLuint fragment_shader_id = LoadShader_Fragment(frag_path.c_str());
+
 
     // Deletamos o programa de GPU anterior, caso ele exista.
     if ( g_GpuProgramID != 0 )
