@@ -9,9 +9,11 @@ set(SOURCES
   src/main.cpp
   src/correcao.cpp
   src/textrendering.cpp
-  src/tiny_obj_loader.cpp
-  src/stb_image.cpp
-  src/glad.c
+  src/Objects.cpp
+  src/buildtriangles.cpp
+  third_party/tiny_obj_loader.cpp
+  third_party/stb_image.cpp
+  third_party/glad.c
 )
 
 cmake_minimum_required(VERSION 3.5.0)
@@ -106,11 +108,12 @@ elseif(UNIX)
   target_compile_options(${EXECUTABLE_NAME} PRIVATE -Wall -Wno-unused-function)
 
   # Add custom target for 'run'
-  add_custom_target(run
-      COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} ./main
-      DEPENDS main
-      USES_TERMINAL
-  )
+add_custom_target(run
+    COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/main
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    DEPENDS main
+    USES_TERMINAL
+)
 
   find_package(OpenGL REQUIRED)
   find_package(X11 REQUIRED)

@@ -1,4 +1,6 @@
 #include "Objects.h"
+
+#include <stb_image.h>
 #include <cmath>
 #include <iostream>
 
