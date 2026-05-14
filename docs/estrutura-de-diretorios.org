@@ -1,0 +1,42 @@
+#+title: Relatório da Estrutura de Arquivos do Projeto
+
+O projeto foi reorganizado seguindo boas práticas de engenharia de software, separando claramente código-fonte, recursos (assets), bibliotecas externas e artefatos de compilação. A estrutura atual facilita a manutenção, o build multiplataforma e a escalabilidade para um jogo mais complexo.
+*  Diretório =assets/=
+Contém todos os recursos estáticos utilizados pelo jogo:
+- =models/= – arquivos OBJ dos objetos 3D (esfera, coelho, plano).
+- =shaders/= – shaders GLSL (vertex e fragment).
+- =textures/= – imagens para texturização (brick, terreno rochoso).
+
+Todos os caminhos para esses recursos são resolvidos via macro =ASSETS_DIR=, definida no CMake, garantindo que o programa encontre os arquivos independentemente do diretório de execução.
+
+* Diretório =engine/=
+Contém o código fonte do motor gráfico e da lógica central do jogo:
+
+- =engine/include/= – headers públicos (matemática, objetos, carregamento de modelos/texturas, etc.).
+- =engine/src/= – implementações correspondentes (main.cpp, correcao.cpp, Objects.cpp, buildtriangles.cpp, etc.).
+
+*  Diretório =external/=
+Armazena arquivos de terceiros que não fazem parte do motor principal:
+- =glad.c= – carregador de extensões OpenGL.
+- =stb_image.cpp= – leitura de imagens.
+- =tiny_obj_loader.cpp= – carregamento de modelos OBJ.
+
+* Diretórios de bibliotecas específicas por plataforma
+- =lib-linux/= – GLFW compilado para Linux.
+- =lib-mingw-32/=, lib-mingw-64/, lib-ucrt-64/, lib-vc2022/ – versões da GLFW para diferentes ambientes Windows (MinGW, UCRT, MSVC).
+
+* Diretórios de saída do build
+- =bin/Linux/= – executável final (main) gerado após a compilação.
+- =build/= – diretório temporário do CMake (objetos, Makefiles, cache). Pode ser apagado a qualquer momento sem afetar o código fonte.
+
+* Arquivos de configuração e documentação
+=CMakeLists.txt= – script de build principal, configurando compilação, inclusão de diretórios, definição de ASSETS_DIR e criação da target run.
+=CMakePresets.json= – presets para facilitar a execução dos comandos CMake.
+=Makefile= auxiliar (simplifica chamadas cmake --build).
+=docs/= – documentação de desenvolvimento, anotações e imagens de referência.
+=README.md=, =SPEC.md=, =COMPILACAO.md= – instruções gerais e especificações do projeto.
+
+* Possíveis próximos passos
+   1. Mover o código específico do jogo (personagens, regras, níveis) para um diretório game/, separado do motor.
+   2. Adicionar um sistema de gerenciamento de recursos (resource manager) para carregamento eficiente.
+   3. Utilizar JSON para descrição de cenas (níveis), tornando o jogo data‑driven.
