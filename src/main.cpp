@@ -144,6 +144,7 @@ void TextRendering_ShowModelViewProjection(GLFWwindow* window, glm::mat4 project
 void TextRendering_ShowEulerAngles(GLFWwindow* window);
 void TextRendering_ShowProjection(GLFWwindow* window);
 void TextRendering_ShowFramesPerSecond(GLFWwindow* window);
+void TextRendering_ShowDebugPanel(GLFWwindow* window);
 
 // Funções callback para comunicação com o sistema operacional e interação do
 // usuário. Veja mais comentários nas definições das mesmas, abaixo.
@@ -219,6 +220,9 @@ bool g_UsePerspectiveProjection = true;
 
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
+
+// Variável que controla se o painel de depuração será mostrado na tela.
+bool g_ShowDebugPanel = true;
 
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
@@ -469,6 +473,9 @@ int main(int argc, char* argv[])
         // Imprimimos na tela informação sobre o número de quadros renderizados
         // por segundo (frames per second).
         TextRendering_ShowFramesPerSecond(window);
+
+        // Imprimimos o painel de depuração com métricas de voo
+        TextRendering_ShowDebugPanel(window);
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
@@ -1294,6 +1301,12 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         g_ShowInfoText = !g_ShowInfoText;
     }
 
+    // Se o usuário apertar a tecla T, fazemos um "toggle" do painel de depuração.
+    if (key == GLFW_KEY_T && action == GLFW_PRESS)
+    {
+        g_ShowDebugPanel = !g_ShowDebugPanel;
+    }
+
     // Se o usuário apertar a tecla R, recarregamos os shaders dos arquivos "shader_fragment.glsl" e "shader_vertex.glsl".
     if (key == GLFW_KEY_R && action == GLFW_PRESS)
     {
@@ -1475,6 +1488,49 @@ void TextRendering_ShowFramesPerSecond(GLFWwindow* window)
     float charwidth = TextRendering_CharWidth(window);
 
     TextRendering_PrintString(window, buffer, 1.0f-(numchars + 1)*charwidth, 1.0f-lineheight, 1.0f);
+}
+
+void TextRendering_ShowDebugPanel(GLFWwindow* window)
+{
+    if (!g_ShowDebugPanel)
+        return;
+
+    float lineheight = TextRendering_LineHeight(window);
+    float charwidth = TextRendering_CharWidth(window);
+
+    // Obtém hora atual
+    time_t now = time(0);
+    struct tm* currentTime = localtime(&now);
+    int hour = currentTime->tm_hour;
+    int minute = currentTime->tm_min;
+    int second = currentTime->tm_sec;
+    bool isDayTime = !(hour >= 18 || hour < 6);
+
+    // Título do painel
+    TextRendering_PrintString(window, "=== PAINEL DE VOO ===", -1.0f + charwidth, 1.0f - lineheight, 1.0f);
+
+    // Posição do bunny
+    char buffer[256];
+    snprintf(buffer, 256, "Posicao: X=%.2f Y=%.2f Z=%.2f", g_BunnyPositionX, g_BunnyPositionY, g_BunnyPositionZ);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 2*lineheight, 1.0f);
+
+    // Rotação do bunny
+    snprintf(buffer, 256, "Rotacao Y: %.2f rad (%.1f graus)", g_BunnyRotationY, g_BunnyRotationY * 180.0f / 3.141592f);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 3*lineheight, 1.0f);
+
+    // Hora do dia
+    snprintf(buffer, 256, "Hora: %02d:%02d:%02d - %s", hour, minute, second, isDayTime ? "DIA" : "NOITE");
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 4*lineheight, 1.0f);
+
+    // Câmera
+    snprintf(buffer, 256, "Camera: Dist=%.2f Theta=%.2f Phi=%.2f", g_CameraDistance, g_CameraTheta, g_CameraPhi);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 5*lineheight, 1.0f);
+
+    // Controles
+    TextRendering_PrintString(window, "Controles:", -1.0f + charwidth, 1.0f - 7*lineheight, 1.0f);
+    TextRendering_PrintString(window, "WASD: Mover | Q/E: Subir/Descer", -1.0f + charwidth, 1.0f - 8*lineheight, 1.0f);
+    TextRendering_PrintString(window, "Setas: Rotacionar | Mouse Dir: Rotacionar", -1.0f + charwidth, 1.0f - 9*lineheight, 1.0f);
+    TextRendering_PrintString(window, "T: Toggle Painel | H: Toggle Info", -1.0f + charwidth, 1.0f - 10*lineheight, 1.0f);
 }
 
 // Função para debugging: imprime no terminal todas informações de um modelo
