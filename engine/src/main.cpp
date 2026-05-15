@@ -50,7 +50,8 @@
 #include "utils.h"
 #include "matrices.h"
 
-
+//  Classe `Bird`: ave controlada pelo usuário
+#include "Bird.hpp"
 
 /** função inline para obter o caminho para algum asset (textura, modelo) 
     uso:
@@ -228,10 +229,10 @@ float g_TorsoPositionX = 0.0f;
 float g_TorsoPositionY = 0.0f;
 
 // Variáveis que controlam posição e rotação do bunny
-float g_BunnyPositionX = 1.0f;
-float g_BunnyPositionY = 0.0f;
-float g_BunnyPositionZ = 0.0f;
-float g_BunnyRotationY = 0.0f;
+// float g_BunnyPositionX = 1.0f;
+// float g_BunnyPositionY = 0.0f;
+// float g_BunnyPositionZ = 0.0f;
+// float g_BunnyRotationY = 0.0f;
 
 // Variável que controla o tipo de projeção utilizada: perspectiva ou ortográfica.
 bool g_UsePerspectiveProjection = true;
@@ -253,6 +254,14 @@ GLint g_bbox_max_uniform;
 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
+
+
+
+/**
+ * BIRD: Ave controlada pelo usuário
+*/
+Bird g_Bird;
+
 
 int main(int argc, char* argv[])
 {
@@ -1375,7 +1384,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     }
 
     // Setas para rotacionar o bunny
-    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
     {
         g_BunnyRotationY += rotSpeed;
     }
