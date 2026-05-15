@@ -6,9 +6,18 @@
 //   - glm         (vec4, mat4, value_ptr)
 
 #include "Camera.hpp"
-#include "matrices.h"
 
+#include <cmath>
 #include <limits>
+
+// matrices.h define as funções diretamente (sem inline), o que causa "multiple
+// definition" quando mais de um .cpp o inclui. Declaramos apenas as três
+// funções que Camera.cpp precisa, sem reincluir o header inteiro.
+#include <glm/mat4x4.hpp>
+#include <glm/vec4.hpp>
+glm::mat4 Matrix_Camera_View(glm::vec4 position_c, glm::vec4 view_vector, glm::vec4 up_vector);
+glm::mat4 Matrix_Perspective(float field_of_view, float ratio, float nearplane, float farplane);
+glm::mat4 Matrix_Orthographic(float l, float r, float b, float t, float nearplane, float farplane);
 
 // -----------------------------------------------------------------------------
 // Construtor — espelha os valores padrão das globais do main.cpp original

@@ -235,10 +235,10 @@ float g_BunnyPositionZ = 0.0f;
 float g_BunnyRotationY = 0.0f;
 
 // Variável que controla se o texto informativo será mostrado na tela.
-bool g_ShowInfoText = InputHandler::get().showInfoText();
+bool g_ShowInfoText = true;
 
 // Variável que controla se o painel de depuração será mostrado na tela.
-bool g_ShowDebugPanel = InputHandler::get().showDebugPanel();
+bool g_ShowDebugPanel = true;
 
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
@@ -445,7 +445,7 @@ int main(int argc, char* argv[])
         TextRendering_ShowFramesPerSecond(window);
 
         // Imprimimos o painel de depuração com métricas de voo
-        //  TextRendering_ShowDebugPanel(window); --> delegado à InputHandler
+        TextRendering_ShowDebugPanel(window);
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
@@ -1078,7 +1078,8 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     // =======================
     // Não modifique esta chamada! Ela é utilizada para correção automatizada dos
     // laboratórios. Deve ser sempre o primeiro comando desta função KeyCallback().
-    Correcao_KeyCallback(key, action, mod);
+    //      ---> delegado ao InputHandler.
+    // Correcao_KeyCallback(key, action, mod);
     // =======================
 
     InputHandler::get().onKey(window, key, scancode, action, mod);
