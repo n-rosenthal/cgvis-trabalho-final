@@ -52,10 +52,25 @@
 
 // Modularização de =main.cpp=
 #include "Camera.hpp"           //  reúne métodos e constantes para a camera
+#include "InputHandler.hpp"     //  reúne métodos e constantes para o input (teclado, mouse)
 
 
 /**  Classe CAMERA
  *   @see =src/include/Camera.hpp=
+ * 
+ *  Instância desta classe em main.cpp para controlar a camera.
+ *  Note que `InputHandler`, classe responsável por lidar com os eventos de teclado e mouse,
+ *  recebe um ponteiro para a câmera na função main
+ * 
+ *   @example
+ *      int main(int argc, char* argv[])
+        {
+            // Conecta InputHandler à câmera — deve vir ANTES de registrar callbacks
+            InputHandler::get().setCamera(&g_Camera);
+
+            int success = glfwInit();
+            // ...
+        }
  */
 Camera g_Camera;
 
@@ -220,10 +235,10 @@ float g_BunnyPositionZ = 0.0f;
 float g_BunnyRotationY = 0.0f;
 
 // Variável que controla se o texto informativo será mostrado na tela.
-bool g_ShowInfoText = true;
+bool g_ShowInfoText = InputHandler::get().showInfoText();
 
 // Variável que controla se o painel de depuração será mostrado na tela.
-bool g_ShowDebugPanel = true;
+bool g_ShowDebugPanel = InputHandler::get().showDebugPanel();
 
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
@@ -428,7 +443,7 @@ int main(int argc, char* argv[])
         TextRendering_ShowFramesPerSecond(window);
 
         // Imprimimos o painel de depuração com métricas de voo
-        TextRendering_ShowDebugPanel(window);
+        //  TextRendering_ShowDebugPanel(window); --> delegado à InputHandler
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
@@ -1037,114 +1052,20 @@ void FramebufferSizeCallback(GLFWwindow* window, int width, int height) {
 }
 
 // Função callback chamada sempre que o usuário aperta algum dos botões do mouse
-void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-{
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
-    {
-        // Se o usuário pressionou o botão esquerdo do mouse, guardamos a
-        // posição atual do cursor nas variáveis g_LastCursorPosX e
-        // g_LastCursorPosY.  Também, setamos a variável
-        // g_RightMouseButtonPressed como true, para saber que o usuário está
-        // com o botão esquerdo pressionado.
-        glfwGetCursorPos(window, &g_LastCursorPosX, &g_LastCursorPosY);
-        g_RightMouseButtonPressed = true;
-    }
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
-    {
-        // Quando o usuário soltar o botão esquerdo do mouse, atualizamos a
-        // variável abaixo para false.
-        g_RightMouseButtonPressed = false;
-    }
-    if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS)
-    {
-        // Se o usuário pressionou o botão esquerdo do mouse, guardamos a
-        // posição atual do cursor nas variáveis g_LastCursorPosX e
-        // g_LastCursorPosY.  Também, setamos a variável
-        // g_MiddleMouseButtonPressed como true, para saber que o usuário está
-        // com o botão esquerdo pressionado.
-        glfwGetCursorPos(window, &g_LastCursorPosX, &g_LastCursorPosY);
-        g_MiddleMouseButtonPressed = true;
-    }
-    if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE)
-    {
-        // Quando o usuário soltar o botão esquerdo do mouse, atualizamos a
-        // variável abaixo para false.
-        g_MiddleMouseButtonPressed = false;
-    }
+void MouseButtonCallback(GLFWwindow* w, int btn, int action, int mods) {
+    InputHandler::get().onMouseButton(w, btn, action, mods);
 }
 
 // Função callback chamada sempre que o usuário movimentar o cursor do mouse em
 // cima da janela OpenGL.
-void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
-{
-    // Abaixo executamos o seguinte: caso o botão esquerdo do mouse esteja
-    // pressionado, computamos quanto que o mouse se movimento desde o último
-    // instante de tempo, e usamos esta movimentação para atualizar os
-    // parâmetros que definem a posição da câmera dentro da cena virtual.
-    // Assim, temos que o usuário consegue controlar a câmera.
-
-    if (g_LeftMouseButtonPressed)
-    {
-        // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
-        float dx = xpos - g_LastCursorPosX;
-        float dy = ypos - g_LastCursorPosY;
-    
-        // Atualizamos parâmetros da câmera com os deslocamentos
-        g_CameraTheta -= 0.01f*dx;
-        g_CameraPhi   += 0.01f*dy;
-    
-        // Em coordenadas esféricas, o ângulo phi deve ficar entre -pi/2 e +pi/2.
-        float phimax = 3.141592f/2;
-        float phimin = -phimax;
-    
-        if (g_CameraPhi > phimax)
-            g_CameraPhi = phimax;
-    
-        if (g_CameraPhi < phimin)
-            g_CameraPhi = phimin;
-    
-        // Atualizamos as variáveis globais para armazenar a posição atual do
-        // cursor como sendo a última posição conhecida do cursor.
-        g_LastCursorPosX = xpos;
-        g_LastCursorPosY = ypos;
-    }
-
-    if (g_RightMouseButtonPressed)
-    {
-        // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
-        float dx = xpos - g_LastCursorPosX;
-        float dy = ypos - g_LastCursorPosY;
-
-        // Atualizamos parâmetros do bunny com os deslocamentos
-        g_BunnyRotationY -= 0.01f*dx;
-        g_BunnyPositionY += 0.01f*dy;
-
-        // Atualizamos as variáveis globais para armazenar a posição atual do
-        // cursor como sendo a última posição conhecida do cursor.
-        g_LastCursorPosX = xpos;
-        g_LastCursorPosY = ypos;
-    }
-
-    if (g_MiddleMouseButtonPressed)
-    {
-        // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
-        float dx = xpos - g_LastCursorPosX;
-        float dy = ypos - g_LastCursorPosY;
-    
-        // Atualizamos parâmetros da antebraço com os deslocamentos
-        g_TorsoPositionX += 0.01f*dx;
-        g_TorsoPositionY -= 0.01f*dy;
-    
-        // Atualizamos as variáveis globais para armazenar a posição atual do
-        // cursor como sendo a última posição conhecida do cursor.
-        g_LastCursorPosX = xpos;
-        g_LastCursorPosY = ypos;
-    }
+void CursorPosCallback(GLFWwindow* w, double x, double y) {
+    InputHandler::get().onCursorPos(w, x, y);
 }
 
 // Função callback chamada sempre que o usuário movimenta a "rodinha" do mouse.
-//  void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
-//  ---> delegado à =Camera.cpp=
+void ScrollCallback(GLFWwindow* w, double xoff, double yoff) {
+    InputHandler::get().onScroll(w, xoff, yoff);
+}
 
 void Correcao_KeyCallback(int key, int action, int mod);
 
@@ -1158,110 +1079,8 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     Correcao_KeyCallback(key, action, mod);
     // =======================
 
-    // Se o usuário pressionar a tecla ESC, fechamos a janela.
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
-
-    // O código abaixo implementa a seguinte lógica:
-    //   Se apertar tecla X       então g_AngleX += delta;
-    //   Se apertar tecla shift+X então g_AngleX -= delta;
-    //   Se apertar tecla Y       então g_AngleY += delta;
-    //   Se apertar tecla shift+Y então g_AngleY -= delta;
-    //   Se apertar tecla Z       então g_AngleZ += delta;
-    //   Se apertar tecla shift+Z então g_AngleZ -= delta;
-
-    float delta = 3.141592 / 16; // 22.5 graus, em radianos.
-
-    if (key == GLFW_KEY_X && action == GLFW_PRESS)
-    {
-        g_AngleX += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
-    }
-
-    if (key == GLFW_KEY_Y && action == GLFW_PRESS)
-    {
-        g_AngleY += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
-    }
-    if (key == GLFW_KEY_Z && action == GLFW_PRESS)
-    {
-        g_AngleZ += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
-    }
-
-    // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-    {
-        g_AngleX = 0.0f;
-        g_AngleY = 0.0f;
-        g_AngleZ = 0.0f;
-        g_ForearmAngleX = 0.0f;
-        g_ForearmAngleZ = 0.0f;
-        g_TorsoPositionX = 0.0f;
-        g_TorsoPositionY = 0.0f;
-    }
-
-    // Se o usuário apertar a tecla P, utilizamos projeção perspectiva.
-    //  ----> delegado à =Camera.cpp=
-
-    // Se o usuário apertar a tecla H, fazemos um "toggle" do texto informativo mostrado na tela.
-    if (key == GLFW_KEY_H && action == GLFW_PRESS)
-    {
-        g_ShowInfoText = !g_ShowInfoText;
-    }
-
-    // Se o usuário apertar a tecla T, fazemos um "toggle" do painel de depuração.
-    if (key == GLFW_KEY_T && action == GLFW_PRESS)
-    {
-        g_ShowDebugPanel = !g_ShowDebugPanel;
-    }
-
-    // Se o usuário apertar a tecla R, recarregamos os shaders dos arquivos "shader_fragment.glsl" e "shader_vertex.glsl".
-    if (key == GLFW_KEY_R && action == GLFW_PRESS)
-    {
-        LoadShadersFromFiles();
-        fprintf(stdout,"Shaders recarregados!\n");
-        fflush(stdout);
-    }
-
-    // Controles do bunny com teclado
-    float moveSpeed = 0.1f;
-    float rotSpeed = 0.1f;
-
-    // WASD para mover o bunny
-    if (key == GLFW_KEY_W && action == GLFW_PRESS)
-    {
-        g_BunnyPositionZ -= moveSpeed;
-    }
-    if (key == GLFW_KEY_S && action == GLFW_PRESS)
-    {
-        g_BunnyPositionZ += moveSpeed;
-    }
-    if (key == GLFW_KEY_A && action == GLFW_PRESS)
-    {
-        g_BunnyPositionX -= moveSpeed;
-    }
-    if (key == GLFW_KEY_D && action == GLFW_PRESS)
-    {
-        g_BunnyPositionX += moveSpeed;
-    }
-    if (key == GLFW_KEY_Q && action == GLFW_PRESS)
-    {
-        g_BunnyPositionY += moveSpeed;
-    }
-    if (key == GLFW_KEY_E && action == GLFW_PRESS)
-    {
-        g_BunnyPositionY -= moveSpeed;
-    }
-
-    // Setas para rotacionar o bunny
-    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
-    {
-        g_BunnyRotationY += rotSpeed;
-    }
-    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
-    {
-        g_BunnyRotationY -= rotSpeed;
-    }
+    InputHandler::get().onKey(window, key, scancode, action, mod);
 }
-
 // Definimos o callback para impressão de erros da GLFW no terminal
 void ErrorCallback(int error, const char* description)
 {
@@ -1340,7 +1159,9 @@ void TextRendering_ShowEulerAngles(GLFWwindow* window)
     float pad = TextRendering_LineHeight(window);
 
     char buffer[80];
-    snprintf(buffer, 80, "Euler Angles rotation matrix = Z(%.2f)*Y(%.2f)*X(%.2f)\n", g_AngleZ, g_AngleY, g_AngleX);
+    auto& inp = InputHandler::get();
+    snprintf(buffer, 80, "... = Z(%.2f)*Y(%.2f)*X(%.2f)\n",
+            inp.getAngleZ(), inp.getAngleY(), inp.getAngleX());
 
     TextRendering_PrintString(window, buffer, -1.0f+pad/10, -1.0f+2*pad/10, 1.0f);
 }
@@ -1354,7 +1175,7 @@ void TextRendering_ShowProjection(GLFWwindow* window)
     float lineheight = TextRendering_LineHeight(window);
     float charwidth = TextRendering_CharWidth(window);
 
-    if ( g_UsePerspectiveProjection )
+    if (g_Camera.isPerspective())
         TextRendering_PrintString(window, "Perspective", 1.0f-13*charwidth, -1.0f+2*lineheight/10, 1.0f);
     else
         TextRendering_PrintString(window, "Orthographic", 1.0f-13*charwidth, -1.0f+2*lineheight/10, 1.0f);
@@ -1398,7 +1219,7 @@ void TextRendering_ShowFramesPerSecond(GLFWwindow* window)
 
 void TextRendering_ShowDebugPanel(GLFWwindow* window)
 {
-    if (!g_ShowDebugPanel)
+    if (!InputHandler::get().showDebugPanel())
         return;
 
     float lineheight = TextRendering_LineHeight(window);
@@ -1417,11 +1238,11 @@ void TextRendering_ShowDebugPanel(GLFWwindow* window)
 
     // Posição do bunny
     char buffer[256];
-    snprintf(buffer, 256, "Posicao: X=%.2f Y=%.2f Z=%.2f", g_BunnyPositionX, g_BunnyPositionY, g_BunnyPositionZ);
+    snprintf(buffer, 256, "Posicao: X=%.2f Y=%.2f Z=%.2f", InputHandler::get().getBunnyPositionX(), InputHandler::get().getBunnyPositionY(), InputHandler::get().getBunnyPositionZ());
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 2*lineheight, 1.0f);
 
     // Rotação do bunny
-    snprintf(buffer, 256, "Rotacao Y: %.2f rad (%.1f graus)", g_BunnyRotationY, g_BunnyRotationY * 180.0f / 3.141592f);
+    snprintf(buffer, 256, "Rotacao Y: %.2f rad (%.1f graus)", InputHandler::get().getBunnyRotationY(), InputHandler::get().getBunnyRotationY() * 180.0f / 3.141592f);
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 3*lineheight, 1.0f);
 
     // Hora do dia
@@ -1429,7 +1250,7 @@ void TextRendering_ShowDebugPanel(GLFWwindow* window)
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 4*lineheight, 1.0f);
 
     // Câmera
-    snprintf(buffer, 256, "Camera: Dist=%.2f Theta=%.2f Phi=%.2f", g_CameraDistance, g_CameraTheta, g_CameraPhi);
+    snprintf(buffer, 256, "Camera: Dist=%.2f Theta=%.2f Phi=%.2f", g_Camera.getDistance(), g_Camera.getTheta(), g_Camera.getPhi());
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 5*lineheight, 1.0f);
 
     // Controles
