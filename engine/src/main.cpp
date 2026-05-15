@@ -18,6 +18,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
 
 // Headers abaixo são específicos de C++
 #include <set>
@@ -161,6 +162,7 @@ void TextRendering_ShowModelViewProjection(GLFWwindow* window, glm::mat4 project
 void TextRendering_ShowEulerAngles(GLFWwindow* window);
 void TextRendering_ShowProjection(GLFWwindow* window);
 void TextRendering_ShowFramesPerSecond(GLFWwindow* window);
+void TextRendering_ShowDebugPanel(GLFWwindow* window);
 
 // Funções callback para comunicação com o sistema operacional e interação do
 // usuário. Veja mais comentários nas definições das mesmas, abaixo.
@@ -225,11 +227,20 @@ float g_ForearmAngleX = 0.0f;
 float g_TorsoPositionX = 0.0f;
 float g_TorsoPositionY = 0.0f;
 
+// Variáveis que controlam posição e rotação do bunny
+float g_BunnyPositionX = 1.0f;
+float g_BunnyPositionY = 0.0f;
+float g_BunnyPositionZ = 0.0f;
+float g_BunnyRotationY = 0.0f;
+
 // Variável que controla o tipo de projeção utilizada: perspectiva ou ortográfica.
 bool g_UsePerspectiveProjection = true;
 
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
+
+// Variável que controla se o painel de depuração será mostrado na tela.
+bool g_ShowDebugPanel = true;
 
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
@@ -353,6 +364,14 @@ int main(int argc, char* argv[])
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+        // Obtém hora atual do computador
+        time_t now = time(0);
+        struct tm* currentTime = localtime(&now);
+        int hour = currentTime->tm_hour;
+
+        // Noite entre 18h e 6h, dia caso contrário
+        bool isDayTime = !(hour >= 18 || hour < 6);
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -364,7 +383,14 @@ int main(int argc, char* argv[])
         // Conversaremos sobre sistemas de cores nas aulas de Modelos de Iluminação.
         //
         //           R     G     B     A
-        glClearColor(0.9f, 0.9f, 1.0f, 1.0f);
+
+
+
+        if (isDayTime) {
+            glClearColor(0.9f, 0.9f, 1.0f, 1.0f); // Dia: céu claro
+        } else {
+            glClearColor(0.1f, 0.1f, 0.2f, 1.0f); // Noite: céu escuro
+        }
 
         // "Pintamos" todos os pixels do framebuffer com a cor definida acima,
         // e também resetamos todos os pixels do Z-buffer (depth buffer).
@@ -445,7 +471,8 @@ int main(int argc, char* argv[])
         DrawVirtualObject("the_sphere");
 
         // Desenhamos o modelo do coelho
-        model = Matrix_Translate(1.0f,0.0f,0.0f)
+        model = Matrix_Translate(g_BunnyPositionX, g_BunnyPositionY, g_BunnyPositionZ)
+              * Matrix_Rotate_Y(g_BunnyRotationY)
               * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, BUNNY);
@@ -467,6 +494,9 @@ int main(int argc, char* argv[])
         // Imprimimos na tela informação sobre o número de quadros renderizados
         // por segundo (frames per second).
         TextRendering_ShowFramesPerSecond(window);
+
+        // Imprimimos o painel de depuração com métricas de voo
+        TextRendering_ShowDebugPanel(window);
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
@@ -1185,11 +1215,11 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
         // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
         float dx = xpos - g_LastCursorPosX;
         float dy = ypos - g_LastCursorPosY;
-    
-        // Atualizamos parâmetros da antebraço com os deslocamentos
-        g_ForearmAngleZ -= 0.01f*dx;
-        g_ForearmAngleX += 0.01f*dy;
-    
+
+        // Atualizamos parâmetros do bunny com os deslocamentos
+        g_BunnyRotationY -= 0.01f*dx;
+        g_BunnyPositionY += 0.01f*dy;
+
         // Atualizamos as variáveis globais para armazenar a posição atual do
         // cursor como sendo a última posição conhecida do cursor.
         g_LastCursorPosX = xpos;
@@ -1300,12 +1330,58 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         g_ShowInfoText = !g_ShowInfoText;
     }
 
+    // Se o usuário apertar a tecla T, fazemos um "toggle" do painel de depuração.
+    if (key == GLFW_KEY_T && action == GLFW_PRESS)
+    {
+        g_ShowDebugPanel = !g_ShowDebugPanel;
+    }
+
     // Se o usuário apertar a tecla R, recarregamos os shaders dos arquivos "shader_fragment.glsl" e "shader_vertex.glsl".
     if (key == GLFW_KEY_R && action == GLFW_PRESS)
     {
         LoadShadersFromFiles();
         fprintf(stdout,"Shaders recarregados!\n");
         fflush(stdout);
+    }
+
+    // Controles do bunny com teclado
+    float moveSpeed = 0.1f;
+    float rotSpeed = 0.1f;
+
+    // WASD para mover o bunny
+    if (key == GLFW_KEY_W && action == GLFW_PRESS)
+    {
+        g_BunnyPositionZ -= moveSpeed;
+    }
+    if (key == GLFW_KEY_S && action == GLFW_PRESS)
+    {
+        g_BunnyPositionZ += moveSpeed;
+    }
+    if (key == GLFW_KEY_A && action == GLFW_PRESS)
+    {
+        g_BunnyPositionX -= moveSpeed;
+    }
+    if (key == GLFW_KEY_D && action == GLFW_PRESS)
+    {
+        g_BunnyPositionX += moveSpeed;
+    }
+    if (key == GLFW_KEY_Q && action == GLFW_PRESS)
+    {
+        g_BunnyPositionY += moveSpeed;
+    }
+    if (key == GLFW_KEY_E && action == GLFW_PRESS)
+    {
+        g_BunnyPositionY -= moveSpeed;
+    }
+
+    // Setas para rotacionar o bunny
+    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
+    {
+        g_BunnyRotationY += rotSpeed;
+    }
+    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
+    {
+        g_BunnyRotationY -= rotSpeed;
     }
 }
 
@@ -1441,6 +1517,49 @@ void TextRendering_ShowFramesPerSecond(GLFWwindow* window)
     float charwidth = TextRendering_CharWidth(window);
 
     TextRendering_PrintString(window, buffer, 1.0f-(numchars + 1)*charwidth, 1.0f-lineheight, 1.0f);
+}
+
+void TextRendering_ShowDebugPanel(GLFWwindow* window)
+{
+    if (!g_ShowDebugPanel)
+        return;
+
+    float lineheight = TextRendering_LineHeight(window);
+    float charwidth = TextRendering_CharWidth(window);
+
+    // Obtém hora atual
+    time_t now = time(0);
+    struct tm* currentTime = localtime(&now);
+    int hour = currentTime->tm_hour;
+    int minute = currentTime->tm_min;
+    int second = currentTime->tm_sec;
+    bool isDayTime = !(hour >= 18 || hour < 6);
+
+    // Título do painel
+    TextRendering_PrintString(window, "=== PAINEL DE VOO ===", -1.0f + charwidth, 1.0f - lineheight, 1.0f);
+
+    // Posição do bunny
+    char buffer[256];
+    snprintf(buffer, 256, "Posicao: X=%.2f Y=%.2f Z=%.2f", g_BunnyPositionX, g_BunnyPositionY, g_BunnyPositionZ);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 2*lineheight, 1.0f);
+
+    // Rotação do bunny
+    snprintf(buffer, 256, "Rotacao Y: %.2f rad (%.1f graus)", g_BunnyRotationY, g_BunnyRotationY * 180.0f / 3.141592f);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 3*lineheight, 1.0f);
+
+    // Hora do dia
+    snprintf(buffer, 256, "Hora: %02d:%02d:%02d - %s", hour, minute, second, isDayTime ? "DIA" : "NOITE");
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 4*lineheight, 1.0f);
+
+    // Câmera
+    snprintf(buffer, 256, "Camera: Dist=%.2f Theta=%.2f Phi=%.2f", g_CameraDistance, g_CameraTheta, g_CameraPhi);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 5*lineheight, 1.0f);
+
+    // Controles
+    TextRendering_PrintString(window, "Controles:", -1.0f + charwidth, 1.0f - 7*lineheight, 1.0f);
+    TextRendering_PrintString(window, "WASD: Mover | Q/E: Subir/Descer", -1.0f + charwidth, 1.0f - 8*lineheight, 1.0f);
+    TextRendering_PrintString(window, "Setas: Rotacionar | Mouse Dir: Rotacionar", -1.0f + charwidth, 1.0f - 9*lineheight, 1.0f);
+    TextRendering_PrintString(window, "T: Toggle Painel | H: Toggle Info", -1.0f + charwidth, 1.0f - 10*lineheight, 1.0f);
 }
 
 // Função para debugging: imprime no terminal todas informações de um modelo
