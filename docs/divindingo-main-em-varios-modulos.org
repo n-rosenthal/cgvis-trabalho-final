@@ -1,0 +1,337 @@
+#+title: Dividindo =main.cpp= em vários módulos
+
+Atualmente, o arquivo principal do projeto (=main.cpp=) contém +1600 linhas. Apesar de muito bem estruturado, existem muitas responsabilidades distintas sendo mantidas em um único arquivo. Para fins práticos, a fim de nos encontrarmos com maior facilidade, propomos uma nova organização de arquivos. Atualmente, as responsabilidades de =main.cpp= são: /inicialização da janela, carregamento de shaders/objetos/texturas, callbacks de entrada (teclado, mouse), renderização de texto, lógica do jogo (controle do objeto principal) e loop principal. Isso dificulta a manutenção e a evolução do simulador./ A tendência é que muitas outras funcionalidades sejam construídas em cima destas e as consequências, se não bem administradas, podem ser catastróficas.
+
+* Delimitação do Problema
+O /problema/ atual é: /tudo/ em um único arquivo.
+Proposta de solução (metas):
+1. =main.cpp= deve conter apenas: criação da janela, inicialização dos subsistemas, loop principal (renderização + update), e desligamento.
+2. Mover /callbacks/ de entrada para um módulo =InputHandler=.
+3. Mover lógica da câmera para =Camera=.
+4. Mover renderização de UI (texto, debug) para =UIRenderer=.
+5. Mover carregamento de recursos (shaders, modelos, texturas) para =ResourceManager=.
+6. Mover lógica do jogo (ave, pontuação, anéis) para =Game=.
+
+* Nova Estrutura de Arquivos
+#+begin_example
+engine/
+├── include/
+│   ├── Bird.hpp               (já existe)
+│   ├── Camera.hpp             (gerencia view matrix, coordenadas esféricas)
+│   ├── Game.hpp               (lógica do jogo: bird, pontuação, anéis)
+│   ├── InputHandler.hpp       (callbacks e estado dos botões)
+│   ├── ResourceManager.hpp    (carrega shaders, modelos, texturas)
+│   ├── UIRenderer.hpp         (texto, debug panel, fps)
+│   └── ... (já existentes)
+└── src/
+    ├── Bird.cpp                (já existe)
+    ├── Camera.cpp
+    ├── Game.cpp
+    ├── InputHandler.cpp
+    ├── ResourceManager.cpp
+    ├── UIRenderer.cpp
+    ├── main.cpp                (bem menor)
+    └── ... (já existentes)
+#+end_src
+
+* Implementando a Solução
+** =Camera=
+Gerencia os parâmetros esféricos e calcula a matriz =view=.
+
+*** =Camera.hpp=
+#+begin_src cpp
+// Camera.hpp
+#pragma once
+#include <glm/glm.hpp>
+
+class Camera {
+public:
+    Camera();
+    void updateFromMouse(float dx, float dy, bool leftButton);
+    void zoom(float delta);
+    glm::mat4 getViewMatrix() const;
+    float getDistance() const;
+    float getTheta() const;
+    float getPhi() const;
+private:
+    float theta;     // Ângulo no plano XZ
+    float phi;       // Ângulo de elevação
+    float distance;
+    glm::vec3 lookAt; // ponto para onde a câmera olha (ex: posição da ave)
+};
+#+end_src
+
+*** =Camera.cpp=
+#+begin_src cpp
+// Camera.cpp
+#include "Camera.hpp"
+#include "matrices.h"
+
+Camera::Camera() : theta(0), phi(0), distance(3.5f), lookAt(0,0,0) {}
+
+void Camera::updateFromMouse(float dx, float dy, bool leftButton) {
+    if (!leftButton) return;
+    theta -= 0.01f * dx;
+    phi   += 0.01f * dy;
+    phi = std::clamp(phi, -3.14159f/2.0f, 3.14159f/2.0f);
+}
+
+void Camera::zoom(float delta) {
+    distance -= 0.1f * delta;
+    distance = std::max(distance, 0.01f);
+}
+
+glm::mat4 Camera::getViewMatrix() const {
+    float x = distance * cos(phi) * sin(theta);
+    float y = distance * sin(phi);
+    float z = distance * cos(phi) * cos(theta);
+    glm::vec4 pos(x, y, z, 1.0f);
+    glm::vec4 look(lookAt, 1.0f);
+    glm::vec4 up(0,1,0,0);
+    return Matrix_Camera_View(pos, look - pos, up);
+}
+#+end_src
+
+** =Game=
+Contém a ave e a lógica de atualização.
+
+*** =Game.hpp=
+#+begin_src cpp
+// Game.hpp
+#pragma once
+#include "Bird.hpp"
+#include <GLFW/glfw3.h>
+
+class Game {
+public:
+    Game();
+    void update(float dt, GLFWwindow* window);
+    void draw(GLuint modelUniform) const;  // desenha a ave (e outros objetos)
+    Bird& getBird() { return bird; }
+private:
+    Bird bird;
+};
+#+end_src
+
+*** =Game.cpp=
+#+begin_src cpp
+// Game.cpp
+#include "Game.hpp"
+#include "matrices.h"
+#include "Objects.h"  // para DrawVirtualObject
+
+void Game::update(float dt, GLFWwindow* window) {
+    bird.update(dt, window);
+    // futuramente: atualizar anéis, IA, etc.
+}
+
+void Game::draw(GLuint modelUniform) const {
+    glm::mat4 model = Matrix_Translate(bird.getPosition().x, bird.getPosition().y, bird.getPosition().z)
+                    * Matrix_Rotate_Y(bird.getRotationY());
+    glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
+    DrawVirtualObject("the_bunny");
+}
+#+end_src
+
+**** Adequando Bird.cpp ao novo main.cpp
+
+A classe Bird já está quase pronta. Apenas ajuste o método update para ler as teclas usando InputHandler (ou diretamente glfwGetKey – simples por enquanto). O main.cpp reduzido chamará game.update(dt, window).
+
+Substitua as variáveis globais do coelho (g_BunnyPositionX, g_BunnyRotationY, etc.) pelo objeto g_Bird. Remova as variáveis globais e modifique:
+    1. O KeyCallback para controlar a Bird (use InputHandler para armazenar estado e depois no Game::update aplique).
+    2. O TextRendering_ShowDebugPanel para ler g_Bird.getPosition() e g_Bird.getRotationY().
+    3. O desenho do coelho: Game::draw usará a matriz da Bird.
+
+***** Função =Game::update=
+Controle da ave através do teclado
+
+#+begin_src cpp
+void Game::update(float dt, GLFWwindow* window) {
+    // Leitura direta (ou via InputHandler)
+    float speed = 0.0f;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) speed = 5.0f;
+    bird.setSpeed(speed); // ou passe dt e faça dentro do bird
+    // rotação
+    float rot = 0.0f;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) rot = -2.0f;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) rot = 2.0f;
+    bird.rotate(rot * dt);
+    // ...
+    bird.update(dt, window);
+}
+#+end_src
+
+
+** =InputHandler=
+Centraliza o estado das teclas e /callbacks/.
+
+*** =InputHandler.hpp=
+#+begin_src cpp
+// InputHandler.hpp
+#pragma once
+#include <GLFW/glfw3.h>
+
+class InputHandler {
+public:
+    static InputHandler& getInstance();
+    void keyCallback(int key, int scancode, int action, int mods);
+    void mouseButtonCallback(int button, int action, int mods, double xpos, double ypos);
+    void cursorPosCallback(double xpos, double ypos);
+    void scrollCallback(double xoffset, double yoffset);
+    // consultas
+    bool isKeyPressed(int key) const;
+    bool isLeftMousePressed() const;
+    // ... getters para movimento do mouse, etc.
+private:
+    InputHandler() = default;
+    std::map<int, bool> keys;
+    bool leftMouseDown = false;
+    double lastX, lastY;
+};
+#+end_src
+
+*** =InputHandler.hpp=
+?
+
+** =ResourceManager=
+Carrega shaders, modelos e texturas apenas uma vez.
+
+*** =ResourceManager.hpp=
+#+begin_src cpp
+// ResourceManager.hpp
+#pragma once
+#include <string>
+#include <map>
+#include "Objects.h"
+
+class ResourceManager {
+public:
+    static ResourceManager& get();
+    void loadShaders();
+    void loadTextures();
+    void loadModels();
+    GLuint getProgramID() const { return gpuProgramID; }
+    // getters para uniforms, etc.
+private:
+    GLuint gpuProgramID;
+    // ...
+};
+#+end_src
+
+*** =ResourceManager.cpp=
+?
+
+** =UIRenderer=
+Renderiza todo o texto (/FPS/, /debug panel/, etc.).
+
+*** =UIRenderer.hpp=
+#+begin_src cpp
+// UIRenderer.hpp
+#pragma once
+#include <GLFW/glfw3.h>
+#include "Game.hpp"
+
+class UIRenderer {
+public:
+    static UIRenderer& get();
+    void init();
+    void render(GLFWwindow* window, const Game& game, const Camera& camera);
+    void showDebugPanel(bool show) { showDebug = show; }
+private:
+    bool showDebug = true;
+    // funções auxiliares (print string, etc.)
+};
+#+end_src
+
+* Versão simplificada para o novo =main.cpp=
+#+begin_src cpp
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include "ResourceManager.h"
+#include "InputHandler.h"
+#include "Game.h"
+#include "Camera.h"
+#include "UIRenderer.h"
+
+GLFWwindow* window;
+Camera camera;
+Game game;
+UIRenderer& ui = UIRenderer::get();
+
+// Callbacks estáticos que chamam InputHandler
+void KeyCallback(GLFWwindow* w, int key, int scancode, int action, int mod) {
+    InputHandler::getInstance().keyCallback(key, scancode, action, mod);
+}
+// ... outros callbacks similares
+
+int main() {
+    // Inicializa GLFW, janela, GLAD, etc. (como antes)
+    // ...
+    ResourceManager::get().loadShaders();
+    ResourceManager::get().loadTextures();
+    ResourceManager::get().loadModels();
+    TextRendering_Init();   // ainda usamos a função antiga? Podemos mover para UIRenderer::init()
+    ui.init();
+
+    double lastTime = glfwGetTime();
+    while (!glfwWindowShouldClose(window)) {
+        double now = glfwGetTime();
+        float dt = float(now - lastTime);
+        lastTime = now;
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glUseProgram(ResourceManager::get().getProgramID());
+
+        // Atualiza câmera (pode seguir a ave)
+        // camera.setLookAt(game.getBird().getPosition()); // se quiser seguir
+        glm::mat4 view = camera.getViewMatrix();
+        glUniformMatrix4fv(g_view_uniform, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(g_projection_uniform, 1, GL_FALSE, glm::value_ptr(projection));
+
+        // Atualiza e desenha o jogo
+        game.update(dt, window);
+        game.draw(g_model_uniform);
+
+        // Desenha plano, esfera (objetos estáticos)
+        // ...
+
+        ui.render(window, game, camera);
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwTerminate();
+    return 0;
+}
+#+end_src
+
+Também é necessário atualizar =CMakeLists.txt=, e incluir os diretórios de cabeçalho (target_include_directories).
+
+#+begin_src txt
+...
+
+set(SOURCES
+  engine/src/main.cpp
+  engine/src/correcao.cpp
+  engine/src/textrendering.cpp
+  engine/src/Objects.cpp
+  engine/src/buildtriangles.cpp
+  engine/src/Bird.cpp
+  engine/src/Camera.cpp          # novo
+  engine/src/Game.cpp            # novo
+  engine/src/InputHandler.cpp    # novo
+  engine/src/ResourceManager.cpp # novo
+  engine/src/UIRenderer.cpp      # novo
+  external/glad.c
+  external/stb_image.cpp
+  external/tiny_obj_loader.cpp
+)
+#+end_src
+
+* =PROMPT.md=
+O /prompt/ utilizado sobre o DeepSeek para guiar essa refatoração, juntamente com o arquivo =main.cpp=, foi:
+
+#+begin_example
+Como podemos tornar `main.cpp` mais modular, e evitar que este arquivo seja tão grande?
+#+end_example
