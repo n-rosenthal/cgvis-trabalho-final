@@ -52,4 +52,8 @@ Seu prompt aqui
 
 **Observações:**
 
+<<<<<<< HEAD
 *   ...
+=======
+*   ...
+>>>>>>> 83d73dddfe76b33ce3b44a67b8a10815b28ae7ab
