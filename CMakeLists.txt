@@ -12,6 +12,8 @@ set(SOURCES
   engine/src/textrendering.cpp
   engine/src/Objects.cpp
   engine/src/buildtriangles.cpp
+  engine/src/Camera.cpp          # novo
+  engine/src/InputHandler.cpp    # novo
   external/glad.c
   external/stb_image.cpp
   external/tiny_obj_loader.cpp
