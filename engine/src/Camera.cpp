@@ -8,7 +8,6 @@
 #include "Camera.hpp"
 #include "matrices.h"
 
-#include <algorithm> // std::clamp
 #include <limits>
 
 // -----------------------------------------------------------------------------
@@ -67,7 +66,9 @@ void Camera::onCursorMove(double xpos, double ypos)
     m_phi   += 0.01f * dy;
 
     // Phi deve ficar entre -pi/2 e +pi/2 para evitar gimbal lock.
-    m_phi = std::clamp(m_phi, -PHI_MAX, PHI_MAX);
+    // (std::clamp requer C++17; usando if/else para compatibilidade)
+    if (m_phi >  PHI_MAX) m_phi =  PHI_MAX;
+    if (m_phi < -PHI_MAX) m_phi = -PHI_MAX;
 
     m_lastCursorX = xpos;
     m_lastCursorY = ypos;

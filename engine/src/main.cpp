@@ -404,6 +404,8 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_view_uniform,       1, GL_FALSE, glm::value_ptr(g_Camera.getViewMatrix()));
         glUniformMatrix4fv(g_projection_uniform, 1, GL_FALSE, glm::value_ptr(g_Camera.getProjectionMatrix()));
 
+        glm::mat4 model = Matrix_Identity();
+
         #define SPHERE 0
         #define BUNNY  1
         #define PLANE  2
@@ -412,7 +414,7 @@ int main(int argc, char* argv[])
         model = Matrix_Translate(-1.0f,0.0f,0.0f)
               * Matrix_Rotate_Z(0.6f)
               * Matrix_Rotate_X(0.2f)
-              * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
+              * Matrix_Rotate_Y(InputHandler::get().getAngleY() + (float)glfwGetTime() * 0.1f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, SPHERE);
         DrawVirtualObject("the_sphere");
@@ -420,7 +422,7 @@ int main(int argc, char* argv[])
         // Desenhamos o modelo do coelho
         model = Matrix_Translate(g_BunnyPositionX, g_BunnyPositionY, g_BunnyPositionZ)
               * Matrix_Rotate_Y(g_BunnyRotationY)
-              * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
+              * Matrix_Rotate_X(InputHandler::get().getAngleX() + (float)glfwGetTime() * 0.1f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, BUNNY);
         DrawVirtualObject("the_bunny");
