@@ -22,7 +22,11 @@ uniform mat4 projection;
 #define SPHERE 0
 #define BUNNY  1
 #define PLANE  2
+#define RUBBER_DUCK 3  // modelo rubber-duck
 uniform int object_id;
+
+// Cor do modelo rubber-duck
+uniform vec3 duck_color; // recebe o Kd do material atual
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
 uniform vec4 bbox_min;
@@ -128,11 +132,17 @@ void main()
     else if ( object_id == PLANE )
     {
         // Coordenadas de textura do plano, obtidas do arquivo OBJ.
-        U = texcoords.x;
-        V = texcoords.y;
+        U = texcoords.x * 10.0;
+        V = texcoords.y * 10.0; 
 
 		// Obtemos a refletância difusa a partir da leitura da imagem TextureImage1
 		Kd0 = texture(TextureImage1, vec2(U,V)).rgb;
+    }
+
+    // RUBBER-DUCK
+    else if ( object_id == RUBBER_DUCK )
+    {
+        Kd0 = duck_color;
     }
 
     // Equação de Iluminação

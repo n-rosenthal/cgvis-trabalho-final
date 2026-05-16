@@ -99,6 +99,12 @@ public:
     bool showInfoText()   const { return m_showInfoText;   }
     bool showDebugPanel() const { return m_showDebugPanel; }
 
+    // Getters públicos para a posição e rotaçãoY do rubber-duck
+    float getDuckPositionX() const { return m_duckPositionX; }
+    float getDuckPositionY() const { return m_duckPositionY; }
+    float getDuckPositionZ() const { return m_duckPositionZ; }
+    float getDuckRotationY() const { return m_duckRotationY; }
+
 private:
     InputHandler() = default;
     InputHandler(const InputHandler&) = delete;
@@ -133,4 +139,14 @@ private:
     // Flags de UI
     bool m_showInfoText   = true;
     bool m_showDebugPanel = true;
+
+    // Posição e rotação do rubber-duck
+    float m_duckPositionX = 0.0f;
+    float m_duckPositionY = 0.0f;
+    float m_duckPositionZ = 0.0f;
+    float m_duckRotationY = 0.0f;
+
+    // Setters privados para o modelo rubber-duck
+    const float moveSpeed = 0.05f;
+    const float rotSpeed  = 0.05f;
 };

@@ -201,5 +201,226 @@ ObjectManager::getInstance().drawAllObjects(model_loc);
 2. Haviam algumas opções de /tipo de arquivo/: =.blend=, =.usdz=, =gITFConverted= e =GLBConverted=. Escolhemos baixar o arquivo =.gITF=.
 3. Baixar e instalar [[https://docs.blender.org/manual/en/latest/getting_started/installing/linux.html][Blender]]. /Importamos/ (não é /abrir/) o arquivo =.gITF= para o Blender. Verificamos que o modelo está orientado corretamente na cena virtual do Blender.
 4. Fazemos =File -> Export -> Wavefront (.obj)= para /converter o arquivo/ ao formato para o qual já possuímos o processamento necessário. O local correto para salvar este arquivo é  no diretório =assets/models/=. *É NECESSÁRIO ASSINALAR A /CHECK-BOX/ =MATERIALS= A FIM DE QUE O ARQUIVO =.mtl= SEJA EXPORTADO TAMBÉM*.
-5. Descobrimos que o =.mtl= gerado não aponta para as texturas do =rubber-duck=. Ao invés disto, as "texturas" são cores sólidas. Vamos voltar ao Blender e fazer /unwrap UV/ e /bake/ das cores para imagem. Então o modelo atual é deletado e fazemos este processo.   
+5. Descobrimos que o =.mtl= gerado não aponta para as texturas do =rubber-duck=. Ao invés disto, as "texturas" são cores sólidas. Vamos voltar ao Blender e fazer /unwrap UV/ e /bake/ das cores para imagem. Então o modelo atual é deletado e fazemos este processo..... ou tentamos, até descobrir que UV unwrapping para um modelo altamente poligonal não é tão fácil assim.... então retornamos ao processo anterior, de "cores cruas" conforme estão no =.mtl= do modelo.
+6. Retornamos ao passo (=5.=)
+
+** Alterando =shader_fragment.glsl=
+Em =shader_fragment.glsl=, definimos um identificador inteiro para o =rubber-duck=:
+
+#+begin_src glsl
+#define RUBBER_DUCK 3
+
+uniform vec3 duck_color; // recebe o Kd do material atual
+#+end_src
+
+Na bloco =main()=, chamaremos o objeto pelo identificador:
+
+#+begin_src glsl
+else if ( object_id == RUBBER_DUCK )
+{
+    Kd0 = duck_color;
+}
+#+end_src
+
+** Alterando =main.cpp=
+Antes de chamar =drawModel= para cada /shape/ do pato, enviamos o =object_id= e o =Kd= correspondente:
+
+#+begin_src cpp
+// Mapeie os Kd do .mtl
+std::map<std::string, glm::vec3> duck_materials = {
+    {"Rubber_Duck_Yellow", glm::vec3(1.000f, 0.556f, 0.030f)},
+    {"Rubber_Duck_Orange", glm::vec3(1.000f, 0.052f, 0.000f)},
+    {"Rubber_Duck_Black",  glm::vec3(0.000f, 0.000f, 0.000f)},
+    {"Rubber_Duck_White",  glm::vec3(0.800f, 0.800f, 0.800f)},
+};
+
+GLint duck_color_uniform = glGetUniformLocation(ResourceManager::get().getProgramID(), "duck_color");
+GLint object_id_uniform  = ResourceManager::get().uniformObjectId();
+
+for (auto& [mat_name, kd] : duck_materials) {
+    glUniform1i(object_id_uniform, 3); // RUBBER_DUCK
+    glUniform3fv(duck_color_uniform, 1, glm::value_ptr(kd));
+    ResourceManager::get().drawModel(mat_name.c_str());
+}
+#+end_src
+
+*** Observações
+O modelo já tem suas /shapes/ separadas no =.mtl= por =usemtl=, de modo que /cada parte do pato/ tem um identificador interno distinto. Por exemplo, o =Object_4= com =usemtl Rubber_Duck_Yellow= e o =Object_5= com =usemtl Rubber_Duck_Orange=
+*É necessário que os /nomes/ no =drawModel= batam com os /nomes/ que o =ResourceManager= registrou no mapa do =VirtualModel=.* Para verificar, usamos =getVirtualModel()=, /getter/ para sabermos /quais as chaves foram geradas no carregamento do modelo/.
+
+Podemos verificar isto com através do seguinte trecho de código, a ser introduzido /antes/ do /loop/ de renderização:
+
+#+begin_src cpp
+auto& models = ResourceManager::get().getVirtualModels();
+for (auto& [name, model] : models) {
+    std::cout << "VirtualModel carregado: \"" << name << "\"\n";
+}
+#+end_src
+
+** Movimentando o modelo =rubber-duck=
+Baseado no trabalho da branch =changes-joana= e em consulta à IA.
+
+*** Alterando =InputHandler.cpp=: introduzir controles de movimento
+#+begin_src cpp
+// Constantes (setters privados) para o modelo =rubber-duck=
+float m_duckPositionX = 0.0f;
+float m_duckPositionY = 0.0f;
+float m_duckPositionZ = 0.0f;
+float m_duckRotationY = 0.0f;
+
+// Movimento do rubber-duck (WASD + Q/E para cima/baixo)
+const float moveSpeed = 0.05f;
+const float rotSpeed  = 0.05f;
+
+if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
+    m_duckPositionZ -= moveSpeed;
+if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
+    m_duckPositionZ += moveSpeed;
+if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
+{ m_duckPositionX -= moveSpeed; m_duckRotationY = +M_PI / 2.0f; }
+if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
+{ m_duckPositionX += moveSpeed; m_duckRotationY = -M_PI / 2.0f; }
+if (key == GLFW_KEY_LEFT  && (action == GLFW_PRESS || action == GLFW_REPEAT))
+    m_duckRotationY += rotSpeed;
+if (key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT))
+    m_duckRotationY -= rotSpeed;
+
+// getters públicos para posições e rotaçãoY do rubber-duck
+float getDuckPositionX() const { return m_duckPositionX; }
+float getDuckPositionY() const { return m_duckPositionY; }
+float getDuckPositionZ() const { return m_duckPositionZ; }
+float getDuckRotationY() const { return m_duckRotationY; }
+#+end_src
+
+*** Alterando =main.cpp=: aplicar a matriz de modelagem do =rubber-duck=
+#+begin_src cpp
+auto& ih = InputHandler::get();
+
+model = Matrix_Translate(ih.getDuckPositionX(),
+                         ih.getDuckPositionY(),
+                         ih.getDuckPositionZ())
+      * Matrix_Rotate_Y(ih.getDuckRotationY());
+
+glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+glUniform1i(g_object_id_uniform, RUBBER_DUCK);
+
+for (auto& [mat_name, kd] : duck_materials) { ... }
+#+end_src
+
+** Focando a câmera no =rubber-duck=
+*Câmera seguindo o pato (/third-person/)*. A câmera precisa ficar atrás e acima do pato, apontando para ele. Isso é uma câmera em terceira pessoa: a posição da câmera é calculada a partir da posição e rotação do pato, e o =lookAt= aponta para o pato.
+
+*** Alterando =main.cpp=
+Antes de enviar =g_view_uniform=, calculamos a posição da câmera:
+
+#+begin_src cpp
+// Offset da câmera em relação ao pato, no espaço local do pato
+float camDist   = 3.0f;  // distância atrás
+float camHeight = 1.5f;  // altura acima
+
+float duckYaw = ih.getDuckRotationY();
+
+// Posição da câmera: atrás e acima do pato
+glm::vec3 duckPos(ih.getDuckPositionX(),
+                  ih.getDuckPositionY(),
+                  ih.getDuckPositionZ());
+
+glm::vec3 camOffset(
+     camDist * sinf(duckYaw),   // X
+     camHeight,                  // Y
+     camDist * cosf(duckYaw)    // Z
+);
+
+glm::vec3 camPos    = duckPos + camOffset;
+glm::vec3 camTarget = duckPos + glm::vec3(0.0f, 0.5f, 0.0f); // mira levemente acima do centro do pato
+
+glm::mat4 view = glm::lookAt(camPos, camTarget, glm::vec3(0.0f, 1.0f, 0.0f));
+
+glUniformMatrix4fv(g_view_uniform, 1, GL_FALSE, glm::value_ptr(view));
+#+end_src
+
+*** Obersevações
+1. Estamos substituindo =g_Camera.getViewMatrix()=;
+2. É interessante /manter a câmera livre também/, principalmente em fase de implementação e /debug/ (e, por exemplo, alternar entre as câmeras com alguma tecla, e.g. =GLFW_KEY_C= ou tecla =C=).
+
    
+** Aumentando o Plano do Chão
+Gostaríamos, por fim, de aumentar o plano do chão *sem esticar sua textura*, mas, no momento, /repetindo-a/ tantas vezes quanto for necessário.
+O modelo =plane.obj= possui um tamanho fixo.
+
+*** Alterando =shader_fragment.glsl=: /repetindo/ uma textura
+Identificamos o bloco que lida com o plano e fazemos
+
+#+begin_src glsl
+else if ( object_id == PLANE )
+{
+    U = texcoords.x * 10.0;
+    V = texcoords.y * 10.0;
+    Kd0 = texture(TextureImage1, vec2(U, V)).rgb;
+}
+#+end_src
+
+*** Alterando =main.cpp=: /clamp/ \to /repeat/
+E agora não queremos mais /to clamp to egde/, mas sim /to repeat/!.
+A função que temos atualmente, =LoadTextureImage()= usa o mesmo método de especificação da textura para todas as texturas (=GL_CLAMP_TO_EDGE=). Entretanto, queremos que, pelo menos algumas (ou, pelo menos neste momento, a textura do chão) sejam especificadas via =GL_REPEAT=. Para tanto, é necessário modificar a função. A partir de agora, a rotina receberá um outro parâmetro: =GLint wrap_mode=.
+
+#+begin_src cpp
+void LoadTextureImage(const char* filename, GLint wrap_mode = GL_CLAMP_TO_EDGE)
+{
+    printf("Carregando imagem \"%s\"... ", filename);
+
+    stbi_set_flip_vertically_on_load(true);
+    int width, height, channels;
+    unsigned char *data = stbi_load(filename, &width, &height, &channels, 3);
+
+    if ( data == NULL )
+    {
+        fprintf(stderr, "ERROR: Cannot open image file \"%s\".\n", filename);
+        std::exit(EXIT_FAILURE);
+    }
+
+    printf("OK (%dx%d).\n", width, height);
+
+    GLuint texture_id;
+    GLuint sampler_id;
+    glGenTextures(1, &texture_id);
+    glGenSamplers(1, &sampler_id);
+
+    // wrap_mode controla se a textura repete (GL_REPEAT) ou corta (GL_CLAMP_TO_EDGE)
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, wrap_mode);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, wrap_mode);
+
+    glSamplerParameteri(sampler_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+    glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+
+    GLuint textureunit = g_NumLoadedTextures;
+    glActiveTexture(GL_TEXTURE0 + textureunit);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glBindSampler(textureunit, sampler_id);
+
+    stbi_image_free(data);
+    g_NumLoadedTextures += 1;
+}
+#+end_src
+
+Isto implica modificar a assinatura da função, no topo de =main.cpp=:
+
+#+begin_src cpp
+void LoadTextureImage(const char* filename, GLint wrap_mode = GL_CLAMP_TO_EDGE);
+#+end_src
+
+E então, quando formos utilizar o =ResourceManager= para carregar a textura, esta receberá o /wrap mode/ =GL_REPEAT=. O modelo =rubber-duck=, ao contrário, receberá =GL_CLAMP_TO_EDGE=.
+
+#+begin_src cpp
+rm.loadTexture(asset_path("textures/red_brick_diff_1k.jpg").c_str());                       // unit 0 — clamp (padrão)
+LoadTextureImage(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str(), GL_REPEAT);   // unit 1 — repeat
+#+end_src
+
+

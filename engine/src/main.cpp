@@ -162,7 +162,7 @@ void PopMatrix(glm::mat4& M);
 void BuildTrianglesAndAddToVirtualScene(ObjModel*); // Constrói representação de um ObjModel como malha de triângulos para renderização
 void ComputeNormals(ObjModel* model); // Computa normais de um ObjModel, caso não existam.
 void LoadShadersFromFiles(); // Carrega os shaders de vértice e fragmento, criando um programa de GPU
-void LoadTextureImage(const char* filename); // Função que carrega imagens de textura
+void LoadTextureImage(const char* filename, GLint wrap_mode = GL_CLAMP_TO_EDGE); // Função que carrega imagens de textura
 void DrawVirtualObject(const char* object_name); // Desenha um objeto armazenado em g_VirtualScene
 GLuint LoadShader_Vertex(const char* filename);   // Carrega um vertex shader
 GLuint LoadShader_Fragment(const char* filename); // Carrega um fragment shader
@@ -257,34 +257,24 @@ GLuint g_NumLoadedTextures = 0;
 
 int main(int argc, char* argv[])
 {
-    // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
-    // sistema operacional, onde poderemos renderizar com OpenGL.
+    // ── GLFW: inicialização ───────────────────────────────────────────────────
     int success = glfwInit();
     if (!success)
     {
         fprintf(stderr, "ERROR: glfwInit() failed.\n");
         std::exit(EXIT_FAILURE);
     }
-
-    // Definimos o callback para impressão de erros da GLFW no terminal
     glfwSetErrorCallback(ErrorCallback);
 
-    // Pedimos para utilizar OpenGL versão 3.3 (ou superior)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-
     #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     #endif
-
-    // Pedimos para utilizar o perfil "core", isto é, utilizaremos somente as
-    // funções modernas de OpenGL.
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // Criamos uma janela do sistema operacional, com 800 colunas e 600 linhas
-    // de pixels, e com título "INF01047 ...".
-    GLFWwindow* window;
-    window = glfwCreateWindow(800, 600, "INF01047 - Seu Cartao - Seu Nome", NULL, NULL);
+    // ── GLFW: janela ─────────────────────────────────────────────────────────
+    GLFWwindow* window = glfwCreateWindow(800, 600, "INF01047 - Seu Cartao - Seu Nome", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -292,200 +282,173 @@ int main(int argc, char* argv[])
         std::exit(EXIT_FAILURE);
     }
 
-    // Definimos a função de callback que será chamada sempre que o usuário
-    // pressionar alguma tecla do teclado ...
-    glfwSetKeyCallback(window, KeyCallback);
-    // ... ou clicar os botões do mouse ...
+    // Conecta InputHandler à câmera — deve vir ANTES de registrar callbacks
+    InputHandler::get().setCamera(&g_Camera);
+
+    glfwSetKeyCallback(window,         KeyCallback);
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
-    // ... ou movimentar o cursor do mouse em cima da janela ...
-    glfwSetCursorPosCallback(window, CursorPosCallback);
-    // ... ou rolar a "rodinha" do mouse.
-    glfwSetScrollCallback(window, ScrollCallback);
+    glfwSetCursorPosCallback(window,   CursorPosCallback);
+    glfwSetScrollCallback(window,      ScrollCallback);
 
-    // Indicamos que as chamadas OpenGL deverão renderizar nesta janela
     glfwMakeContextCurrent(window);
-
-    // Carregamento de todas funções definidas por OpenGL 3.3, utilizando a
-    // biblioteca GLAD.
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
-    // Definimos a função de callback que será chamada sempre que a janela for
-    // redimensionada, por consequência alterando o tamanho do "framebuffer"
-    // (região de memória onde são armazenados os pixels da imagem).
     glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
-    FramebufferSizeCallback(window, 800, 600); // Forçamos a chamada do callback acima, para definir g_ScreenRatio.
+    FramebufferSizeCallback(window, 800, 600);
 
-    // Imprimimos no terminal informações sobre a GPU do sistema
-    const GLubyte *vendor      = glGetString(GL_VENDOR);
-    const GLubyte *renderer    = glGetString(GL_RENDERER);
-    const GLubyte *glversion   = glGetString(GL_VERSION);
-    const GLubyte *glslversion = glGetString(GL_SHADING_LANGUAGE_VERSION);
+    // ── Info GPU ──────────────────────────────────────────────────────────────
+    printf("GPU: %s, %s, OpenGL %s, GLSL %s\n",
+        glGetString(GL_VENDOR),
+        glGetString(GL_RENDERER),
+        glGetString(GL_VERSION),
+        glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-    printf("GPU: %s, %s, OpenGL %s, GLSL %s\n", vendor, renderer, glversion, glslversion);
-
-    // Carregamos os shaders de vértices e de fragmentos que serão utilizados
-    // para renderização. Veja slides 180-200 do documento Aula_03_Rendering_Pipeline_Grafico.pdf.
-    //
+    // ── Shaders ───────────────────────────────────────────────────────────────
     LoadShadersFromFiles();
 
-    /* as texturas são armazenadas no diretório =assets/textures/= */
-    // Carregamos duas imagens para serem utilizadas como textura
-    /**
-     * Gerenciador de Recursos
-     * @see ResourceManager
-     */
     auto& rm = ResourceManager::get();
     rm.loadShaders();
-    rm.loadTexture(asset_path("textures/red_brick_diff_1k.jpg").c_str());
-    rm.loadTexture(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str());
-    
-    /* os objetos são armazenados no diretório =assets/models/= */
-    // Construímos a representação de objetos geométricos através de malhas de triângulos
-    ObjModel spheremodel(asset_path("models/sphere.obj").c_str());
-    ComputeNormals(&spheremodel);
-    BuildTrianglesAndAddToVirtualScene(&spheremodel);
 
-    ObjModel bunnymodel(asset_path("models/bunny.obj").c_str());
-    ComputeNormals(&bunnymodel);
-    BuildTrianglesAndAddToVirtualScene(&bunnymodel);
+    // ── Texturas ──────────────────────────────────────────────────────────────
+    // O shader PLANE lê TextureImage1, então precisamos ocupar dois slots:
+    // TextureImage0 → slot reservado (ocupa unit 0)
+    // TextureImage1 → chão rocky terrain (unit 1)
+    rm.loadTexture(asset_path("textures/red_brick_diff_1k.jpg").c_str());        // unit 0
+    rm.loadTexture(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str(), GL_REPEAT); // unit 1
 
+    // ── Modelos ───────────────────────────────────────────────────────────────
     ObjModel planemodel(asset_path("models/plane.obj").c_str());
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
 
-    if ( argc > 1 )
-    {
-        ObjModel model(argv[1]);
-        BuildTrianglesAndAddToVirtualScene(&model);
-    }
+    ObjModel duckmodel(asset_path("models/rubber-duck.obj").c_str());
+    ComputeNormals(&duckmodel);
+    BuildTrianglesAndAddToVirtualScene(&duckmodel);
 
-    // Inicializamos o código para renderização de texto. (próprio, atualizado)
+    // DEBUG: imprime uma vez no terminal os nomes registrados no ResourceManager.
+    // Use para confirmar as chaves antes de chamar rm.drawModel().
+    // Remova após confirmar os nomes corretos.
+    printf("\n-- VirtualScene objects --\n");
+    for (auto& [name, vm] : rm.getVirtualModels())
+        printf("  \"%s\"\n", name.c_str());
+    printf("-------------------------\n\n");
+
+    // ── UI / texto ────────────────────────────────────────────────────────────
     UIRenderer::get().init();
 
-    // Habilitamos o Z-buffer. Veja slides 104-116 do documento Aula_09_Projecoes.pdf.
+    // ── OpenGL: estado global ─────────────────────────────────────────────────
     glEnable(GL_DEPTH_TEST);
-
-    // Habilitamos o Backface Culling. Veja slides 8-13 do documento Aula_02_Fundamentos_Matematicos.pdf, slides 23-34 do documento Aula_13_Clipping_and_Culling.pdf e slides 112-123 do documento Aula_14_Laboratorio_3_Revisao.pdf.
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-        // Obtém hora atual do computador
-        time_t now = time(0);
-        struct tm* currentTime = localtime(&now);
-        int hour = currentTime->tm_hour;
+    // ── Constantes de object_id ───────────────────────────────────────────────
+    // Devem bater com os #define no fragment shader
+    #define PLANE       2
+    #define RUBBER_DUCK 3
 
-        // Noite entre 18h e 6h, dia caso contrário
-        bool isDayTime = !(hour >= 18 || hour < 6);
+    // ── Uniforms consultados uma única vez ────────────────────────────────────
+    GLint duck_color_uniform = glGetUniformLocation(rm.getProgramID(), "duck_color");
 
-    // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
+    // Cores Kd de cada part do rubber-duck mapeadas pelo nome real do OBJ.
+    // Object_4 = corpo amarelo, Object_5 = bico laranja,
+    // Object_6 = olhos/detalhes brancos, Object_7 = pupilas pretas.
+    // (confirme com o bloco DEBUG acima caso a ordem mude)
+    const std::map<std::string, glm::vec3> duck_materials = {
+        {"Object_4", glm::vec3(1.000f, 0.556f, 0.030f)}, // amarelo
+        {"Object_5", glm::vec3(1.000f, 0.052f, 0.000f)}, // laranja
+        {"Object_6", glm::vec3(0.800f, 0.800f, 0.800f)}, // branco
+        {"Object_7", glm::vec3(0.000f, 0.000f, 0.000f)}, // preto
+    };
+
+    // ── Hora do dia (calculada uma vez na inicialização) ──────────────────────
+    time_t now = time(0);
+    struct tm* currentTime = localtime(&now);
+    bool isDayTime = !(currentTime->tm_hour >= 18 || currentTime->tm_hour < 6);
+
+    // ── Loop de renderização ──────────────────────────────────────────────────
     while (!glfwWindowShouldClose(window))
     {
-        // Aqui executamos as operações de renderização
+        // Cor de fundo: céu claro de dia, escuro de noite
+        if (isDayTime)
+            glClearColor(0.9f, 0.9f, 1.0f, 1.0f);
+        else
+            glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
 
-        // Definimos a cor do "fundo" do framebuffer como branco.  Tal cor é
-        // definida como coeficientes RGBA: Red, Green, Blue, Alpha; isto é:
-        // Vermelho, Verde, Azul, Alpha (valor de transparência).
-        // Conversaremos sobre sistemas de cores nas aulas de Modelos de Iluminação.
-        //
-        //           R     G     B     A
-
-
-
-        if (isDayTime) {
-            glClearColor(0.9f, 0.9f, 1.0f, 1.0f); // Dia: céu claro
-        } else {
-            glClearColor(0.1f, 0.1f, 0.2f, 1.0f); // Noite: céu escuro
-        }
-
-        // "Pintamos" todos os pixels do framebuffer com a cor definida acima,
-        // e também resetamos todos os pixels do Z-buffer (depth buffer).
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
-        // os shaders de vértice e fragmentos).
         glUseProgram(g_GpuProgramID);
 
-        /**
-         * Camera
-         * @see Camera
-        */
-        glUniformMatrix4fv(g_view_uniform,       1, GL_FALSE, glm::value_ptr(g_Camera.getViewMatrix()));
+        // ── Câmera em terceira pessoa (ANTES dos draws) ───────────────────────
+        auto& ih = InputHandler::get();
+
+        float camDist   = 3.0f;
+        float camHeight = 1.5f;
+        float duckYaw   = ih.getDuckRotationY();
+
+        glm::vec3 duckPos(ih.getDuckPositionX(),
+                          ih.getDuckPositionY(),
+                          ih.getDuckPositionZ());
+
+        glm::vec3 camOffset(
+             camDist * sinf(duckYaw),
+             camHeight,
+             camDist * cosf(duckYaw)
+        );
+
+        glm::vec3 camPos    = duckPos + camOffset;
+        glm::vec3 camTarget = duckPos + glm::vec3(0.0f, 0.5f, 0.0f);
+
+        glm::mat4 view = glm::lookAt(camPos, camTarget, glm::vec3(0.0f, 1.0f, 0.0f));
+
+        glUniformMatrix4fv(g_view_uniform,       1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(g_projection_uniform, 1, GL_FALSE, glm::value_ptr(g_Camera.getProjectionMatrix()));
 
         glm::mat4 model = Matrix_Identity();
 
-
-
-        #define SPHERE 0
-        #define BUNNY  1
-        #define PLANE  2
-
-        // Desenhamos o modelo da esfera
-        model = Matrix_Translate(-1.0f,0.0f,0.0f)
-              * Matrix_Rotate_Z(0.6f)
-              * Matrix_Rotate_X(0.2f)
-              * Matrix_Rotate_Y(InputHandler::get().getAngleY() + (float)glfwGetTime() * 0.1f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, SPHERE);
-        rm.drawModel("the_sphere");
-
-        // Desenhamos o plano do chão
-        model = Matrix_Translate(0.0f,-1.1f,0.0f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        // ── Chão ──────────────────────────────────────────────────────────────
+        model = Matrix_Translate(0.0f, -1.1f, 0.0f)
+              * Matrix_Scale(10.0f, 1.0f, 10.0f);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         rm.drawModel("the_plane");
 
-        // Desenhamos o modelo do coelho
-        model = Matrix_Translate(g_BunnyPositionX, g_BunnyPositionY, g_BunnyPositionZ)
-              * Matrix_Rotate_Y(g_BunnyRotationY)
-              * Matrix_Rotate_X(InputHandler::get().getAngleX() + (float)glfwGetTime() * 0.1f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, BUNNY);
-        rm.drawModel("the_bunny");
+        // ── Rubber duck ───────────────────────────────────────────────────────
+        model = Matrix_Translate(ih.getDuckPositionX(),
+                                 ih.getDuckPositionY(),
+                                 ih.getDuckPositionZ())
+              * Matrix_Rotate_Y(ih.getDuckRotationY());
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, RUBBER_DUCK);
 
+        for (auto& [mat_name, kd] : duck_materials)
+        {
+            glUniform3fv(duck_color_uniform, 1, glm::value_ptr(kd));
+            rm.drawModel(mat_name.c_str());
+        }
 
-        /**
-         * Painel de debug próprio
-         */
+        // ── UI ────────────────────────────────────────────────────────────────
         UIRenderer::get().render(window, g_Camera,
-                                g_Camera.getViewMatrix(),
-                                g_Camera.getProjectionMatrix(),
-                                model,        // última model matrix calculada no loop
-                                glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+                                 g_Camera.getViewMatrix(),
+                                 g_Camera.getProjectionMatrix(),
+                                 model,
+                                 glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
-        // O framebuffer onde OpenGL executa as operações de renderização não
-        // é o mesmo que está sendo mostrado para o usuário, caso contrário
-        // seria possível ver artefatos conhecidos como "screen tearing". A
-        // chamada abaixo faz a troca dos buffers, mostrando para o usuário
-        // tudo que foi renderizado pelas funções acima.
-        // Veja o link: https://en.wikipedia.org/w/index.php?title=Multiple_buffering&oldid=793452829#Double_buffering_in_computer_graphics
         glfwSwapBuffers(window);
-
-        // Verificamos com o sistema operacional se houve alguma interação do
-        // usuário (teclado, mouse, ...). Caso positivo, as funções de callback
-        // definidas anteriormente usando glfwSet*Callback() serão chamadas
-        // pela biblioteca GLFW.
         glfwPollEvents();
     }
 
-    // Finalizamos o uso dos recursos do sistema operacional
+    // ── Encerramento ──────────────────────────────────────────────────────────
     glfwTerminate();
-
-    // Fim do programa
     return 0;
 }
 
 // Função que carrega uma imagem para ser utilizada como textura
-void LoadTextureImage(const char* filename)
+void LoadTextureImage(const char* filename, GLint wrap_mode)
 {
     printf("Carregando imagem \"%s\"... ", filename);
 
-    // Primeiro fazemos a leitura da imagem do disco
     stbi_set_flip_vertically_on_load(true);
-    int width;
-    int height;
-    int channels;
+    int width, height, channels;
     unsigned char *data = stbi_load(filename, &width, &height, &channels, 3);
 
     if ( data == NULL )
@@ -496,21 +459,18 @@ void LoadTextureImage(const char* filename)
 
     printf("OK (%dx%d).\n", width, height);
 
-    // Agora criamos objetos na GPU com OpenGL para armazenar a textura
     GLuint texture_id;
     GLuint sampler_id;
     glGenTextures(1, &texture_id);
     glGenSamplers(1, &sampler_id);
 
-    // Veja slides 95-96 do documento Aula_20_Mapeamento_de_Texturas.pdf
-    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // wrap_mode controla se a textura repete (GL_REPEAT) ou corta (GL_CLAMP_TO_EDGE)
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, wrap_mode);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, wrap_mode);
 
-    // Parâmetros de amostragem da textura.
     glSamplerParameteri(sampler_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glSamplerParameteri(sampler_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // Agora enviamos a imagem lida do disco para a GPU
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
@@ -524,7 +484,6 @@ void LoadTextureImage(const char* filename)
     glBindSampler(textureunit, sampler_id);
 
     stbi_image_free(data);
-
     g_NumLoadedTextures += 1;
 }
 
@@ -1262,4 +1221,3 @@ void PrintObjModelInfo(ObjModel* model)
 
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
 // vim: set spell spelllang=pt_br :
-

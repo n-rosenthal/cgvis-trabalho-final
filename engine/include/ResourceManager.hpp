@@ -29,7 +29,7 @@ public:
     // -------------------------------------------------------------------------
     // Textures
     // -------------------------------------------------------------------------
-    void loadTexture(const char* filename);
+    void loadTexture(const char* filename, GLint wrap_mode = GL_CLAMP_TO_EDGE);
     GLuint numLoadedTextures() const { return m_numLoadedTextures; }
 
     // -------------------------------------------------------------------------

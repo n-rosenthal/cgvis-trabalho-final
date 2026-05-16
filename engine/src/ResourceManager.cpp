@@ -67,7 +67,7 @@ void ResourceManager::loadShaders()
 // ---------------------------------------------------------------------------
 // loadTexture – loads an image file and creates an OpenGL texture object.
 // ---------------------------------------------------------------------------
-void ResourceManager::loadTexture(const char* filename)
+void ResourceManager::loadTexture(const char* filename, GLint wrap_mode)
 {
     printf("Carregando imagem \"%s\"... ", filename);
 
@@ -88,8 +88,8 @@ void ResourceManager::loadTexture(const char* filename)
     glGenTextures(1, &texture_id);
     glGenSamplers(1, &sampler_id);
 
-    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, wrap_mode);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, wrap_mode);    
     glSamplerParameteri(sampler_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glSamplerParameteri(sampler_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
