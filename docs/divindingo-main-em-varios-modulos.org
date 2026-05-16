@@ -16,6 +16,7 @@ Proposta de solução (metas):
 #+begin_example
 engine/
 ├── include/
+|   |--- VirtualModel.hpp      (Estrutura que armazena dados de um modelo carregado de arquivo OBJ)
 │   ├── Bird.hpp               (já existe)
 │   ├── Camera.hpp             (gerencia view matrix, coordenadas esféricas)
 │   ├── Game.hpp               (lógica do jogo: bird, pontuação, anéis)

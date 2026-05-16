@@ -1,5 +1,7 @@
 #include <glad/glad.h> // Acesso para funções de OpenGL
 
+
+
 // Constrói triângulos para futura renderização
 GLuint BuildTriangles(GLsizei &num_indices, GLenum &type_indices)
 {

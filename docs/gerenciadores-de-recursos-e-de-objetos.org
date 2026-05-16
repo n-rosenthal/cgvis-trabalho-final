@@ -1,0 +1,130 @@
+#+TITLE: Gerenciadores de Recursos e Objetos no Projeto CG
+#+AUTHOR: Equipe de Desenvolvimento
+#+DATE: 2025-05-15
+
+* Introdução
+
+No processo de refatoração do código‑base do simulador de voo, foram introduzidos dois gerenciadores centrais para organizar o acesso a recursos da GPU e a gestão dos objetos da cena virtual: o =ResourceManager= e o =ObjectManager=. Este documento descreve o propósito de cada um e fornece exemplos de uso.
+
+* ResourceManager – Gerenciador de Recursos da GPU
+
+** Propósito
+
+O =ResourceManager= é um *singleton* responsável por carregar, armazenar e fornecer acesso a todos os recursos que residem na placa de vídeo:
+
+- Programas de GPU (shaders: vertex e fragment).
+- Texturas (imagens carregadas do disco).
+- Modelos geométricos estáticos no formato OBJ (armazenados como =VirtualModel=, com VAO, índices e bounding boxes).
+
+Ele elimina variáveis globais espalhadas pelo código (ex.: =g_GpuProgramID=, =g_model_uniform=, =g_VirtualScene=) e centraliza a lógica de carregamento, recarga (hot‑reload) e consulta.
+
+** Principais métodos
+
+| Método                          | Descrição                                                                 |
+|---------------------------------+---------------------------------------------------------------------------|
+| =ResourceManager::get()=        | Retorna a instância única do singleton.                                   |
+| =loadShaders()=                 | Carrega/recarrega os shaders de =assets/shaders/= e obtém os uniform locations. |
+| =getProgramID()=                | Retorna o ID do programa de GPU (para usar com =glUseProgram=).           |
+| =uniformModel()=, =uniformView()=, … | Retornam os locations dos uniforms (model, view, projection, object_id, bbox_min, bbox_max). |
+| =loadTexture(const char*)=      | Carrega uma imagem e a envia para a GPU; cada chamada usa a próxima *texture unit*. |
+| =drawModel(const char*)=        | Desenha um modelo OBJ previamente carregado (ex.: "the_sphere", "the_bunny"). |
+| =getVirtualModels()=            | Retorna o mapa interno de =VirtualModel= (usado por =BuildTrianglesAndAddToVirtualScene=). |
+
+** Como usar (exemplo no =main.cpp=)
+
+#+BEGIN_SRC C++
+auto& rm = ResourceManager::get();
+
+// Carregar shaders e texturas uma vez
+rm.loadShaders();
+rm.loadTexture(asset_path("textures/red_brick_diff_1k.jpg").c_str());
+
+// Carregar modelos OBJ (a função BuildTrianglesAndAddToVirtualScene
+// já grava os dados no ResourceManager via getVirtualModels())
+ObjModel spheremodel(asset_path("models/sphere.obj").c_str());
+BuildTrianglesAndAddToVirtualScene(&spheremodel);
+
+// Dentro do loop de renderização
+glUseProgram(rm.getProgramID());
+
+// Uniforms da câmera (view e projection)
+glUniformMatrix4fv(rm.uniformView(), 1, GL_FALSE, glm::value_ptr(view));
+glUniformMatrix4fv(rm.uniformProjection(), 1, GL_FALSE, glm::value_ptr(projection));
+
+// Para cada objeto estático:
+glm::mat4 model = ...; // matriz de modelagem
+glUniformMatrix4fv(rm.uniformModel(), 1, GL_FALSE, glm::value_ptr(model));
+glUniform1i(rm.uniformObjectId(), SPHERE);   // ID do objeto (usado no fragment shader)
+rm.drawModel("the_sphere");
+#+END_SRC
+
+* ObjectManager – Gerenciador de Objetos Dinâmicos da Cena
+
+** Propósito
+
+O =ObjectManager= (definido em =Objects.h= e =Objects.cpp=) também é um *singleton*, mas sua função é gerenciar objetos que possuem comportamento próprio – normalmente objetos que se movem, interagem com o jogador ou têm lógica de atualização. Ele trabalha com a hierarquia de classes derivadas de =SceneObject=:
+
+- =Floor= (chão, com textura e geometria procedural)
+- =Sphere= (esfera)
+- =Bunny= (coelho, carregado de OBJ, mas tratado como objeto dinâmico)
+
+Cada =SceneObject= possui posição, rotação, escala, cor e um método virtual =draw()= que envia sua matriz de modelagem e desenha seu mesh (que pode ser um VAO próprio, diferente dos modelos estáticos do =ResourceManager=).
+
+** Principais métodos
+
+| Método                                      | Descrição                                                                |
+|---------------------------------------------+--------------------------------------------------------------------------|
+| =ObjectManager::getInstance()=              | Retorna a instância única.                                               |
+| =addObject(SceneObject*)=                   | Adiciona um objeto dinâmico à cena (o manager torna‑se o dono do ponteiro). |
+| =removeObject(const std::string&)=          | Remove um objeto pelo nome e libera a memória.                           |
+| =getObject(const std::string&)=             | Retorna o ponteiro para o objeto (ou =nullptr=).                         |
+| =drawAllObjects(GLuint model_uniform)=      | Itera sobre todos os objetos visíveis e chama =draw()= de cada um, passando o uniform location da matriz model. |
+| =clear()=                                   | Remove todos os objetos e libera a memória.                              |
+
+** Como usar (exemplo no =main.cpp=)
+
+#+BEGIN_SRC C++
+auto& objMgr = ObjectManager::getInstance();
+
+// Criar e adicionar um chão
+Floor* floor = new Floor("main_floor", 10.0f, 10.0f, -1.1f);
+floor->loadTexture(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str());
+objMgr.addObject(floor);
+
+// Criar uma esfera colorida (se a classe Sphere estiver implementada)
+Sphere* redSphere = new Sphere("red_sphere", 0.5f);
+redSphere->position = glm::vec3(2.0f, 0.0f, 0.0f);
+redSphere->color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+objMgr.addObject(redSphere);
+
+// Dentro do loop de renderização (após configurar view, projection e usar o programa de GPU)
+glUseProgram(rm.getProgramID());
+glUniformMatrix4fv(rm.uniformView(), 1, GL_FALSE, glm::value_ptr(view));
+glUniformMatrix4fv(rm.uniformProjection(), 1, GL_FALSE, glm::value_ptr(proj));
+
+// O ObjectManager desenha todos os objetos (cada um define sua própria matriz model)
+objMgr.drawAllObjects(rm.uniformModel());   // passa o location do uniform "model"
+#+END_SRC
+
+* Quando usar cada um?
+
+| Cenário                                                      | Gerenciador a usar                     |
+|--------------------------------------------------------------+----------------------------------------|
+| Carregar shaders, texturas e modelos OBJ estáticos (cenário, obstáculos fixos) | =ResourceManager=                         |
+| Desenhar um modelo OBJ repetidas vezes (ex.: árvores, anéis) | =ResourceManager= (chamar =drawModel=) |
+| Criar um objeto que se move, sofre rotação ou muda de estado (ex.: ave, inimigos, power‑ups) | =ObjectManager= (derivar de =SceneObject=) |
+| Gerenciar a cena do jogo (adicionar/remover objetos dinamicamente) | =ObjectManager=                           |
+| Acessar bounding boxes ou dados brutos de um modelo OBJ      | =ResourceManager= (via =getVirtualModels()=) |
+
+* Conclusão
+
+A separação entre =ResourceManager= (recursos estáticos da GPU) e =ObjectManager= (objetos dinâmicos da cena) torna o código mais limpo, modular e fácil de estender. Ambos seguem o padrão *singleton* e são acessíveis de qualquer parte do programa. Ao implementar novas *features* (como anéis de checagem ou inimigos controlados por IA), recomenda‑se:
+
+1. Criar uma nova classe derivada de =SceneObject= (ex.: =Ring=, =EnemyBird=).
+2. Implementar o construtor, o método =draw()= (que pode usar =ResourceManager::drawModel()= se o objeto tiver um modelo OBJ) e a lógica de atualização (ex.: =update(float dt)=).
+3. Adicionar uma instância ao =ObjectManager= durante a inicialização ou em tempo real.
+
+Dessa forma, mantém‑se a coesão e o baixo acoplamento entre as partes do simulador de voo.
+
+* =PROMPT.md=
+"Escreva um breve relatório em org-mode explicando o que ResourceManager e ObjectManager fazem, e como usá-los."
