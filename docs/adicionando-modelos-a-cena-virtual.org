@@ -1,0 +1,205 @@
+:PROPERTIES:
+:ID:       4066e08a-c804-425b-87be-f930ff0c4ae0
+:END:
+#+title: Adicionando Modelos à Cena Virtual
+
+Este documento tenta informar como, a partir de um modelo desenvolvido internamente ou baixado da Internet, é possível introduzir novos modelos à cena virtual do jogo.
+A /parte 2/ deste guia mostra o passo-a-passo da introdução de um modelo (=rubber-duck=) *temporário e inicial* como a Ave controlada pelo jogador.
+
+* Parte 1: Visão Geral e Guia
+
+A cena virtual é gerenciada pelo ~ObjectManager~ (singleton), que armazena objetos derivados de ~SceneObject~ em um ~unordered_map~ indexado por nome. A criação desses objetos é delegada à ~ObjectFactory~, que oferece construtores semânticos para os tipos mais comuns.
+
+** Hierarquia de Classes
+
+- ~SceneObject~ — classe-base abstrata; carrega posição, rotação (Euler), escala, cor e visibilidade
+  - ~Floor~ — chão plano, com suporte a textura; criado via ~createMesh()~ + ~loadTexture()~
+  - ~Sphere~ — esfera parametrizada por raio, setores e stacks
+  - ~Bunny~ — modelo carregado de arquivo ~.obj~ via ~loadFromFile()~
+
+Todos os objetos concretos implementam ~draw(GLuint model_uniform)~, que envia a matriz de modelagem ao shader.
+
+** Estruturas de Dados
+
+*** ~VertexData~
+Agrupa os três atributos por vértice:
+| Campo      | Tipo        | Descrição                        |
+|------------+-------------+----------------------------------|
+| ~position~ | ~glm::vec3~ | Posição no espaço local          |
+| ~normal~   | ~glm::vec3~ | Normal para iluminação           |
+| ~texcoord~ | ~glm::vec2~ | Coordenada UV para texturização  |
+
+*** ~Mesh~
+Encapsula os recursos OpenGL de uma geometria:
+- ~vertices~ / ~indices~ — dados na CPU
+- ~vertex_array_object_id~, ~vertex_buffer_id~, ~index_buffer_id~ — recursos na GPU
+- ~bbox_min~ / ~bbox_max~ — AABB calculada via ~computeBoundingBox()~
+- ~rendering_mode~ — padrão ~GL_TRIANGLES~
+
+*** ~VirtualModel~
+Estrutura alternativa para modelos carregados de ~.obj~; ao contrário de ~Mesh~, referencia um intervalo (~first_index~, ~num_indices~) dentro de um vetor global de índices compartilhado.
+
+** Criando e Adicionando Objetos
+
+Use ~ObjectFactory~ para instanciar e ~ObjectManager::getInstance()~ para registrar:
+
+#+begin_src cpp
+// Chão cinza simples
+Floor* floor = ObjectFactory::createFloor(10.0f, 10.0f);
+ObjectManager::getInstance().addObject(floor);
+
+// Chão xadrezado (requer textures/checkered.png)
+Floor* chk = ObjectFactory::createCheckeredFloor(10.0f, 10.0f);
+ObjectManager::getInstance().addObject(chk);
+
+// Esfera vermelha em posição arbitrária
+Sphere* sphere = ObjectFactory::createSphere(0.5f, glm::vec3(0.0f, 0.0f, 0.0f));
+ObjectManager::getInstance().addObject(sphere);
+#+end_src
+
+No loop de renderização, basta chamar:
+
+#+begin_src cpp
+ObjectManager::getInstance().drawAllObjects(model_uniform);
+#+end_src
+
+Apenas objetos com ~visible = true~ são desenhados.
+
+** Gerenciamento de Objetos
+
+| Operação        | Método                          |
+|-----------------+---------------------------------|
+| Adicionar       | ~addObject(SceneObject*)~       |
+| Buscar por nome | ~getObject(std::string)~        |
+| Remover         | ~removeObject(std::string)~     |
+| Limpar tudo     | ~clear()~                       |
+
+~removeObject~ e ~clear~ liberam a memória dos ponteiros armazenados.
+
+** Do Arquivo Baixado até a Cena
+
+*** Pipeline Completo
+
+#+begin_example
+[arquivo .obj + .mtl]          ← fonte externa (Sketchfab, etc.)
+        │
+        ▼
+  ResourceManager               carrega geometria → VirtualModel
+  ::get().loadTexture()         carrega texturas  → GPU (texture unit N)
+        │
+        ▼
+  ResourceManager
+  ::get().drawModel()           envia bbox, VAO e glDrawElements
+        │
+        ▼
+  SceneObject::draw()           envia model matrix via uniform
+        │
+        ▼
+  Shader (vertex + fragment)    transforma vértices, amostra texturas
+#+end_example
+
+*** Passo 1 — Obter o modelo
+
+Formatos aceitos: ~.obj~ com ~.mtl~ associado. Fontes comuns:
+
+- [[https://sketchfab.com][Sketchfab]] (exportar como OBJ)
+- [[https://polyhaven.com][Poly Haven]] (modelos e texturas livres)
+- [[https://kenney.nl][Kenney.nl]] (assets de jogos)
+
+Salvar em ~assets/models/<nome>/~ junto com o ~.mtl~ e as texturas referenciadas.
+
+*** Passo 2 — Carregar geometria com ~ResourceManager~
+
+~ResourceManager~ mantém um ~std::map<std::string, VirtualModel>~ que indexa cada shape
+do OBJ por nome. O carregamento preenche ~first_index~, ~num_indices~ e o VAO compartilhado.
+
+#+begin_src cpp
+// Normalmente chamado na inicialização, antes do loop
+ResourceManager::get().getVirtualModels(); // acessa o mapa após carga
+#+end_src
+
+Após a carga, cada entrada do mapa contém a ~bbox_min~/~bbox_max~ que o shader usa para
+mapeamento de textura por coordenadas de bounding box.
+
+*** Passo 3 — Carregar texturas
+
+Cada textura ocupa uma /texture unit/ na GPU. As units são atribuídas
+na ordem de chamada:
+
+#+begin_src cpp
+ResourceManager::get().loadTexture("assets/textures/diffuse.png");   // unit 0
+ResourceManager::get().loadTexture("assets/textures/specular.png");  // unit 1
+// numLoadedTextures() retorna quantas foram carregadas
+#+end_src
+
+O shader acessa a unit correta via ~sampler2D~; certifique-se de que o
+~object_id~ enviado pelo uniform ~uniformObjectId()~ corresponde à lógica
+de seleção de textura no fragment shader.
+
+*** Passo 4 — Desenhar o modelo
+
+#+begin_src cpp
+// Dentro do loop de renderização, após setar view/projection:
+ResourceManager::get().drawModel("nome_da_shape");
+#+end_src
+
+Internamente, ~drawModel~ faz:
+1. Envia ~bbox_min~/~bbox_max~ via ~uniformBboxMin()~ / ~uniformBboxMax()~
+2. Vincula o VAO do ~VirtualModel~
+3. Chama ~glDrawElements~ com ~first_index~ e ~num_indices~
+
+*** Passo 5 — Posicionar via ~SceneObject~
+
+Para controlar posição, rotação e escala, encapsule o modelo em um
+~SceneObject~ (ou subclasse como ~Bunny~) e use ~getModelMatrix()~:
+
+#+begin_src cpp
+Bunny* coelho = new Bunny("coelho", "assets/models/bunny.obj");
+coelho->position = glm::vec3(1.0f, 0.0f, 0.0f);
+coelho->rotation = glm::vec3(0.0f, glm::radians(45.0f), 0.0f);
+coelho->scale    = glm::vec3(2.0f);
+ObjectManager::getInstance().addObject(coelho);
+#+end_src
+
+~getModelMatrix()~ combina as três transformações na ordem TRS
+(translação × rotação × escala), que é enviada ao shader via
+~uniformModel()~.
+
+*** Uniforms por frame
+
+#+begin_src cpp
+GLint model_loc = ResourceManager::get().uniformModel();
+GLint view_loc  = ResourceManager::get().uniformView();
+GLint proj_loc  = ResourceManager::get().uniformProjection();
+
+glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm::value_ptr(view_matrix));
+glUniformMatrix4fv(proj_loc, 1, GL_FALSE, glm::value_ptr(proj_matrix));
+
+// ObjectManager chama draw() de cada objeto, que seta model_loc individualmente
+ObjectManager::getInstance().drawAllObjects(model_loc);
+#+end_src
+
+*** Checklist rápido
+
+- [ ] ~.obj~ e ~.mtl~ no diretório correto (~assets/~)
+- [ ] Texturas referenciadas no ~.mtl~ existem no caminho esperado
+- [ ] ~loadTexture~ chamado para cada textura antes do loop
+- [ ] ~object_id~ no shader aponta para a texture unit certa
+- [ ] ~SceneObject::position~/~rotation~/~scale~ ajustados após criação
+- [ ] Objeto adicionado ao ~ObjectManager~ antes do loop de renderização
+
+*** Observações
+
+- ~ObjectFactory~ gera nomes únicos via ~rand()~; prefira nomear manualmente e ajustar ~name~ após a criação se precisar acessar o objeto por ~getObject()~.
+- ~VirtualModel~ e ~Mesh~ coexistem no projeto com propósitos distintos: ~VirtualModel~ pressupõe um buffer global de geometria (pipeline de carregamento OBJ), enquanto ~Mesh~ é auto-contido por objeto.
+- ~Floor::loadTexture~ espera o diretório ~textures/~ relativo ao executável.
+- ~ResourceManager~ é também singleton e não deve ser copiado; acesse sempre via ~ResourceManager::get()~.
+
+
+* Parte 2: introduzindo =rubber-duck=
+1. O modelo foi descoberto em [[https://sketchfab.com/3d-models/free-rubber-duck-3d-model-c5739cd7a94547dcb091bdd527536977][Sketchfab]];
+2. Haviam algumas opções de /tipo de arquivo/: =.blend=, =.usdz=, =gITFConverted= e =GLBConverted=. Escolhemos baixar o arquivo =.gITF=.
+3. Baixar e instalar [[https://docs.blender.org/manual/en/latest/getting_started/installing/linux.html][Blender]]. /Importamos/ (não é /abrir/) o arquivo =.gITF= para o Blender. Verificamos que o modelo está orientado corretamente na cena virtual do Blender.
+4. Fazemos =File -> Export -> Wavefront (.obj)= para /converter o arquivo/ ao formato para o qual já possuímos o processamento necessário. O local correto para salvar este arquivo é  no diretório =assets/models/=. *É NECESSÁRIO ASSINALAR A /CHECK-BOX/ =MATERIALS= A FIM DE QUE O ARQUIVO =.mtl= SEJA EXPORTADO TAMBÉM*.
+5. Descobrimos que o =.mtl= gerado não aponta para as texturas do =rubber-duck=. Ao invés disto, as "texturas" são cores sólidas. Vamos voltar ao Blender e fazer /unwrap UV/ e /bake/ das cores para imagem. Então o modelo atual é deletado e fazemos este processo.   
+   
