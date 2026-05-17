@@ -262,7 +262,7 @@ GLuint g_NumLoadedTextures = 0;
 int treenumber = 8;
 
 /**
- * BIRD: Ave controlada pelo usuário (DESATIVADO)
+ * BIRD: Ave controlada pelo usuário
 */
  Bird g_Bird;
 
@@ -1315,8 +1315,11 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
 
     // Se o usuário pressionar a tecla ESC, fechamos a janela.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
         glfwSetWindowShouldClose(window, GL_TRUE);
+        fprintf(stdout,"Janela fechada.\n");
 
+    }
     // O código abaixo implementa a seguinte lógica:
     //   Se apertar tecla X       então g_AngleX += delta;
     //   Se apertar tecla shift+X então g_AngleX -= delta;
@@ -1357,24 +1360,36 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     if (key == GLFW_KEY_P && action == GLFW_PRESS)
     {
         g_UsePerspectiveProjection = true;
+        fprintf(stdout,"Alteracao de perspectiva para perspectiva.\n");
+
     }
 
     // Se o usuário apertar a tecla O, utilizamos projeção ortográfica.
     if (key == GLFW_KEY_O && action == GLFW_PRESS)
     {
         g_UsePerspectiveProjection = false;
+        fprintf(stdout,"Alteracao de perspectiva para ortografica.\n");
+
     }
 
     // Se o usuário apertar a tecla H, fazemos um "toggle" do texto informativo mostrado na tela.
     if (key == GLFW_KEY_H && action == GLFW_PRESS)
     {
         g_ShowInfoText = !g_ShowInfoText;
+        fprintf(stdout,"Texto informativo toggled.\n");
+
+        fprintf(stdout,"Texto informativo toggled.\n");
+
+    // Se o usuario apertar a tecla T, fazemos um "toggle" do painel de depuracao.
+    if (key == GLFW_KEY_M && action == GLFW_PRESS)
     }
 
     // Se o usuário apertar a tecla T, fazemos um "toggle" do painel de depuração.
     if (key == GLFW_KEY_T && action == GLFW_PRESS)
     {
         g_ShowDebugPanel = !g_ShowDebugPanel;
+        fprintf(stdout,"Painel de depuracao toggled.\n");
+
     }
 
     // Se o usuário apertar a tecla L, alternamos dia/noite manualmente além da lógica automática.
@@ -1382,6 +1397,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     {
         g_ManualDayNight = true;
         g_DayTime = !g_DayTime;
+        fprintf(stdout,"Iluminacao do mundo trocada.\n");
     }
 
     // Se o usuário apertar a tecla R, recarregamos os shaders dos arquivos "shader_fragment.glsl" e "shader_vertex.glsl".
@@ -1489,9 +1505,9 @@ void TextRendering_ShowProjection(GLFWwindow* window)
     float charwidth = TextRendering_CharWidth(window);
 
     if ( g_UsePerspectiveProjection )
-        TextRendering_PrintString(window, "Projeção: Perspectiva", 1.0f-22*charwidth, -1.0f+2*lineheight/10, 1.0f);
+        TextRendering_PrintString(window, "Projecao: Perspectiva", 1.0f-22*charwidth, -1.0f+2*lineheight/10, 1.0f);
     else
-        TextRendering_PrintString(window, "Projeção: Ortográfica", 1.0f-23*charwidth, -1.0f+2*lineheight/10, 1.0f);
+        TextRendering_PrintString(window, "Projecao: Ortografica", 1.0f-23*charwidth, -1.0f+2*lineheight/10, 1.0f);
 }
 
 // Escrevemos na tela o número de quadros renderizados por segundo (frames per
@@ -1533,7 +1549,20 @@ void TextRendering_ShowFramesPerSecond(GLFWwindow* window)
 void TextRendering_ShowDebugPanel(GLFWwindow* window)
 {
     if (!g_ShowDebugPanel)
+    {
+        float lineheight = TextRendering_LineHeight(window);
+        float charwidth = TextRendering_CharWidth(window);
+
+        TextRendering_PrintString(
+            window,
+            "Pressione M para mostrar o painel",
+            -1.0f + charwidth,
+            1.0f - lineheight,
+            1.0f
+        );
+
         return;
+    }
 
     float lineheight = TextRendering_LineHeight(window);
     float charwidth = TextRendering_CharWidth(window);
@@ -1546,37 +1575,42 @@ void TextRendering_ShowDebugPanel(GLFWwindow* window)
     int second = currentTime->tm_sec;
     bool actualDayTime = !(hour >= 18 || hour < 6);
     bool isDayTime = g_ManualDayNight ? g_DayTime : actualDayTime;
-    const char* timeMode = g_ManualDayNight ? "Manual" : "Automático";
+    const char* timeMode = g_ManualDayNight ? "Manual" : "Automatico";
 
     // Título do painel
     TextRendering_PrintString(window, "=== PAINEL DE INFORMAÇÕES ===", -1.0f + charwidth, 1.0f - lineheight, 1.0f);
 
     char buffer[256];
-    // Posição do Bird (desativado)
-    // glm::vec3 birdPosition = g_Bird.getPosition();
-    // snprintf(buffer, 256, "Posição: X=%.2f  Y=%.2f  Z=%.2f", birdPosition.x, birdPosition.y, birdPosition.z);
-    // TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 2*lineheight, 1.0f);
 
-    // Rotação do Bird (desativado)
-    // snprintf(buffer, 256, "Rotação Y: %.2f rad (%.1f°)", g_Bird.getRotationY(), g_Bird.getRotationY() * 180.0f / 3.141592f);
-    // TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 3*lineheight, 1.0f);
+     glm::vec3 birdPosition = g_Bird.getPosition();
+    snprintf(buffer, 256, "Posicao: X=%.2f Y=%.2f Z=%.2f", birdPosition.x, birdPosition.y, birdPosition.z);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 3*lineheight, 1.0f);
 
-    snprintf(buffer, 256, "Status: Pássaro desativado");
-    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 2*lineheight, 1.0f);
-
-    snprintf(buffer, 256, "Clima: %s (%s)", isDayTime ? "DIA" : "NOITE", timeMode);
+    snprintf(buffer, 256, "Rotacao Y: %.2f rad (%.1f graus)",
+            g_Bird.getRotationY(),
+            g_Bird.getRotationY() * 180.0f / 3.141592f);
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 4*lineheight, 1.0f);
 
-    snprintf(buffer, 256, "Relógio: %02d:%02d:%02d", hour, minute, second);
+    snprintf(buffer, 256, "Clima: %s (%s)", isDayTime ? "DIA" : "NOITE", timeMode);
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 5*lineheight, 1.0f);
 
-    snprintf(buffer, 256, "Câmera: Dist=%.2f  Θ=%.2f  Φ=%.2f", g_CameraDistance, g_CameraTheta, g_CameraPhi);
+    snprintf(buffer, 256, "Relogio: %02d:%02d:%02d", hour, minute, second);
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 6*lineheight, 1.0f);
 
-    TextRendering_PrintString(window, "Controles:", -1.0f + charwidth, 1.0f - 8*lineheight, 1.0f);
-    TextRendering_PrintString(window, "WASD: voar | Q/E: subir/descer", -1.0f + charwidth, 1.0f - 9*lineheight, 1.0f);
-    TextRendering_PrintString(window, "Setas: girar view | L: dia/noite", -1.0f + charwidth, 1.0f - 10*lineheight, 1.0f);
-    TextRendering_PrintString(window, "T: painel debug | H: texto info", -1.0f + charwidth, 1.0f - 11*lineheight, 1.0f);
+    snprintf(buffer, 256, "Camera: %s", g_BirdView ? "Passaro" : "Livre");
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 7*lineheight, 1.0f);
+
+    TextRendering_PrintString(window, "Controles:", -1.0f + charwidth, 1.0f - 9*lineheight, 1.0f);
+    TextRendering_PrintString(window, "W: acelerar para frente", -1.0f + charwidth, 1.0f - 10*lineheight, 1.0f);
+    TextRendering_PrintString(window, "S: frear/parar", -1.0f + charwidth, 1.0f - 11*lineheight, 1.0f);
+    TextRendering_PrintString(window, "A/D: virar esquerda/direita", -1.0f + charwidth, 1.0f - 12*lineheight, 1.0f);
+    TextRendering_PrintString(window, "Q/E: subir/descer", -1.0f + charwidth, 1.0f - 13*lineheight, 1.0f);
+    TextRendering_PrintString(window, "F: camera do passaro", -1.0f + charwidth, 1.0f - 14*lineheight, 1.0f);
+    TextRendering_PrintString(window, "L: alternar dia/noite", -1.0f + charwidth, 1.0f - 15*lineheight, 1.0f);
+    TextRendering_PrintString(window, "P/O: perspectiva/ortografica", -1.0f + charwidth, 1.0f - 16*lineheight, 1.0f);
+    TextRendering_PrintString(window, "R: recarregar shaders", -1.0f + charwidth, 1.0f - 17*lineheight, 1.0f);
+    TextRendering_PrintString(window, "M: mostrar/ocultar painel", -1.0f + charwidth, 1.0f - 18*lineheight, 1.0f);
+    TextRendering_PrintString(window, "ESC: sair", -1.0f + charwidth, 1.0f - 19*lineheight, 1.0f);
 }
 
 // Função para debugging: imprime no terminal todas informações de um modelo
