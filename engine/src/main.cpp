@@ -51,7 +51,7 @@
 #include "matrices.h"
 
 //  Classe `Bird`: ave controlada pelo usuário
-//#include "Bird.hpp"
+#include "Bird.hpp"
 
 /** função inline para obter o caminho para algum asset (textura, modelo) 
     uso:
@@ -259,12 +259,12 @@ GLint g_bbox_max_uniform;
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 
-
+int treenumber = 8;
 
 /**
  * BIRD: Ave controlada pelo usuário (DESATIVADO)
 */
-// Bird g_Bird;
+ Bird g_Bird;
 
 
 int main(int argc, char* argv[])
@@ -383,14 +383,7 @@ int main(int argc, char* argv[])
 
     float last_frame_time = (float)glfwGetTime();
 
-        // Obtém hora atual do computador
-        time_t now = time(0);
-        struct tm* currentTime = localtime(&now);
-        int hour = currentTime->tm_hour;
-
-        // Noite entre 18h e 6h, dia caso contrário
-        bool actualDayTime = !(hour >= 18 || hour < 6);
-        bool isDayTime = g_ManualDayNight ? g_DayTime : actualDayTime;
+       
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -404,6 +397,14 @@ int main(int argc, char* argv[])
         //
         //           R     G     B     A
 
+         // Obtém hora atual do computador
+        time_t now = time(0);
+        struct tm* currentTime = localtime(&now);
+        int hour = currentTime->tm_hour;
+
+        // Noite entre 18h e 6h, dia caso contrário
+        bool actualDayTime = !(hour >= 18 || hour < 6);
+        bool isDayTime = g_ManualDayNight ? g_DayTime : actualDayTime;
 
 
         if (isDayTime) {
@@ -423,7 +424,7 @@ int main(int argc, char* argv[])
         float current_frame_time = (float)glfwGetTime();
         float dt = current_frame_time - last_frame_time;
         last_frame_time = current_frame_time;
-        // g_Bird.update(dt, window);  // Atualização do Bird desativada
+        g_Bird.update(dt, window); 
 
         // Computamos a posição da câmera utilizando coordenadas esféricas.  As
         // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
@@ -489,7 +490,7 @@ int main(int argc, char* argv[])
         
         // Desenhamos o modelo da esfera
         // Várias esferas apoiadas no chão
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < treenumber; i++)
         {
             float x = -2.5f + i * 1.0f;
 
@@ -498,39 +499,32 @@ int main(int argc, char* argv[])
 
             float y = groundY + sphereRadius;
 
-            float z = -1.5f + 0.4f * cos(glfwGetTime() + i);
+            //float z = -1.5f + 0.4f * cos(glfwGetTime() + i);
+            float z = -1.5f + i * 0.2f;
 
             model = Matrix_Translate(x, y, z)
                 * Matrix_Scale(0.25f, 0.25f, 0.25f)
-                * Matrix_Rotate_Y((float)glfwGetTime());
+                * Matrix_Rotate_Y(0.0f);
+                //  Matrix_Rotate_Y((float)glfwGetTime());
 
             glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
             glUniform1i(g_object_id_uniform, SPHERE);
             DrawVirtualObject("the_sphere");
         }
 
-        /*
-        Desenhamos o modelo do coelho usando a transformação controlada pela classe Bird
+        
+        // Desenhamos o modelo do coelho usando a transformação controlada pela classe Bird
         g_Bird.setModelMatrixUniform(g_model_uniform, view, projection);
-        glUniform1i(g_object_id_uniform, BUNNY);
-        DrawVirtualObject("the_bunny");
-        */
+       glUniform1i(g_object_id_uniform, BIRD);
+        DrawVirtualObject("the_bird");
+        
 
         // Desenhamos o plano do chão
         model = Matrix_Translate(0.0f,-1.1f,0.0f) * Matrix_Scale(10.0f,1.0f,10.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
-
-
-        // Desenhar o passaro
-        model = Matrix_Translate(0.0f, 0.5f, -2.0f)
-            * Matrix_Scale(0.3f, 0.3f, 0.3f)
-            * Matrix_Rotate_Y(3.141592f);
-
-        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, BIRD);
-        DrawVirtualObject("the_bird");
+ 
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
