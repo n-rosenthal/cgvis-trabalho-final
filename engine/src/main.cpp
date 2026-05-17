@@ -53,6 +53,9 @@
 //  Classe `Bird`: ave controlada pelo usuário
 #include "Bird.hpp"
 
+// Classe `Tree`: árvores geradas aleatoriamente
+#include "Tree.hpp"
+
 /** função inline para obter o caminho para algum asset (textura, modelo) 
     uso:
     	// carregar uma textura
@@ -247,6 +250,9 @@ bool g_ShowDebugPanel = true;
 bool g_ManualDayNight = false;
 bool g_DayTime = true;
 
+// A variável abaixo controla se a câmera está em modo "bird view", ou seja, se ela
+bool g_BirdView = false;
+
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
 GLint g_model_uniform;
@@ -258,14 +264,14 @@ GLint g_bbox_max_uniform;
 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
-
-int treenumber = 8;
+int NumberOfTrees = 30;
 
 /**
  * BIRD: Ave controlada pelo usuário
 */
  Bird g_Bird;
 
+ Tree g_Tree;
 
 int main(int argc, char* argv[])
 {
@@ -364,6 +370,15 @@ int main(int argc, char* argv[])
     ComputeNormals(&birdmodel);
     BuildTrianglesAndAddToVirtualScene(&birdmodel);
 
+    ObjModel tree1model(asset_path("models/trees/tree1/GenTree-103_AE3D_03122023-F1.obj").c_str());
+    ComputeNormals(&tree1model);
+    BuildTrianglesAndAddToVirtualScene(&tree1model);
+
+    ObjModel tree2model(asset_path("models/trees/tree2/GenTree_105_AE3D_03122023-F2.obj").c_str());
+    ComputeNormals(&tree2model);
+    BuildTrianglesAndAddToVirtualScene(&tree2model);
+
+
     if ( argc > 1 )
     {
         ObjModel model(argv[1]);
@@ -383,7 +398,7 @@ int main(int argc, char* argv[])
 
     float last_frame_time = (float)glfwGetTime();
 
-       
+    g_Tree.generate(NumberOfTrees);
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -488,30 +503,7 @@ int main(int argc, char* argv[])
         #define PLANE  2
         #define BIRD  3
         
-        // Desenhamos o modelo da esfera
-        // Várias esferas apoiadas no chão
-        for (int i = 0; i < treenumber; i++)
-        {
-            float x = -2.5f + i * 1.0f;
-
-            float groundY = -1.1f;
-            float sphereRadius = 0.25f;
-
-            float y = groundY + sphereRadius;
-
-            //float z = -1.5f + 0.4f * cos(glfwGetTime() + i);
-            float z = -1.5f + i * 0.2f;
-
-            model = Matrix_Translate(x, y, z)
-                * Matrix_Scale(0.25f, 0.25f, 0.25f)
-                * Matrix_Rotate_Y(0.0f);
-                //  Matrix_Rotate_Y((float)glfwGetTime());
-
-            glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-            glUniform1i(g_object_id_uniform, SPHERE);
-            DrawVirtualObject("the_sphere");
-        }
-
+        g_Tree.draw(g_model_uniform, g_object_id_uniform, SPHERE);
         
         // Desenhamos o modelo do coelho usando a transformação controlada pela classe Bird
         g_Bird.setModelMatrixUniform(g_model_uniform, view, projection);
@@ -525,6 +517,8 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
  
+
+
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -1378,14 +1372,10 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         g_ShowInfoText = !g_ShowInfoText;
         fprintf(stdout,"Texto informativo toggled.\n");
 
-        fprintf(stdout,"Texto informativo toggled.\n");
+    }
 
     // Se o usuario apertar a tecla T, fazemos um "toggle" do painel de depuracao.
     if (key == GLFW_KEY_M && action == GLFW_PRESS)
-    }
-
-    // Se o usuário apertar a tecla T, fazemos um "toggle" do painel de depuração.
-    if (key == GLFW_KEY_T && action == GLFW_PRESS)
     {
         g_ShowDebugPanel = !g_ShowDebugPanel;
         fprintf(stdout,"Painel de depuracao toggled.\n");
