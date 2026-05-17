@@ -51,7 +51,7 @@
 #include "matrices.h"
 
 //  Classe `Bird`: ave controlada pelo usuário
-#include "Bird.hpp"
+//#include "Bird.hpp"
 
 /** função inline para obter o caminho para algum asset (textura, modelo) 
     uso:
@@ -243,6 +243,10 @@ bool g_ShowInfoText = true;
 // Variável que controla se o painel de depuração será mostrado na tela.
 bool g_ShowDebugPanel = true;
 
+// Variáveis que controlam o modo de dia/noite.
+bool g_ManualDayNight = false;
+bool g_DayTime = true;
+
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
 GLint g_model_uniform;
@@ -258,9 +262,9 @@ GLuint g_NumLoadedTextures = 0;
 
 
 /**
- * BIRD: Ave controlada pelo usuário
+ * BIRD: Ave controlada pelo usuário (DESATIVADO)
 */
-Bird g_Bird;
+// Bird g_Bird;
 
 
 int main(int argc, char* argv[])
@@ -356,6 +360,10 @@ int main(int argc, char* argv[])
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
 
+    ObjModel birdmodel(asset_path("models/bird/0V3HJRW3DQ5QPF3J2O5PR4Z1M.obj").c_str());
+    ComputeNormals(&birdmodel);
+    BuildTrianglesAndAddToVirtualScene(&birdmodel);
+
     if ( argc > 1 )
     {
         ObjModel model(argv[1]);
@@ -373,13 +381,16 @@ int main(int argc, char* argv[])
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+    float last_frame_time = (float)glfwGetTime();
+
         // Obtém hora atual do computador
         time_t now = time(0);
         struct tm* currentTime = localtime(&now);
         int hour = currentTime->tm_hour;
 
         // Noite entre 18h e 6h, dia caso contrário
-        bool isDayTime = !(hour >= 18 || hour < 6);
+        bool actualDayTime = !(hour >= 18 || hour < 6);
+        bool isDayTime = g_ManualDayNight ? g_DayTime : actualDayTime;
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -408,6 +419,11 @@ int main(int argc, char* argv[])
         // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
         // os shaders de vértice e fragmentos).
         glUseProgram(g_GpuProgramID);
+
+        float current_frame_time = (float)glfwGetTime();
+        float dt = current_frame_time - last_frame_time;
+        last_frame_time = current_frame_time;
+        // g_Bird.update(dt, window);  // Atualização do Bird desativada
 
         // Computamos a posição da câmera utilizando coordenadas esféricas.  As
         // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
@@ -469,29 +485,52 @@ int main(int argc, char* argv[])
         #define SPHERE 0
         #define BUNNY  1
         #define PLANE  2
-
+        #define BIRD  3
+        
         // Desenhamos o modelo da esfera
-        model = Matrix_Translate(-1.0f,0.0f,0.0f)
-              * Matrix_Rotate_Z(0.6f)
-              * Matrix_Rotate_X(0.2f)
-              * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, SPHERE);
-        DrawVirtualObject("the_sphere");
+        // Várias esferas apoiadas no chão
+        for (int i = 0; i < 6; i++)
+        {
+            float x = -2.5f + i * 1.0f;
 
-        // Desenhamos o modelo do coelho
-        model = Matrix_Translate(g_BunnyPositionX, g_BunnyPositionY, g_BunnyPositionZ)
-              * Matrix_Rotate_Y(g_BunnyRotationY)
-              * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            float groundY = -1.1f;
+            float sphereRadius = 0.25f;
+
+            float y = groundY + sphereRadius;
+
+            float z = -1.5f + 0.4f * cos(glfwGetTime() + i);
+
+            model = Matrix_Translate(x, y, z)
+                * Matrix_Scale(0.25f, 0.25f, 0.25f)
+                * Matrix_Rotate_Y((float)glfwGetTime());
+
+            glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform1i(g_object_id_uniform, SPHERE);
+            DrawVirtualObject("the_sphere");
+        }
+
+        /*
+        Desenhamos o modelo do coelho usando a transformação controlada pela classe Bird
+        g_Bird.setModelMatrixUniform(g_model_uniform, view, projection);
         glUniform1i(g_object_id_uniform, BUNNY);
         DrawVirtualObject("the_bunny");
+        */
 
         // Desenhamos o plano do chão
-        model = model = Matrix_Translate(0.0f,-1.1f,0.0f) * Matrix_Scale(10.0f,1.0f,10.0f);
+        model = Matrix_Translate(0.0f,-1.1f,0.0f) * Matrix_Scale(10.0f,1.0f,10.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
+
+
+        // Desenhar o passaro
+        model = Matrix_Translate(0.0f, 0.5f, -2.0f)
+            * Matrix_Scale(0.3f, 0.3f, 0.3f)
+            * Matrix_Rotate_Y(3.141592f);
+
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, BIRD);
+        DrawVirtualObject("the_bird");
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -1225,9 +1264,8 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
         float dx = xpos - g_LastCursorPosX;
         float dy = ypos - g_LastCursorPosY;
 
-        // Atualizamos parâmetros do bunny com os deslocamentos
-        g_BunnyRotationY -= 0.01f*dx;
-        g_BunnyPositionY += 0.01f*dy;
+        // Atenção: o controle de voo do Bird é feito pela classe Bird::update().
+        // O arrasto com o botão direito não altera diretamente a posição do modelo.
 
         // Atualizamos as variáveis globais para armazenar a posição atual do
         // cursor como sendo a última posição conhecida do cursor.
@@ -1345,6 +1383,13 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         g_ShowDebugPanel = !g_ShowDebugPanel;
     }
 
+    // Se o usuário apertar a tecla L, alternamos dia/noite manualmente além da lógica automática.
+    if (key == GLFW_KEY_L && action == GLFW_PRESS)
+    {
+        g_ManualDayNight = true;
+        g_DayTime = !g_DayTime;
+    }
+
     // Se o usuário apertar a tecla R, recarregamos os shaders dos arquivos "shader_fragment.glsl" e "shader_vertex.glsl".
     if (key == GLFW_KEY_R && action == GLFW_PRESS)
     {
@@ -1353,44 +1398,8 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         fflush(stdout);
     }
 
-    // Controles do bunny com teclado
-    float moveSpeed = 0.1f;
-    float rotSpeed = 0.1f;
-
-    // WASD para mover o bunny
-    if (key == GLFW_KEY_W && action == GLFW_PRESS)
-    {
-        g_BunnyPositionZ -= moveSpeed;
-    }
-    if (key == GLFW_KEY_S && action == GLFW_PRESS)
-    {
-        g_BunnyPositionZ += moveSpeed;
-    }
-    if (key == GLFW_KEY_A && action == GLFW_PRESS)
-    {
-        g_BunnyPositionX -= moveSpeed;
-    }
-    if (key == GLFW_KEY_D && action == GLFW_PRESS)
-    {
-        g_BunnyPositionX += moveSpeed;
-    }
-    if (key == GLFW_KEY_Q && action == GLFW_PRESS)
-    {
-        g_BunnyPositionY += moveSpeed;
-    }
-    if (key == GLFW_KEY_E && action == GLFW_PRESS)
-    {
-        g_BunnyPositionY -= moveSpeed;
-    }
-
-    // Setas para rotacionar o bunny
-    {
-        g_BunnyRotationY += rotSpeed;
-    }
-    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
-    {
-        g_BunnyRotationY -= rotSpeed;
-    }
+    // Controles de voo do Bird são tratados pela classe Bird::update().
+    // Esta função já responde a WASD + Q/E para ajustar velocidade, rotação e altura.
 }
 
 // Definimos o callback para impressão de erros da GLFW no terminal
@@ -1471,9 +1480,9 @@ void TextRendering_ShowEulerAngles(GLFWwindow* window)
     float pad = TextRendering_LineHeight(window);
 
     char buffer[80];
-    snprintf(buffer, 80, "Euler Angles rotation matrix = Z(%.2f)*Y(%.2f)*X(%.2f)\n", g_AngleZ, g_AngleY, g_AngleX);
+    snprintf(buffer, 80, "Euler Angles: Z=%.2f Y=%.2f X=%.2f", g_AngleZ, g_AngleY, g_AngleX);
 
-    TextRendering_PrintString(window, buffer, -1.0f+pad/10, -1.0f+2*pad/10, 1.0f);
+    TextRendering_PrintString(window, buffer, -1.0f + pad/10, -1.0f + 2*pad/10, 1.0f);
 }
 
 // Escrevemos na tela qual matriz de projeção está sendo utilizada.
@@ -1486,9 +1495,9 @@ void TextRendering_ShowProjection(GLFWwindow* window)
     float charwidth = TextRendering_CharWidth(window);
 
     if ( g_UsePerspectiveProjection )
-        TextRendering_PrintString(window, "Perspective", 1.0f-13*charwidth, -1.0f+2*lineheight/10, 1.0f);
+        TextRendering_PrintString(window, "Projeção: Perspectiva", 1.0f-22*charwidth, -1.0f+2*lineheight/10, 1.0f);
     else
-        TextRendering_PrintString(window, "Orthographic", 1.0f-13*charwidth, -1.0f+2*lineheight/10, 1.0f);
+        TextRendering_PrintString(window, "Projeção: Ortográfica", 1.0f-23*charwidth, -1.0f+2*lineheight/10, 1.0f);
 }
 
 // Escrevemos na tela o número de quadros renderizados por segundo (frames per
@@ -1541,33 +1550,39 @@ void TextRendering_ShowDebugPanel(GLFWwindow* window)
     int hour = currentTime->tm_hour;
     int minute = currentTime->tm_min;
     int second = currentTime->tm_sec;
-    bool isDayTime = !(hour >= 18 || hour < 6);
+    bool actualDayTime = !(hour >= 18 || hour < 6);
+    bool isDayTime = g_ManualDayNight ? g_DayTime : actualDayTime;
+    const char* timeMode = g_ManualDayNight ? "Manual" : "Automático";
 
     // Título do painel
-    TextRendering_PrintString(window, "=== PAINEL DE VOO ===", -1.0f + charwidth, 1.0f - lineheight, 1.0f);
+    TextRendering_PrintString(window, "=== PAINEL DE INFORMAÇÕES ===", -1.0f + charwidth, 1.0f - lineheight, 1.0f);
 
-    // Posição do bunny
     char buffer[256];
-    snprintf(buffer, 256, "Posicao: X=%.2f Y=%.2f Z=%.2f", g_BunnyPositionX, g_BunnyPositionY, g_BunnyPositionZ);
+    // Posição do Bird (desativado)
+    // glm::vec3 birdPosition = g_Bird.getPosition();
+    // snprintf(buffer, 256, "Posição: X=%.2f  Y=%.2f  Z=%.2f", birdPosition.x, birdPosition.y, birdPosition.z);
+    // TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 2*lineheight, 1.0f);
+
+    // Rotação do Bird (desativado)
+    // snprintf(buffer, 256, "Rotação Y: %.2f rad (%.1f°)", g_Bird.getRotationY(), g_Bird.getRotationY() * 180.0f / 3.141592f);
+    // TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 3*lineheight, 1.0f);
+
+    snprintf(buffer, 256, "Status: Pássaro desativado");
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 2*lineheight, 1.0f);
 
-    // Rotação do bunny
-    snprintf(buffer, 256, "Rotacao Y: %.2f rad (%.1f graus)", g_BunnyRotationY, g_BunnyRotationY * 180.0f / 3.141592f);
-    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 3*lineheight, 1.0f);
-
-    // Hora do dia
-    snprintf(buffer, 256, "Hora: %02d:%02d:%02d - %s", hour, minute, second, isDayTime ? "DIA" : "NOITE");
+    snprintf(buffer, 256, "Clima: %s (%s)", isDayTime ? "DIA" : "NOITE", timeMode);
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 4*lineheight, 1.0f);
 
-    // Câmera
-    snprintf(buffer, 256, "Camera: Dist=%.2f Theta=%.2f Phi=%.2f", g_CameraDistance, g_CameraTheta, g_CameraPhi);
+    snprintf(buffer, 256, "Relógio: %02d:%02d:%02d", hour, minute, second);
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 5*lineheight, 1.0f);
 
-    // Controles
-    TextRendering_PrintString(window, "Controles:", -1.0f + charwidth, 1.0f - 7*lineheight, 1.0f);
-    TextRendering_PrintString(window, "WASD: Mover | Q/E: Subir/Descer", -1.0f + charwidth, 1.0f - 8*lineheight, 1.0f);
-    TextRendering_PrintString(window, "Setas: Rotacionar | Mouse Dir: Rotacionar", -1.0f + charwidth, 1.0f - 9*lineheight, 1.0f);
-    TextRendering_PrintString(window, "T: Toggle Painel | H: Toggle Info", -1.0f + charwidth, 1.0f - 10*lineheight, 1.0f);
+    snprintf(buffer, 256, "Câmera: Dist=%.2f  Θ=%.2f  Φ=%.2f", g_CameraDistance, g_CameraTheta, g_CameraPhi);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 6*lineheight, 1.0f);
+
+    TextRendering_PrintString(window, "Controles:", -1.0f + charwidth, 1.0f - 8*lineheight, 1.0f);
+    TextRendering_PrintString(window, "WASD: voar | Q/E: subir/descer", -1.0f + charwidth, 1.0f - 9*lineheight, 1.0f);
+    TextRendering_PrintString(window, "Setas: girar view | L: dia/noite", -1.0f + charwidth, 1.0f - 10*lineheight, 1.0f);
+    TextRendering_PrintString(window, "T: painel debug | H: texto info", -1.0f + charwidth, 1.0f - 11*lineheight, 1.0f);
 }
 
 // Função para debugging: imprime no terminal todas informações de um modelo

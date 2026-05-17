@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Source files
 set(SOURCES
   engine/src/main.cpp
+  engine/src/Bird.cpp
   engine/src/correcao.cpp
   engine/src/textrendering.cpp
   engine/src/Objects.cpp

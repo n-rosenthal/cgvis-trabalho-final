@@ -9,7 +9,8 @@ https://www.cgtrader.com/free-3d-models/animal/bird/barn-owl-a6ebd1ac-f0f3-4282-
 
 falcon
 standing - https://rigmodels.com/model.php?view=Falcon-3d-model__G1FXKUZIFSQHX0QERXO6AAO63&searchkeyword=bird
-flying - https://rigmodels.com/model.php?view=Falcon-3d-model__0V3HJRW3DQ5QPF3J2O5PR4Z1M&searchkeyword=bird
+
+flying - https://rigmodels.com/model.php?view=Falcon-3d-model__0V3HJRW3DQ5QPF3J2O5PR4Z1M&searchkeyword=bird   /// adicionado ao projeto
 
 
 tree models
