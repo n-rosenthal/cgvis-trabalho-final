@@ -247,6 +247,10 @@ bool g_ShowDebugPanel = true;
 bool g_ManualDayNight = false;
 bool g_DayTime = true;
 
+// Variável que controla se a câmera está em modo "bird view" (visão de pássaro)
+bool g_BirdView = false;
+
+
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
 GLint g_model_uniform;
@@ -345,7 +349,9 @@ int main(int argc, char* argv[])
     std::string tex_path = std::string(ASSETS_DIR);
     LoadTextureImage(asset_path("textures/red_brick_diff_1k.jpg").c_str());		// TextureImage0
     LoadTextureImage(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str());	// TextureImage1
-    
+    LoadTextureImage(asset_path("models/bird2/yiny1.jpg").c_str());	// TextureImage2
+    LoadTextureImage(asset_path("models/bird2/yiny2.jpg").c_str());	// TextureImage3
+
     /* os objetos são armazenados no diretório =assets/models/= */
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel(asset_path("models/sphere.obj").c_str());
@@ -360,7 +366,8 @@ int main(int argc, char* argv[])
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
 
-    ObjModel birdmodel(asset_path("models/bird/0V3HJRW3DQ5QPF3J2O5PR4Z1M.obj").c_str());
+//    ObjModel birdmodel(asset_path("models/bird/0V3HJRW3DQ5QPF3J2O5PR4Z1M.obj").c_str());
+    ObjModel birdmodel(asset_path("models/bird2/1MWMHT4M2D4LN4H7TAH9H6HH5.obj").c_str());
     ComputeNormals(&birdmodel);
     BuildTrianglesAndAddToVirtualScene(&birdmodel);
 
@@ -516,8 +523,10 @@ int main(int argc, char* argv[])
         // Desenhamos o modelo do coelho usando a transformação controlada pela classe Bird
         g_Bird.setModelMatrixUniform(g_model_uniform, view, projection);
        glUniform1i(g_object_id_uniform, BIRD);
-        DrawVirtualObject("the_bird");
-        
+        //DrawVirtualObject("the_bird");
+        DrawVirtualObject("Object_yiny1.jpg");
+        DrawVirtualObject("Object_yiny2.jpg");
+
 
         // Desenhamos o plano do chão
         model = Matrix_Translate(0.0f,-1.1f,0.0f) * Matrix_Scale(10.0f,1.0f,10.0f);
@@ -703,6 +712,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
     glUseProgram(0);
 }
 
@@ -1377,15 +1387,10 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     {
         g_ShowInfoText = !g_ShowInfoText;
         fprintf(stdout,"Texto informativo toggled.\n");
-
-        fprintf(stdout,"Texto informativo toggled.\n");
-
+    }
+    
     // Se o usuario apertar a tecla T, fazemos um "toggle" do painel de depuracao.
     if (key == GLFW_KEY_M && action == GLFW_PRESS)
-    }
-
-    // Se o usuário apertar a tecla T, fazemos um "toggle" do painel de depuração.
-    if (key == GLFW_KEY_T && action == GLFW_PRESS)
     {
         g_ShowDebugPanel = !g_ShowDebugPanel;
         fprintf(stdout,"Painel de depuracao toggled.\n");
