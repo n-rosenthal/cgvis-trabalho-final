@@ -1,7 +1,8 @@
-#include "Bird.hpp"
-#include "matrices.h"   // Matrix_Translate, Matrix_Rotate_Y, etc.
-#include <cmath>
 
+#include "Bird.hpp"
+#include <cmath>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 Bird::Bird()
     : position(0.0f, 0.0f, 0.0f),
@@ -56,8 +57,9 @@ void Bird::update(float dt, GLFWwindow* window) {
 }
 
 void Bird::setModelMatrixUniform(GLuint model_uniform, const glm::mat4& view, const glm::mat4& projection) const {
-    glm::mat4 model = Matrix_Translate(position.x, position.y, position.z)
-                    * Matrix_Rotate_Y(rotationY)
-                    * Matrix_Rotate_X(rotationX);
+   glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, position);
+    model = glm::rotate(model, rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
     glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
 }

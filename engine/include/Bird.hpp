@@ -4,8 +4,9 @@
 #ifndef BIRD_HPP
 #define BIRD_HPP
 
-#include <glm/glm.hpp>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 class Bird {
     /** A ave controlada pelo usuário */
