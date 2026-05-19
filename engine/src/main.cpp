@@ -347,10 +347,12 @@ int main(int argc, char* argv[])
     LoadShadersFromFiles();
 
     /* as texturas são armazenadas no diretório =assets/textures/= */
-    // Carregamos duas imagens para serem utilizadas como textura
+
     std::string tex_path = std::string(ASSETS_DIR);
-    LoadTextureImage(asset_path("textures/red_brick_diff_1k.jpg").c_str());		// TextureImage0
-    LoadTextureImage(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str());	// TextureImage1
+    LoadTextureImage(asset_path("textures/red_brick_diff_1k.jpg").c_str());		// TextureImage0 
+    LoadTextureImage(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str());	// TextureImage1 
+    LoadTextureImage(asset_path("textures/tree1_textures/Gentree_2_Twigs_AE3D_04022023-B-DIFFUSE.jpg").c_str()); // TextureImage2 (árvore)
+    LoadTextureImage(asset_path("models/bird/falcon2.jpg").c_str());		// TextureImage3 (pássaro)
     
     /* os objetos são armazenados no diretório =assets/models/= */
     // Construímos a representação de objetos geométricos através de malhas de triângulos
@@ -501,9 +503,10 @@ int main(int argc, char* argv[])
         #define SPHERE 0
         #define BUNNY  1
         #define PLANE  2
-        #define BIRD  3
-        
-        g_Tree.draw(g_model_uniform, g_object_id_uniform, SPHERE);
+        #define TREE   3
+        #define BIRD   4
+
+        g_Tree.draw(g_model_uniform, g_object_id_uniform, TREE);
         
         // Desenhamos o modelo do coelho usando a transformação controlada pela classe Bird
         g_Bird.setModelMatrixUniform(g_model_uniform, view, projection);
@@ -697,6 +700,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
     glUseProgram(0);
 }
 

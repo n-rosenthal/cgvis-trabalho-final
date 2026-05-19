@@ -22,6 +22,8 @@ uniform mat4 projection;
 #define SPHERE 0
 #define BUNNY  1
 #define PLANE  2
+#define TREE   3
+#define BIRD   4
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -32,6 +34,7 @@ uniform vec4 bbox_max;
 uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
+uniform sampler2D TextureImage3;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -122,8 +125,8 @@ void main()
         U = (position_model.x - minx) / (maxx - minx);
         V = (position_model.y - miny) / (maxy - miny);
 
-		// Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
-		Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
+		// Cor branca sem textura para o coelho
+		Kd0 = vec3(1.0, 1.0, 1.0);
     }
     else if ( object_id == PLANE )
     {
@@ -133,6 +136,24 @@ void main()
 
 		// Obtemos a refletância difusa a partir da leitura da imagem TextureImage1
 		Kd0 = texture(TextureImage1, vec2(U,V)).rgb;
+    }
+    else if ( object_id == TREE )
+    {
+        // Coordenadas de textura da árvore, obtidas do arquivo OBJ.
+        U = texcoords.x;
+        V = texcoords.y;
+
+		// Obtemos a refletância difusa a partir da leitura da imagem TextureImage2
+		Kd0 = texture(TextureImage2, vec2(U,V)).rgb;
+    }
+    else if ( object_id == BIRD )
+    {
+        // Coordenadas de textura do pássaro, obtidas do arquivo OBJ.
+        U = texcoords.x;
+        V = texcoords.y;
+
+		// Obtemos a refletância difusa a partir da leitura da imagem TextureImage3 (falcon2.jpg do MTL)
+		Kd0 = texture(TextureImage3, vec2(U,V)).rgb;
     }
 
     // Equação de Iluminação
