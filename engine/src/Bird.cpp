@@ -4,6 +4,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+extern void DrawVirtualObject(const char* object_name);
+
 Bird::Bird()
     : position(0.0f, 0.0f, 0.0f),
       rotationY(0.0f),
@@ -63,3 +65,4 @@ void Bird::setModelMatrixUniform(GLuint model_uniform, const glm::mat4& view, co
     model = glm::rotate(model, rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
     glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
 }
+ 

@@ -253,6 +253,9 @@ bool g_DayTime = true;
 // A variável abaixo controla se a câmera está em modo "bird view", ou seja, se ela
 bool g_BirdView = false;
 
+// Show or not the scenerio
+bool g_ShowScenario = false;
+
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
 GLint g_model_uniform;
@@ -267,7 +270,7 @@ GLuint g_NumLoadedTextures = 0;
 int NumberOfTrees = 30;
 
 /**
- * BIRD: Ave controlada pelo usuário
+ * Instancias das classes
 */
  Bird g_Bird;
 
@@ -353,6 +356,7 @@ int main(int argc, char* argv[])
     LoadTextureImage(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str());	// TextureImage1 
     LoadTextureImage(asset_path("textures/tree1_textures/Gentree_2_Twigs_AE3D_04022023-B-DIFFUSE.jpg").c_str()); // TextureImage2 (árvore)
     LoadTextureImage(asset_path("models/bird/falcon2.jpg").c_str());		// TextureImage3 (pássaro)
+    LoadTextureImage(asset_path("models/bird_standing/falcon1.jpg").c_str());		// TextureImage4 (pássaro)
     
     /* os objetos são armazenados no diretório =assets/models/= */
     // Construímos a representação de objetos geométricos através de malhas de triângulos
@@ -360,9 +364,6 @@ int main(int argc, char* argv[])
     ComputeNormals(&spheremodel);
     BuildTrianglesAndAddToVirtualScene(&spheremodel);
 
-    ObjModel bunnymodel(asset_path("models/bunny.obj").c_str());
-    ComputeNormals(&bunnymodel);
-    BuildTrianglesAndAddToVirtualScene(&bunnymodel);
 
     ObjModel planemodel(asset_path("models/plane.obj").c_str());
     ComputeNormals(&planemodel);
@@ -371,6 +372,10 @@ int main(int argc, char* argv[])
     ObjModel birdmodel(asset_path("models/bird/0V3HJRW3DQ5QPF3J2O5PR4Z1M.obj").c_str());
     ComputeNormals(&birdmodel);
     BuildTrianglesAndAddToVirtualScene(&birdmodel);
+
+       ObjModel bird2model(asset_path("models/bird_standing/G1FXKUZIFSQHX0QERXO6AAO63.obj").c_str());
+    ComputeNormals(&bird2model);
+    BuildTrianglesAndAddToVirtualScene(&bird2model);
 
     ObjModel tree1model(asset_path("models/trees/tree1/GenTree-103_AE3D_03122023-F1.obj").c_str());
     ComputeNormals(&tree1model);
@@ -400,7 +405,10 @@ int main(int argc, char* argv[])
 
     float last_frame_time = (float)glfwGetTime();
 
-    g_Tree.generate(NumberOfTrees);
+    if (g_ShowScenario)
+    {
+        g_Tree.generate(NumberOfTrees);
+    } 
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -425,7 +433,7 @@ int main(int argc, char* argv[])
 
 
         if (isDayTime) {
-            glClearColor(0.9f, 0.9f, 1.0f, 1.0f); // Dia: céu claro
+           glClearColor(0.53f, 0.81f, 0.98f, 1.0f); // Dia: céu claro
         } else {
             glClearColor(0.1f, 0.1f, 0.2f, 1.0f); // Noite: céu escuro
         }
@@ -478,7 +486,7 @@ int main(int argc, char* argv[])
             float field_of_view = 3.141592 / 2.0f;
             projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);
         }
-        else
+        else if (! g_UsePerspectiveProjection && g_BirdView )
         {
             // Projeção Ortográfica.
             // Para definição dos valores l, r, b, t ("left", "right", "bottom", "top"),
@@ -491,6 +499,7 @@ int main(int argc, char* argv[])
             float l = -r;
             projection = Matrix_Orthographic(l, r, b, t, nearplane, farplane);
         }
+        // else if (g_BirdView){}
 
         glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
 
@@ -505,13 +514,14 @@ int main(int argc, char* argv[])
         #define PLANE  2
         #define TREE   3
         #define BIRD   4
+        #define BIRD2  5
 
         g_Tree.draw(g_model_uniform, g_object_id_uniform, TREE);
         
         // Desenhamos o modelo do coelho usando a transformação controlada pela classe Bird
         g_Bird.setModelMatrixUniform(g_model_uniform, view, projection);
-       glUniform1i(g_object_id_uniform, BIRD);
-        DrawVirtualObject("the_bird");
+       glUniform1i(g_object_id_uniform, BIRD2);
+        DrawVirtualObject("the_bird2");
         
 
         // Desenhamos o plano do chão
