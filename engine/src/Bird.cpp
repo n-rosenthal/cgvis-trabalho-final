@@ -72,7 +72,9 @@ void Bird::draw(GLuint model_uniform, GLuint object_id_uniform) const {
     if (standing) {
         glUniform1i(object_id_uniform, 5); // BIRD2
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, position);
+        glm::vec3 draw_position = position;
+        draw_position.y = -0.5f; // Posição fixa y = -0.5 quando standing
+        model = glm::translate(model, draw_position);
         model = glm::rotate(model, rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::rotate(model, rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f)); // Escala para normalizar tamanho
