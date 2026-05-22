@@ -356,7 +356,7 @@ int main(int argc, char* argv[])
     LoadTextureImage(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str());	// TextureImage1 
     LoadTextureImage(asset_path("textures/tree1_textures/Gentree_2_Twigs_AE3D_04022023-B-DIFFUSE.jpg").c_str()); // TextureImage2 (árvore)
     LoadTextureImage(asset_path("models/bird/falcon2.jpg").c_str());		// TextureImage3 (pássaro)
-    LoadTextureImage(asset_path("models/bird_standing/falcon1.jpg").c_str());		// TextureImage4 (pássaro)
+    LoadTextureImage(asset_path("models/bird_standing/falcon1.jpg").c_str());		// TextureImage4 (pássaro2)
     
     /* os objetos são armazenados no diretório =assets/models/= */
     // Construímos a representação de objetos geométricos através de malhas de triângulos
@@ -520,8 +520,9 @@ int main(int argc, char* argv[])
         
         // Desenhamos o modelo do coelho usando a transformação controlada pela classe Bird
         g_Bird.setModelMatrixUniform(g_model_uniform, view, projection);
-       glUniform1i(g_object_id_uniform, BIRD2);
+        glUniform1i(g_object_id_uniform, BIRD2);
         DrawVirtualObject("the_bird2");
+        DrawVirtualObject("Object_color_0.031360-0.009440-0.009440.jpg");
         
 
         // Desenhamos o plano do chão
@@ -711,6 +712,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
     glUseProgram(0);
 }
 
