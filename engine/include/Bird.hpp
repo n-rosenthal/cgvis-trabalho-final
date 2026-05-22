@@ -18,7 +18,7 @@ public:
     void update(float dt, GLFWwindow* window);
 
     // Desenha a ave
-    void draw(GLuint model_uniform) const; 
+    void draw(GLuint model_uniform, GLuint object_id_uniform) const; 
 
     // Getters
     //  Retorna a posição atual da ave
@@ -27,9 +27,14 @@ public:
     //  Retorna o angulo Y de inclinação da ave
     float getRotationY() const { return rotationY; }
 
+    //  Retorna se o pássaro está em modo standing (parado)
+    bool getStanding() const { return standing; }
+
     // Setters
     //  Altera a posição da ave
     void setModelMatrixUniform(GLuint model_uniform, const glm::mat4& view, const glm::mat4& projection) const;
+    //  Define se o pássaro está em modo standing (parado)
+    void setStanding(bool standing) { this->standing = standing; }
 
 private:
     glm::vec3 position;      // X, Y, Z
@@ -42,6 +47,7 @@ private:
     float moveSpeed;
     float rotationSpeed;
     float verticalSpeedFactor;
+    bool standing;  // Flag para indicar se usa modelo standing (bird2) ou voando (bird)
 };
 
 #endif

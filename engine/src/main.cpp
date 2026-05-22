@@ -385,6 +385,10 @@ int main(int argc, char* argv[])
     ComputeNormals(&tree2model);
     BuildTrianglesAndAddToVirtualScene(&tree2model);
 
+    ObjModel lettermodel(asset_path("models/the_letter.obj").c_str());
+    ComputeNormals(&lettermodel);
+    BuildTrianglesAndAddToVirtualScene(&lettermodel);
+
 
     if ( argc > 1 )
     {
@@ -517,12 +521,29 @@ int main(int argc, char* argv[])
         #define BIRD2  5
 
         g_Tree.draw(g_model_uniform, g_object_id_uniform, TREE);
-        
-        // Desenhamos o modelo do coelho usando a transformação controlada pela classe Bird
-        g_Bird.setModelMatrixUniform(g_model_uniform, view, projection);
-        glUniform1i(g_object_id_uniform, BIRD2);
-        DrawVirtualObject("the_bird2");
+
+        // Desenhamos o modelo do pássaro usando a transformação controlada pela classe Bird
+        g_Bird.draw(g_model_uniform, g_object_id_uniform);
         DrawVirtualObject("Object_color_0.031360-0.009440-0.009440.jpg");
+
+        // Se o pássaro está em modo standing, desenhamos a carta na frente dele
+        if (g_Bird.getStanding()) {
+            glm::vec3 bird_pos = g_Bird.getPosition();
+            float bird_rot = g_Bird.getRotationY();
+            float distance = 2.0f; // Distância na frente do pássaro
+
+            // Calcular posição na frente do pássaro baseado na rotação
+            glm::vec3 letter_pos;
+            letter_pos.x = bird_pos.x + distance * sin(bird_rot);
+            letter_pos.z = bird_pos.z + distance * cos(bird_rot);
+            letter_pos.y = bird_pos.y; // Mesma altura do pássaro
+
+            // Desenhar a carta na posição calculada
+            model = Matrix_Translate(letter_pos.x, letter_pos.y, letter_pos.z);
+            glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform1i(g_object_id_uniform, BUNNY); // Usar object_id existente para a carta
+            DrawVirtualObject("the_letter");
+        }
         
 
         // Desenhamos o plano do chão

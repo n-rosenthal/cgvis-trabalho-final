@@ -14,7 +14,8 @@ Bird::Bird()
       verticalSpeed(0.0f),
       moveSpeed(5.0f),
       rotationSpeed(2.0f),
-      verticalSpeedFactor(3.0f) {}
+      verticalSpeedFactor(3.0f),
+      standing(false) {}
 
 
 void Bird::update(float dt, GLFWwindow* window) {
@@ -65,4 +66,26 @@ void Bird::setModelMatrixUniform(GLuint model_uniform, const glm::mat4& view, co
     model = glm::rotate(model, rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
     glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
 }
- 
+
+void Bird::draw(GLuint model_uniform, GLuint object_id_uniform) const {
+    // Define o object_id baseado no modelo (BIRD para voando, BIRD2 para standing)
+    if (standing) {
+        glUniform1i(object_id_uniform, 5); // BIRD2
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, position);
+        model = glm::rotate(model, rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f)); // Escala para normalizar tamanho
+        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        DrawVirtualObject("the_bird2");
+    } else {
+        glUniform1i(object_id_uniform, 4); // BIRD
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, position);
+        model = glm::rotate(model, rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f)); // Escala para normalizar tamanho
+        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        DrawVirtualObject("the_bird");
+    }
+}
