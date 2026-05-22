@@ -528,7 +528,12 @@ int main(int argc, char* argv[])
         g_Tree.draw(g_model_uniform, g_object_id_uniform, TREE);
 
         // Desenhamos o modelo do pássaro usando a transformação controlada pela classe Bird
-        g_Bird.setStanding(true);
+        // Determina se está no chão (standing) ou voando baseado na altura
+        if (g_Bird.getPosition().y <= -0.8f) {
+            g_Bird.setStanding(true); // No chão: usa modelo standing
+        } else {
+            g_Bird.setStanding(false); // Voando: usa modelo voando
+        }
         g_Bird.draw(g_model_uniform, g_object_id_uniform);
 
         // Desenhamos o cilindro (the_letter) usando a classe Letter
