@@ -276,6 +276,8 @@ int NumberOfTrees = 30;
 
  Tree g_Tree;
 
+ Letter g_Letter;
+
 int main(int argc, char* argv[])
 {
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
@@ -453,7 +455,10 @@ int main(int argc, char* argv[])
         float current_frame_time = (float)glfwGetTime();
         float dt = current_frame_time - last_frame_time;
         last_frame_time = current_frame_time;
-        g_Bird.update(dt, window); 
+        g_Bird.update(dt, window);
+
+        // Atualizar física da letter usando a classe Letter
+        g_Letter.update(dt, g_Bird.getPosition(), g_Bird.getRotationY(), g_Letter.isCaptured()); 
 
         // Computamos a posição da câmera utilizando coordenadas esféricas.  As
         // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
@@ -526,33 +531,8 @@ int main(int argc, char* argv[])
         g_Bird.setStanding(true);
         g_Bird.draw(g_model_uniform, g_object_id_uniform);
 
-        // Desenhamos o cilindro (the_letter) em ambas as situações
-        glm::vec3 bird_pos = g_Bird.getPosition();
-        float bird_rot = g_Bird.getRotationY();
-        glm::vec3 letter_pos;
-
-        if (g_Bird.getStanding()) {
-            // Pássaro parado: cilindro fixo na frente do pássaro
-            float distance = 2.0f;
-            letter_pos.x = bird_pos.x + distance * sin(bird_rot);
-            letter_pos.z = bird_pos.z + distance * cos(bird_rot);
-            letter_pos.y = -0.5f; // Mesma altura do pássaro parado
-        } else {
-            // Pássaro voando: cilindro junto das garras (horizontal)
-            // Posição relativa às garras do pássaro
-            float distance = 0.5f; // Distância das garras
-            letter_pos.x = bird_pos.x + distance * sin(bird_rot);
-            letter_pos.z = bird_pos.z + distance * cos(bird_rot);
-            letter_pos.y = bird_pos.y; // Mesma altura do pássaro voando
-        }
-
-        // Desenhar o cilindro com escala 4x menor
-        model = Matrix_Translate(letter_pos.x, letter_pos.y, letter_pos.z);
-        model = model * Matrix_Scale(0.25f, 0.25f, 0.25f); // 4x menor
-        model = model * Matrix_Rotate_Y(bird_rot); // Rotacionar com o pássaro
-        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, BUNNY);
-        DrawVirtualObject("the_letter");
+        // Desenhamos o cilindro (the_letter) usando a classe Letter
+        g_Letter.draw(g_model_uniform, g_object_id_uniform);
         
 
         // Desenhamos o plano do chão
