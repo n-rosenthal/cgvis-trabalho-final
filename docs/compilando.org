@@ -1,0 +1,9 @@
+#+title: como compilar para testar novas /features/
+Sempre que novas /features/ forem introduzidas ao projeto, este pode ser re-compilado através de
+
+#+begin_src bash
+rm -rf build/
+cmake -B build -S .
+cmake --build build
+cmake --build build --target run
+#+end_src
