@@ -78,6 +78,7 @@ void Bird::draw(GLuint model_uniform, GLuint object_id_uniform) const {
         model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f)); // Escala para normalizar tamanho
         glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
         DrawVirtualObject("the_bird2");
+        DrawVirtualObject("Object_color_0.031360-0.009440-0.009440.jpg");
     } else {
         glUniform1i(object_id_uniform, 4); // BIRD
         glm::mat4 model = glm::mat4(1.0f);

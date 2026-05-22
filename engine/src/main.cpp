@@ -523,8 +523,8 @@ int main(int argc, char* argv[])
         g_Tree.draw(g_model_uniform, g_object_id_uniform, TREE);
 
         // Desenhamos o modelo do pássaro usando a transformação controlada pela classe Bird
+        g_Bird.setStanding(true);
         g_Bird.draw(g_model_uniform, g_object_id_uniform);
-        DrawVirtualObject("Object_color_0.031360-0.009440-0.009440.jpg");
 
         // Se o pássaro está em modo standing, desenhamos a carta na frente dele
         if (g_Bird.getStanding()) {
@@ -706,7 +706,7 @@ void LoadShadersFromFiles()
     //       |
     //       o-- shader_fragment.glsl
     //
-    	GLuint vertex_shader_id   = LoadShader_Vertex(vert_path.c_str());
+    GLuint vertex_shader_id   = LoadShader_Vertex(vert_path.c_str());
 	GLuint fragment_shader_id = LoadShader_Fragment(frag_path.c_str());
 
 
