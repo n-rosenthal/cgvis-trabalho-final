@@ -14,6 +14,16 @@ Bird::Bird()
         rotationSpeed(2.0f),
         verticalSpeedFactor(3.0f) {}
 
+glm::vec3 Bird::getForward() const
+{
+    glm::vec3 forward;
+
+    forward.x = sin(rotationY) * cos(rotationX);
+    forward.y = sin(rotationX);
+    forward.z = cos(rotationY) * cos(rotationX);
+
+    return glm::normalize(forward);
+}
 
 void Bird::update(float dt, GLFWwindow* window) {
     // Leitura do teclado

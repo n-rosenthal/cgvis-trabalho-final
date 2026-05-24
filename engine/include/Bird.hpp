@@ -24,6 +24,13 @@ public:
     //  Retorna a posição atual da ave
     glm::vec3 getPosition() const { return position; }
 
+    // Retorna a velocidade atual da ave
+    float getSpeed() const { return speed; }
+
+    //  Para onde aponta o pássaro
+    glm::vec3 getForward() const;
+
+
     //  Retorna o angulo Y de inclinação da ave
     float getRotationY() const { return rotationY; }
 
