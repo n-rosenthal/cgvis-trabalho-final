@@ -42,13 +42,15 @@ private:
     glm::vec3 position;      // X, Y, Z
     float rotationY;         // ângulo em radianos (para onde olha)
     float rotationX;         // inclinação (pitch)
+    float rotationZ;         // inclinação (roll)
     float speed;             // velocidade atual
-    float verticalSpeed;     // velocidade de subida/descida
+    
+    glm::vec3 velocity;       // velocidade vetorial
+    glm::vec3 acceleration;   // aceleração vetorial
 
     // Parâmetros de controle
     float moveSpeed;
     float rotationSpeed;
-    float verticalSpeedFactor;
 };
 
 #endif
