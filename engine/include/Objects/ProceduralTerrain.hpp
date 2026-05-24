@@ -29,9 +29,14 @@ public:
     ~ProceduralTerrain();
 
     void generate();
+
     void draw(GLuint model_uniform);
 
-    float heightAt(float x, float z) const;
+    // altura interpolada do terreno
+    float getHeight(float x, float z) const;
+
+    // normal interpolada opcional
+    glm::vec3 getNormal(float x, float z) const;
 
 private:
 

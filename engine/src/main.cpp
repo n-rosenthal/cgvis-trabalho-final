@@ -59,6 +59,9 @@
 // Classe `ProceduralTerrain`: terreno gerado proceduralmente
 #include "Objects/ProceduralTerrain.hpp"
 
+// Classes `ProceduralRock`: rochas geradas proceduralmente
+#include "Objects/ProceduralRock.hpp"
+
 /** função inline para obter o caminho para algum asset (textura, modelo) 
     uso:
     	// carregar uma textura
@@ -272,9 +275,15 @@ int NumberOfTrees = 30;
 /**
  * BIRD: Ave controlada pelo usuário
 */
- Bird g_Bird;
+Bird g_Bird;
 
- Tree g_Tree;
+Tree g_Tree;
+
+/**
+ * Rochas geradas proceduralmente
+*/
+std::vector<ProceduralRock> g_Rocks;
+
 
 int main(int argc, char* argv[])
 {
@@ -401,7 +410,46 @@ int main(int argc, char* argv[])
 
     float last_frame_time = (float)glfwGetTime();
 
+    // Geração de árvores
     g_Tree.generate(NumberOfTrees);
+
+    //  TERRENO geração procedural
+    ProceduralTerrain terrain(
+        256,   // width
+        256,   // depth
+        1.0f,  // spacing
+        6.0f,  // amplitude
+        0.03f  // frequency
+    );
+    terrain.generate();
+
+    //  ROCHAS geração procedural
+    srand((unsigned int)time(nullptr));
+    const int rockCount = 250;
+
+    for (int i = 0; i < rockCount; ++i) {
+        // espalhamento no mundo
+        float x = ((float)rand() / RAND_MAX) * 220.0f + 10.0f;
+        float z = ((float)rand() / RAND_MAX) * 220.0f + 10.0f;
+
+        float y = terrain.getHeight(x, z);
+
+        // escala aleatória
+        float scale =
+            0.8f +
+            ((float)rand() / RAND_MAX) * 3.5f;
+
+        // empurra a rocha para cima
+        y += scale * 0.8f;
+
+
+        // cria rocha
+        g_Rocks.emplace_back(
+            glm::vec3(x, y, z),
+            scale
+        );
+    }
+
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -501,37 +549,66 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
         glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
-        #define SPHERE 0
-        #define BUNNY  1
-        #define PLANE  2
-        #define BIRD  3
-        
-        // Geração do TERRENO procedural
-        ProceduralTerrain terrain(
-            256,   // width
-            256,   // depth
-            1.0f,  // spacing
-            2.0f,  // amplitude
-            0.05f  // frequency
+        #define SPHERE  0
+        #define BUNNY   1
+        #define PLANE   2
+        #define BIRD    3 
+        #define ROCK    4
+
+        // =========================================================
+        // ÁRVORE
+        // =========================================================
+
+        g_Tree.draw(
+            g_model_uniform,
+            g_object_id_uniform,
+            SPHERE
         );
 
-        terrain.generate();
+        // =========================================================
+        // PÁSSARO
+        // =========================================================
 
+        g_Bird.setModelMatrixUniform(
+            g_model_uniform,
+            view,
+            projection
+        );
 
-        g_Tree.draw(g_model_uniform, g_object_id_uniform, SPHERE);
-        
-        // Desenhamos o modelo do coelho usando a transformação controlada pela classe Bird
-        g_Bird.setModelMatrixUniform(g_model_uniform, view, projection);
         glUniform1i(g_object_id_uniform, BIRD);
-        DrawVirtualObject("the_bird");
-        
 
-        // Desenhamos o TERRENO proceduralmente gerado
+        DrawVirtualObject("the_bird");
+
+        // =========================================================
+        // TERRENO PROCEDURAL
+        // =========================================================
+
+        model =
+            Matrix_Translate(0.0f, -1.1f, 0.0f)
+            * Matrix_Scale(10.0f, 1.0f, 10.0f);
+
+        glUniformMatrix4fv(
+            g_model_uniform,
+            1,
+            GL_FALSE,
+            glm::value_ptr(model)
+        );
+
         glUniform1i(g_object_id_uniform, PLANE);
 
+        // agora desenha o terreno procedural
         terrain.draw(g_model_uniform);
 
+        // =========================================================
+        // ROCHAS PROCEDURAIS
+        // =========================================================
 
+        glUniform1i(g_object_id_uniform, ROCK);
+
+        for (auto& rock : g_Rocks)
+        {
+            rock.Draw();
+        }
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.

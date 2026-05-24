@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(SOURCES
   engine/src/main.cpp
   engine/src/Objects/ProceduralTerrain.cpp
+  engine/src/Objects/ProceduralRock.cpp
   engine/src/Bird.cpp
   engine/src/Tree.cpp
   engine/src/correcao.cpp

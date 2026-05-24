@@ -39,10 +39,6 @@ float ProceduralTerrain::generateHeight(float x, float z) const
         std::cos(z * m_frequency);
 }
 
-float ProceduralTerrain::heightAt(float x, float z) const
-{
-    return generateHeight(x, z);
-}
 
 void ProceduralTerrain::generate()
 {
@@ -233,4 +229,68 @@ void ProceduralTerrain::draw(GLuint model_uniform)
     );
 
     glBindVertexArray(0);
+}
+
+float ProceduralTerrain::getHeight(float x, float z) const
+{
+    // converte coordenadas do mundo para grid local
+    float localX = x / m_spacing;
+    float localZ = z / m_spacing;
+
+    int x0 = (int)floor(localX);
+    int z0 = (int)floor(localZ);
+
+    int x1 = x0 + 1;
+    int z1 = z0 + 1;
+
+    // evita acesso inválido
+    if (
+        x0 < 0 || z0 < 0 ||
+        x1 >= m_width ||
+        z1 >= m_depth
+    )
+    {
+        return 0.0f;
+    }
+
+    // fração dentro da célula
+    float tx = localX - x0;
+    float tz = localZ - z0;
+
+    // índices dos 4 vértices
+    int i00 = z0 * m_width + x0;
+    int i10 = z0 * m_width + x1;
+    int i01 = z1 * m_width + x0;
+    int i11 = z1 * m_width + x1;
+
+    float h00 = m_vertices[i00].position.y;
+    float h10 = m_vertices[i10].position.y;
+    float h01 = m_vertices[i01].position.y;
+    float h11 = m_vertices[i11].position.y;
+
+    // interpolação bilinear
+    float hx0 = h00 * (1.0f - tx) + h10 * tx;
+    float hx1 = h01 * (1.0f - tx) + h11 * tx;
+
+    return hx0 * (1.0f - tz) + hx1 * tz;
+}
+
+glm::vec3 ProceduralTerrain::getNormal(float x, float z) const
+{
+    float eps = 0.1f;
+
+    float hL = getHeight(x - eps, z);
+    float hR = getHeight(x + eps, z);
+
+    float hD = getHeight(x, z - eps);
+    float hU = getHeight(x, z + eps);
+
+    glm::vec3 normal =
+        glm::normalize(glm::vec3(
+            hL - hR,
+            2.0f,
+            hD - hU
+        ));
+
+    return normal;
 }
