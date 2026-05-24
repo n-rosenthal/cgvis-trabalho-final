@@ -418,8 +418,8 @@ int main(int argc, char* argv[])
         256,   // width
         256,   // depth
         1.0f,  // spacing
-        6.0f,  // amplitude
-        0.03f  // frequency
+        3.0f,  // amplitude
+        0.005f  // frequency
     );
     terrain.generate();
 
@@ -429,8 +429,8 @@ int main(int argc, char* argv[])
 
     for (int i = 0; i < rockCount; ++i) {
         // espalhamento no mundo
-        float x = ((float)rand() / RAND_MAX) * 220.0f + 10.0f;
-        float z = ((float)rand() / RAND_MAX) * 220.0f + 10.0f;
+        float x = ((float)rand() / RAND_MAX) * 100.0f + 10.0f;
+        float z = ((float)rand() / RAND_MAX) * 100.0f + 10.0f;
 
         float y = terrain.getHeight(x, z);
 
@@ -438,10 +438,6 @@ int main(int argc, char* argv[])
         float scale =
             0.8f +
             ((float)rand() / RAND_MAX) * 3.5f;
-
-        // empurra a rocha para cima
-        y += scale * 0.8f;
-
 
         // cria rocha
         g_Rocks.emplace_back(
@@ -607,8 +603,10 @@ int main(int argc, char* argv[])
 
         for (auto& rock : g_Rocks)
         {
-            rock.Draw();
+            rock.Draw(g_model_uniform);
         }
+
+        // =========================================================`
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.

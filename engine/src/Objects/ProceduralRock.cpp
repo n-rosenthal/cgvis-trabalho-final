@@ -1,109 +1,124 @@
 #include "Objects/ProceduralRock.hpp"
 
-#include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <cstdlib>
 #include <ctime>
 
-static float randf(float a, float b)
-{
-    return a + (b-a)*(float(rand())/float(RAND_MAX));
-}
-
 ProceduralRock::ProceduralRock(glm::vec3 pos, float scale)
 {
-    position = pos;
+    position  = pos;
     rockScale = scale;
 
     Generate();
     SetupBuffers();
 }
 
+ProceduralRock::~ProceduralRock()
+{
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
+}
+
 void ProceduralRock::Generate()
+{
+    generateCube();
+}
+
+void ProceduralRock::generateCube()
 {
     vertices.clear();
     indices.clear();
 
-    // ============================================================
-    // Base: cubo low-poly
-    // ============================================================
+    float s = 0.5f;
 
-    std::vector<glm::vec3> base =
+    // intensidade da deformação
+    float jitter = rockScale * 0.15f;
+
+    auto randOffset = [&]() -> float
     {
-        {-1,-1,-1},
-        { 1,-1,-1},
-        { 1, 1,-1},
-        {-1, 1,-1},
-
-        {-1,-1, 1},
-        { 1,-1, 1},
-        { 1, 1, 1},
-        {-1, 1, 1},
+        return (
+            ((float) rand() / RAND_MAX) - 0.5f
+        ) * jitter;
     };
 
-    // deformação irregular
-    for (auto& v : base)
+    // =====================================================
+    // VÉRTICES DO CUBO DEFORMADO
+    // =====================================================
+
+    glm::vec3 p0(-s + randOffset(), -s + randOffset(), -s + randOffset());
+    glm::vec3 p1( s + randOffset(), -s + randOffset(), -s + randOffset());
+    glm::vec3 p2( s + randOffset(),  s + randOffset(), -s + randOffset());
+    glm::vec3 p3(-s + randOffset(),  s + randOffset(), -s + randOffset());
+
+    glm::vec3 p4(-s + randOffset(), -s + randOffset(),  s + randOffset());
+    glm::vec3 p5( s + randOffset(), -s + randOffset(),  s + randOffset());
+    glm::vec3 p6( s + randOffset(),  s + randOffset(),  s + randOffset());
+    glm::vec3 p7(-s + randOffset(),  s + randOffset(),  s + randOffset());
+
+    // =====================================================
+    // HELPERS
+    // =====================================================
+
+    auto addTriangle =
+    [&](glm::vec3 a, glm::vec3 b, glm::vec3 c)
     {
-        float noise = randf(0.7f, 1.4f);
-
-        v.x *= noise * randf(0.8f, 1.2f);
-        v.y *= noise * randf(0.7f, 1.3f);
-        v.z *= noise * randf(0.8f, 1.2f);
-
-        // achata levemente
-        v.y *= 0.7f;
-    }
-
-    // ============================================================
-    // Faces trianguladas
-    // ============================================================
-
-    int tris[] =
-    {
-        0,1,2,  2,3,0,
-        4,5,6,  6,7,4,
-        0,4,7,  7,3,0,
-        1,5,6,  6,2,1,
-        3,2,6,  6,7,3,
-        0,1,5,  5,4,0
-    };
-
-    // ============================================================
-    // Flat shading:
-    // duplicamos vértices por triângulo
-    // ============================================================
-
-    for (int i = 0; i < 36; i += 3)
-    {
-        glm::vec3 a = base[tris[i]];
-        glm::vec3 b = base[tris[i+1]];
-        glm::vec3 c = base[tris[i+2]];
-
         glm::vec3 normal =
-            glm::normalize(glm::cross(b-a, c-a));
+            glm::normalize(glm::cross(b - a, c - a));
 
-        RockVertex va;
-        va.position = a * rockScale + position;
-        va.normal = normal;
-        va.texcoords = glm::vec2(0,0);
+        unsigned int start = vertices.size();
 
-        RockVertex vb;
-        vb.position = b * rockScale + position;
-        vb.normal = normal;
-        vb.texcoords = glm::vec2(0,0);
+        vertices.push_back({
+            a,
+            normal,
+            glm::vec2(0.0f, 0.0f)
+        });
 
-        RockVertex vc;
-        vc.position = c * rockScale + position;
-        vc.normal = normal;
-        vc.texcoords = glm::vec2(0,0);
+        vertices.push_back({
+            b,
+            normal,
+            glm::vec2(1.0f, 0.0f)
+        });
 
-        vertices.push_back(va);
-        vertices.push_back(vb);
-        vertices.push_back(vc);
+        vertices.push_back({
+            c,
+            normal,
+            glm::vec2(0.5f, 1.0f)
+        });
 
-        indices.push_back(vertices.size()-3);
-        indices.push_back(vertices.size()-2);
-        indices.push_back(vertices.size()-1);
-    }
+        indices.push_back(start + 0);
+        indices.push_back(start + 1);
+        indices.push_back(start + 2);
+    };
+
+    // =====================================================
+    // 12 TRIÂNGULOS DO CUBO
+    // =====================================================
+
+    // Frente
+    addTriangle(p4, p5, p6);
+    addTriangle(p4, p6, p7);
+
+    // Trás
+    addTriangle(p1, p0, p3);
+    addTriangle(p1, p3, p2);
+
+    // Esquerda
+    addTriangle(p0, p4, p7);
+    addTriangle(p0, p7, p3);
+
+    // Direita
+    addTriangle(p5, p1, p2);
+    addTriangle(p5, p2, p6);
+
+    // Topo
+    addTriangle(p3, p7, p6);
+    addTriangle(p3, p6, p2);
+
+    // Base
+    addTriangle(p0, p1, p5);
+    addTriangle(p0, p5, p4);
 }
 
 void ProceduralRock::SetupBuffers()
@@ -114,34 +129,51 @@ void ProceduralRock::SetupBuffers()
 
     glBindVertexArray(VAO);
 
+    // =====================================================
+    // VBO
+    // =====================================================
+
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
     glBufferData(
         GL_ARRAY_BUFFER,
-        vertices.size()*sizeof(RockVertex),
+        vertices.size() * sizeof(RockVertex),
         vertices.data(),
         GL_STATIC_DRAW
     );
 
+    // =====================================================
+    // EBO
+    // =====================================================
+
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
     glBufferData(
         GL_ELEMENT_ARRAY_BUFFER,
-        indices.size()*sizeof(unsigned int),
+        indices.size() * sizeof(unsigned int),
         indices.data(),
         GL_STATIC_DRAW
     );
 
-    // posição
+    // =====================================================
+    // POSITION
+    // =====================================================
+
     glVertexAttribPointer(
         0,
         3,
         GL_FLOAT,
         GL_FALSE,
         sizeof(RockVertex),
-        (void*)0
+        (void*)offsetof(RockVertex, position)
     );
+
     glEnableVertexAttribArray(0);
 
-    // normal
+    // =====================================================
+    // NORMAL
+    // =====================================================
+
     glVertexAttribPointer(
         1,
         3,
@@ -150,9 +182,13 @@ void ProceduralRock::SetupBuffers()
         sizeof(RockVertex),
         (void*)offsetof(RockVertex, normal)
     );
+
     glEnableVertexAttribArray(1);
 
-    // texcoord
+    // =====================================================
+    // TEXCOORDS
+    // =====================================================
+
     glVertexAttribPointer(
         2,
         2,
@@ -161,13 +197,33 @@ void ProceduralRock::SetupBuffers()
         sizeof(RockVertex),
         (void*)offsetof(RockVertex, texcoords)
     );
+
     glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
 }
 
-void ProceduralRock::Draw()
+void ProceduralRock::Draw(GLuint model_uniform)
 {
+    model = glm::mat4(1.0f);
+
+    model = glm::translate(
+        model,
+        position
+    );
+
+    model = glm::scale(
+        model,
+        glm::vec3(rockScale)
+    );
+
+    glUniformMatrix4fv(
+        model_uniform,
+        1,
+        GL_FALSE,
+        glm::value_ptr(model)
+    );
+
     glBindVertexArray(VAO);
 
     glDrawElements(
