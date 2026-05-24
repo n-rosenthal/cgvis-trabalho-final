@@ -56,6 +56,9 @@
 // Classe `Tree`: árvores geradas aleatoriamente
 #include "Tree.hpp"
 
+// Classe `ProceduralTerrain`: terreno gerado proceduralmente
+#include "Objects/ProceduralTerrain.hpp"
+
 /** função inline para obter o caminho para algum asset (textura, modelo) 
     uso:
     	// carregar uma textura
@@ -503,20 +506,30 @@ int main(int argc, char* argv[])
         #define PLANE  2
         #define BIRD  3
         
+        // Geração do TERRENO procedural
+        ProceduralTerrain terrain(
+            256,   // width
+            256,   // depth
+            1.0f,  // spacing
+            2.0f,  // amplitude
+            0.05f  // frequency
+        );
+
+        terrain.generate();
+
+
         g_Tree.draw(g_model_uniform, g_object_id_uniform, SPHERE);
         
         // Desenhamos o modelo do coelho usando a transformação controlada pela classe Bird
         g_Bird.setModelMatrixUniform(g_model_uniform, view, projection);
-       glUniform1i(g_object_id_uniform, BIRD);
+        glUniform1i(g_object_id_uniform, BIRD);
         DrawVirtualObject("the_bird");
         
 
-        // Desenhamos o plano do chão
-        model = Matrix_Translate(0.0f,-1.1f,0.0f) * Matrix_Scale(10.0f,1.0f,10.0f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        // Desenhamos o TERRENO proceduralmente gerado
         glUniform1i(g_object_id_uniform, PLANE);
-        DrawVirtualObject("the_plane");
- 
+
+        terrain.draw(g_model_uniform);
 
 
 
@@ -671,7 +684,7 @@ void LoadShadersFromFiles()
     //       |
     //       o-- shader_fragment.glsl
     //
-    	GLuint vertex_shader_id   = LoadShader_Vertex(vert_path.c_str());
+    GLuint vertex_shader_id   = LoadShader_Vertex(vert_path.c_str());
 	GLuint fragment_shader_id = LoadShader_Fragment(frag_path.c_str());
 
 

@@ -6,13 +6,13 @@
 
 Bird::Bird()
     : position(0.0f, 0.0f, 0.0f),
-      rotationY(0.0f),
-      rotationX(0.0f),
-      speed(0.0f),
-      verticalSpeed(0.0f),
-      moveSpeed(5.0f),
-      rotationSpeed(2.0f),
-      verticalSpeedFactor(3.0f) {}
+        rotationY(0.0f),
+        rotationX(0.0f),
+        speed(0.0f),
+        verticalSpeed(0.0f),
+        moveSpeed(5.0f),
+        rotationSpeed(2.0f),
+        verticalSpeedFactor(3.0f) {}
 
 
 void Bird::update(float dt, GLFWwindow* window) {
