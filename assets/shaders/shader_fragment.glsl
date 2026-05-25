@@ -185,11 +185,6 @@ void main()
             Kd0 = vec3(1.0, 1.0, 1.0); // Branco
         }
     }
-    else if ( object_id == 999 )
-    {
-        // Cor branca sólida para fundo de UI
-        Kd0 = vec3(1.0, 1.0, 1.0);
-    }
 
     // Equação de Iluminação
     float lambert = max(0,dot(n,l));
