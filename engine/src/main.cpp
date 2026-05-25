@@ -167,6 +167,7 @@ void TextRendering_ShowEulerAngles(GLFWwindow* window);
 void TextRendering_ShowProjection(GLFWwindow* window);
 void TextRendering_ShowFramesPerSecond(GLFWwindow* window);
 void TextRendering_ShowDebugPanel(GLFWwindow* window);
+void TextRendering_ShowControlsPopup(GLFWwindow* window);
 
 // Funções callback para comunicação com o sistema operacional e interação do
 // usuário. Veja mais comentários nas definições das mesmas, abaixo.
@@ -277,6 +278,14 @@ int NumberOfTrees = 30;
  Tree g_Tree;
 
  Letter g_Letter;
+
+// Variáveis para o target
+glm::vec3 g_TargetPosition = glm::vec3(0.0f, -1.0f, 0.0f); // Posição do target no plano
+
+// Variáveis de controle para UI
+bool g_ShowInfoPanel = true;  // Mostra painel de informações
+bool g_ShowControlsPopup = false;  // Mostra popup de controls
+bool g_IsPaused = false;  // Jogo pausado
 
 int main(int argc, char* argv[])
 {
@@ -455,10 +464,14 @@ int main(int argc, char* argv[])
         float current_frame_time = (float)glfwGetTime();
         float dt = current_frame_time - last_frame_time;
         last_frame_time = current_frame_time;
-        g_Bird.update(dt, window);
 
-        // Atualizar física da letter usando a classe Letter
-        g_Letter.update(dt, g_Bird.getPosition(), g_Bird.getRotationY(), g_Letter.isCaptured()); 
+        // Só atualiza física se não estiver pausado
+        if (!g_IsPaused) {
+            g_Bird.update(dt, window);
+
+            // Atualizar física da letter usando a classe Letter
+            g_Letter.update(dt, g_Bird.getPosition(), g_Bird.getRotationY(), g_Letter.isCaptured());
+        } 
 
         // Computamos a posição da câmera utilizando coordenadas esféricas.  As
         // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
@@ -538,6 +551,13 @@ int main(int argc, char* argv[])
 
         // Desenhamos o cilindro (the_letter) usando a classe Letter
         g_Letter.draw(g_model_uniform, g_object_id_uniform);
+
+        // Desenhamos o target (círculo com vermelho e branco) no plano
+        model = Matrix_Translate(g_TargetPosition.x, g_TargetPosition.y, g_TargetPosition.z);
+        model = model * Matrix_Scale(2.0f, 0.1f, 2.0f); // Círculo achatado no plano
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, BUNNY); // Usa object_id do bunny para cor
+        DrawVirtualObject("sphere"); // Usa sphere como base para o target
         
 
         // Desenhamos o plano do chão
@@ -560,8 +580,11 @@ int main(int argc, char* argv[])
         // por segundo (frames per second).
         TextRendering_ShowFramesPerSecond(window);
 
-        // Imprimimos o painel de depuração com métricas de voo
+        // Imprimimos o painel de informações no canto superior esquerdo
         TextRendering_ShowDebugPanel(window);
+
+        // Imprimimos o popup de controles no meio da tela se estiver ativo
+        TextRendering_ShowControlsPopup(window);
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
@@ -1369,16 +1392,34 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         g_AngleZ += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
     }
 
-    // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.
+    // Se o usuário apertar a tecla espaço, captura ou solta a letter
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
     {
-        g_AngleX = 0.0f;
-        g_AngleY = 0.0f;
-        g_AngleZ = 0.0f;
-        g_ForearmAngleX = 0.0f;
-        g_ForearmAngleZ = 0.0f;
-        g_TorsoPositionX = 0.0f;
-        g_TorsoPositionY = 0.0f;
+        if (g_Letter.isCaptured()) {
+            // Se a letter está capturada e o pássaro está voando, solta a letter
+            g_Letter.setCaptured(false);
+        } else {
+            // Se a letter não está capturada, verifica se o pássaro está perto para capturar
+            glm::vec3 bird_pos = g_Bird.getPosition();
+            glm::vec3 letter_pos = g_Letter.getPosition();
+            float distance = glm::length(bird_pos - letter_pos);
+            if (distance < 2.0f) { // Distância máxima para capturar
+                g_Letter.setCaptured(true);
+            }
+        }
+    }
+
+    // Se o usuário apertar a tecla M, mostra/esconde popup de controls e pausa o jogo
+    if (key == GLFW_KEY_M && action == GLFW_PRESS)
+    {
+        g_ShowControlsPopup = !g_ShowControlsPopup;
+        g_IsPaused = g_ShowControlsPopup;
+    }
+
+    // Se o usuário apertar a tecla I, mostra/esconde painel de informações
+    if (key == GLFW_KEY_I && action == GLFW_PRESS)
+    {
+        g_ShowInfoPanel = !g_ShowInfoPanel;
     }
 
     // Se o usuário apertar a tecla P, utilizamos projeção perspectiva.
@@ -1569,19 +1610,8 @@ void TextRendering_ShowFramesPerSecond(GLFWwindow* window)
 
 void TextRendering_ShowDebugPanel(GLFWwindow* window)
 {
-    if (!g_ShowDebugPanel)
+    if (!g_ShowInfoPanel)
     {
-        float lineheight = TextRendering_LineHeight(window);
-        float charwidth = TextRendering_CharWidth(window);
-
-        TextRendering_PrintString(
-            window,
-            "Pressione M para mostrar o painel",
-            -1.0f + charwidth,
-            1.0f - lineheight,
-            1.0f
-        );
-
         return;
     }
 
@@ -1598,40 +1628,76 @@ void TextRendering_ShowDebugPanel(GLFWwindow* window)
     bool isDayTime = g_ManualDayNight ? g_DayTime : actualDayTime;
     const char* timeMode = g_ManualDayNight ? "Manual" : "Automatico";
 
-    // Título do painel
-    TextRendering_PrintString(window, "=== PAINEL DE INFORMAÇÕES ===", -1.0f + charwidth, 1.0f - lineheight, 1.0f);
+    // Calcular distância entre letter e target
+    float letter_target_distance = glm::length(g_Letter.getPosition() - g_TargetPosition);
+
+    // Título do painel de informações
+    TextRendering_PrintString(window, "=== INFORMAÇÕES ===", -1.0f + charwidth, 1.0f - lineheight, 1.0f);
 
     char buffer[256];
 
-     glm::vec3 birdPosition = g_Bird.getPosition();
-    snprintf(buffer, 256, "Posicao: X=%.2f Y=%.2f Z=%.2f", birdPosition.x, birdPosition.y, birdPosition.z);
+    glm::vec3 birdPosition = g_Bird.getPosition();
+    snprintf(buffer, 256, "Posicao Bird: X=%.2f Y=%.2f Z=%.2f", birdPosition.x, birdPosition.y, birdPosition.z);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 2*lineheight, 1.0f);
+
+    glm::vec3 letterPosition = g_Letter.getPosition();
+    snprintf(buffer, 256, "Posicao Letter: X=%.2f Y=%.2f Z=%.2f", letterPosition.x, letterPosition.y, letterPosition.z);
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 3*lineheight, 1.0f);
+
+    snprintf(buffer, 256, "Distancia Letter-Target: %.2f", letter_target_distance);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 4*lineheight, 1.0f);
+
+    snprintf(buffer, 256, "Letter Capturada: %s", g_Letter.isCaptured() ? "SIM" : "NAO");
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 5*lineheight, 1.0f);
 
     snprintf(buffer, 256, "Rotacao Y: %.2f rad (%.1f graus)",
             g_Bird.getRotationY(),
             g_Bird.getRotationY() * 180.0f / 3.141592f);
-    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 4*lineheight, 1.0f);
-
-    snprintf(buffer, 256, "Clima: %s (%s)", isDayTime ? "DIA" : "NOITE", timeMode);
-    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 5*lineheight, 1.0f);
-
-    snprintf(buffer, 256, "Relogio: %02d:%02d:%02d", hour, minute, second);
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 6*lineheight, 1.0f);
 
-    snprintf(buffer, 256, "Camera: %s", g_BirdView ? "Passaro" : "Livre");
+    snprintf(buffer, 256, "Clima: %s (%s)", isDayTime ? "DIA" : "NOITE", timeMode);
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 7*lineheight, 1.0f);
 
-    TextRendering_PrintString(window, "Controles:", -1.0f + charwidth, 1.0f - 9*lineheight, 1.0f);
-    TextRendering_PrintString(window, "W: acelerar para frente", -1.0f + charwidth, 1.0f - 10*lineheight, 1.0f);
-    TextRendering_PrintString(window, "S: frear/parar", -1.0f + charwidth, 1.0f - 11*lineheight, 1.0f);
-    TextRendering_PrintString(window, "A/D: virar esquerda/direita", -1.0f + charwidth, 1.0f - 12*lineheight, 1.0f);
-    TextRendering_PrintString(window, "Q/E: subir/descer", -1.0f + charwidth, 1.0f - 13*lineheight, 1.0f);
-    TextRendering_PrintString(window, "F: camera do passaro", -1.0f + charwidth, 1.0f - 14*lineheight, 1.0f);
-    TextRendering_PrintString(window, "L: alternar dia/noite", -1.0f + charwidth, 1.0f - 15*lineheight, 1.0f);
-    TextRendering_PrintString(window, "P/O: perspectiva/ortografica", -1.0f + charwidth, 1.0f - 16*lineheight, 1.0f);
-    TextRendering_PrintString(window, "R: recarregar shaders", -1.0f + charwidth, 1.0f - 17*lineheight, 1.0f);
-    TextRendering_PrintString(window, "M: mostrar/ocultar painel", -1.0f + charwidth, 1.0f - 18*lineheight, 1.0f);
-    TextRendering_PrintString(window, "ESC: sair", -1.0f + charwidth, 1.0f - 19*lineheight, 1.0f);
+    snprintf(buffer, 256, "Relogio: %02d:%02d:%02d", hour, minute, second);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 8*lineheight, 1.0f);
+
+    snprintf(buffer, 256, "Estado: %s", g_IsPaused ? "PAUSADO" : "RODANDO");
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 9*lineheight, 1.0f);
+
+    snprintf(buffer, 256, "Camera: %s", g_BirdView ? "Passaro" : "Livre");
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 10*lineheight, 1.0f);
+}
+
+void TextRendering_ShowControlsPopup(GLFWwindow* window)
+{
+    if (!g_ShowControlsPopup)
+    {
+        return;
+    }
+
+    float lineheight = TextRendering_LineHeight(window);
+    float charwidth = TextRendering_CharWidth(window);
+
+    // Popup no meio da tela
+    float center_x = 0.0f;
+    float center_y = 0.0f;
+    int num_lines = 12;
+    float start_y = center_y + (num_lines * lineheight) / 2.0f;
+
+    TextRendering_PrintString(window, "=== CONTROLES ===", center_x - 8.0f * charwidth, start_y, 1.0f);
+    TextRendering_PrintString(window, "W: acelerar para frente", center_x - 8.0f * charwidth, start_y - 2*lineheight, 1.0f);
+    TextRendering_PrintString(window, "S: frear/parar", center_x - 8.0f * charwidth, start_y - 3*lineheight, 1.0f);
+    TextRendering_PrintString(window, "A/D: virar esquerda/direita", center_x - 8.0f * charwidth, start_y - 4*lineheight, 1.0f);
+    TextRendering_PrintString(window, "Q/E: subir/descer", center_x - 8.0f * charwidth, start_y - 5*lineheight, 1.0f);
+    TextRendering_PrintString(window, "SPACE: capturar/soltar letter", center_x - 8.0f * charwidth, start_y - 6*lineheight, 1.0f);
+    TextRendering_PrintString(window, "F: camera do passaro", center_x - 8.0f * charwidth, start_y - 7*lineheight, 1.0f);
+    TextRendering_PrintString(window, "L: alternar dia/noite", center_x - 8.0f * charwidth, start_y - 8*lineheight, 1.0f);
+    TextRendering_PrintString(window, "P/O: perspectiva/ortografica", center_x - 8.0f * charwidth, start_y - 9*lineheight, 1.0f);
+    TextRendering_PrintString(window, "R: recarregar shaders", center_x - 8.0f * charwidth, start_y - 10*lineheight, 1.0f);
+    TextRendering_PrintString(window, "M: mostrar/ocultar este painel", center_x - 8.0f * charwidth, start_y - 11*lineheight, 1.0f);
+    TextRendering_PrintString(window, "I: mostrar/ocultar informacoes", center_x - 8.0f * charwidth, start_y - 12*lineheight, 1.0f);
+    TextRendering_PrintString(window, "ESC: sair", center_x - 8.0f * charwidth, start_y - 13*lineheight, 1.0f);
+    TextRendering_PrintString(window, "Pressione M para fechar", center_x - 8.0f * charwidth, start_y - 14*lineheight, 1.0f);
 }
 
 // Função para debugging: imprime no terminal todas informações de um modelo
