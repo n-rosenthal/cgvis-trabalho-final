@@ -7,7 +7,7 @@ extern void DrawVirtualObject(const char* object_name);
 Letter::Letter()
     : position(5.0f, -0.9f, 5.0f),
       velocity(0.0f, 0.0f, 0.0f),
-      size(0.25f, 0.25f, 0.25f),
+      size(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE),
       captured(false) {}
 
 void Letter::update(float dt, const glm::vec3& bird_position, float bird_rotation, bool bird_captured) {

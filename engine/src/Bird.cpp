@@ -12,7 +12,7 @@ Bird::Bird()
       rotationX(0.0f),
       speed(0.0f),
       verticalSpeed(0.0f),
-      size(0.5f, 0.5f, 0.5f),
+      size(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE),
       moveSpeed(5.0f),
       rotationSpeed(2.0f),
       verticalSpeedFactor(3.0f),
@@ -78,7 +78,9 @@ void Bird::draw(GLuint model_uniform, GLuint object_id_uniform) const {
         model = glm::translate(model, draw_position);
         model = glm::rotate(model, rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::rotate(model, rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::scale(model, size); // Usa tamanho configurado
+        // Usa tamanho ajustado para standing (menor para corrigir proporção)
+        glm::vec3 standing_size = size * STANDING_SCALE_FACTOR;
+        model = glm::scale(model, standing_size);
         glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
         DrawVirtualObject("the_bird2");
         DrawVirtualObject("Object_color_0.031360-0.009440-0.009440.jpg");

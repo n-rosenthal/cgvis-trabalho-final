@@ -40,6 +40,10 @@ public:
     glm::vec3 getSize() const { return size; }
     void setSize(const glm::vec3& s) { size = s; }
 
+    // Constantes externas para tamanho
+    static constexpr float DEFAULT_SIZE = 0.5f;
+    static constexpr float STANDING_SCALE_FACTOR = 0.6f;
+
 private:
     glm::vec3 position;      // X, Y, Z
     float rotationY;         // ângulo em radianos (para onde olha)

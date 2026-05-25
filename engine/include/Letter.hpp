@@ -32,6 +32,9 @@ public:
     glm::vec3 getSize() const { return size; }
     void setSize(const glm::vec3& s) { size = s; }
 
+    // Constante para tamanho padrão
+    static constexpr float DEFAULT_SIZE = 0.25f;
+
 private:
     glm::vec3 position;      // X, Y, Z
     glm::vec3 velocity;      // Velocidade da letter
