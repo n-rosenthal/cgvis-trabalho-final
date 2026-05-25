@@ -41,8 +41,8 @@ public:
     void setSize(const glm::vec3& s) { size = s; }
 
     // Constantes externas para tamanho
-    static constexpr float DEFAULT_SIZE = 0.5f;
-    static constexpr float STANDING_SCALE_FACTOR = 0.6f;
+    static constexpr float DEFAULT_SIZE = 1.2f;
+    static constexpr float STANDING_SCALE_FACTOR = 0.3f;
 
 private:
     glm::vec3 position;      // X, Y, Z

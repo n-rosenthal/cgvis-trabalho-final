@@ -283,14 +283,8 @@ const float TARGET_CAPTURE_DISTANCE = 2.0f;  // Distância máxima para capturar
 const float TARGET_SCALE_X = 2.0f;           // Escala X do target (diâmetro)
 const float TARGET_SCALE_Y = 0.1f;           // Escala Y do target (espessura)
 const float TARGET_SCALE_Z = 2.0f;           // Escala Z do target (diâmetro)
-const float TARGET_Y_POSITION = -0.5f;       // Altura do target acima do plano
+const float TARGET_Y_POSITION = 1.0f;       // Altura do target acima do plano
 const float CONTROLS_TEXT_OFFSET = 8.0f;      // Offset para centralizar texto do popup de controles
-
-// Constantes para tamanhos
-const float BIRD_SIZE_FLYING = 0.5f;         // Tamanho do pássaro voando
-const float BIRD_SIZE_STANDING = 0.3f;       // Tamanho do pássaro standing (parado)
-const float BIRD_STANDING_SCALE_FACTOR = 0.6f; // Fator de escala para standing vs voando
-const float LETTER_SIZE = 0.25f;             // Tamanho da carta
 
 // Variáveis para o target
 glm::vec3 g_TargetPosition = glm::vec3(0.0f, TARGET_Y_POSITION, 0.0f); // Posição do target no plano
