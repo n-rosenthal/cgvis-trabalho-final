@@ -1,27 +1,30 @@
-
 #include "Bird.hpp"
+
 #include <cmath>
+
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 Bird::Bird()
-    : position(0.0f, 0.0f, 0.0f),
-        rotationY(0.0f),
-        rotationX(0.0f),
-        rotationZ(0.0f),
-        velocity(0.0f),
-        acceleration(0.0f),
-        speed(0.0f),
-        moveSpeed(5.0f),
-        rotationSpeed(2.0f) {}
+    : position(0.0f, 5.0f, 0.0f),
+      rotationY(0.0f),
+      rotationX(0.0f),
+      rotationZ(0.0f),
+      velocity(0.0f),
+      acceleration(0.0f),
+      speed(12.0f),
+      moveSpeed(12.0f),
+      rotationSpeed(2.0f)
+{
+}
 
 glm::vec3 Bird::getForward() const
 {
     glm::vec3 forward;
 
-    forward.x = sin(rotationY) * cos(rotationX);
-    forward.y = sin(rotationX);
-    forward.z = cos(rotationY) * cos(rotationX);
+    forward.x = sin(rotationY);
+    forward.y = 0.0f;
+    forward.z = cos(rotationY);
 
     return glm::normalize(forward);
 }
@@ -41,7 +44,7 @@ void Bird::update(float dt, GLFWwindow* window)
         yawInput = -1.0f;
 
     // =========================================
-    // ACELERAÇÃO / FREIO
+    // VELOCIDADE
     // =========================================
 
     float throttle = 0.0f;
@@ -52,17 +55,13 @@ void Bird::update(float dt, GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         throttle = -1.0f;
 
-    speed += throttle * 12.0f * dt;
+    speed += throttle * 18.0f * dt;
 
-    // drag aerodinâmico
-    speed *= 0.992f;
+    // drag
+    speed *= 0.996f;
 
     // limites
-    if (speed < 4.0f)
-        speed = 4.0f;
-
-    if (speed > 30.0f)
-        speed = 30.0f;
+    speed = glm::clamp(speed, 6.0f, 32.0f);
 
     // =========================================
     // YAW
@@ -71,26 +70,22 @@ void Bird::update(float dt, GLFWwindow* window)
     rotationY += yawInput * rotationSpeed * dt;
 
     // =========================================
-    // ROLL AUTOMÁTICO (banking)
+    // ROLL AUTOMÁTICO
     // =========================================
 
     float targetRoll =
-        yawInput * glm::radians(40.0f);
+        yawInput * glm::radians(45.0f);
 
     rotationZ +=
         (targetRoll - rotationZ)
-        * 3.5f
+        * 4.0f
         * dt;
 
     // =========================================
-    // FORWARD
+    // DIREÇÃO
     // =========================================
 
     glm::vec3 forward = getForward();
-
-    // =========================================
-    // VELOCIDADE HORIZONTAL
-    // =========================================
 
     velocity.x = forward.x * speed;
     velocity.z = forward.z * speed;
@@ -99,25 +94,37 @@ void Bird::update(float dt, GLFWwindow* window)
     // GRAVIDADE
     // =========================================
 
-    velocity.y -= 9.81f * 0.45f * dt;
+    velocity.y -= 14.0f * dt;
 
     // =========================================
-    // LIFT (sustentação)
+    // LIFT
     // =========================================
 
     float lift =
-        speed * speed * 0.018f;
+        speed * 0.55f;
 
     velocity.y += lift * dt;
 
     // =========================================
-    // SUBIDA AUTOMÁTICA EM CURVAS
+    // FLAP (ESPAÇO)
     // =========================================
 
-    velocity.y +=
-        abs(rotationZ)
-        * 1.2f
-        * dt;
+    static bool flapPressedLastFrame = false;
+
+    bool flapPressed =
+        glfwGetKey(window, GLFW_KEY_SPACE)
+        == GLFW_PRESS;
+
+    // impulso apenas no instante do clique
+    if (flapPressed && !flapPressedLastFrame)
+    {
+        velocity.y += 6.5f;
+
+        // pitch instantâneo
+        rotationX += glm::radians(10.0f);
+    }
+
+    flapPressedLastFrame = flapPressed;
 
     // =========================================
     // PITCH VISUAL
@@ -125,15 +132,21 @@ void Bird::update(float dt, GLFWwindow* window)
 
     float targetPitch =
         glm::clamp(
-            velocity.y * 0.08f,
-            glm::radians(-25.0f),
-            glm::radians(25.0f)
+            velocity.y * 0.05f,
+            glm::radians(-35.0f),
+            glm::radians(35.0f)
         );
 
     rotationX +=
         (targetPitch - rotationX)
-        * 2.5f
+        * 3.0f
         * dt;
+
+    // =========================================
+    // DAMPING VERTICAL
+    // =========================================
+
+    velocity.y *= 0.995f;
 
     // =========================================
     // MOVIMENTO
@@ -142,7 +155,7 @@ void Bird::update(float dt, GLFWwindow* window)
     position += velocity * dt;
 
     // =========================================
-    // LIMITES
+    // CHÃO
     // =========================================
 
     if (position.y < -1.0f)
@@ -153,9 +166,13 @@ void Bird::update(float dt, GLFWwindow* window)
             velocity.y = 0.0f;
     }
 
-    if (position.y > 80.0f)
+    // teto
+    if (position.y > 120.0f)
     {
-        position.y = 80.0f;
+        position.y = 120.0f;
+
+        if (velocity.y > 0.0f)
+            velocity.y = 0.0f;
     }
 }
 
@@ -167,34 +184,31 @@ void Bird::setModelMatrixUniform(
 {
     glm::mat4 model = glm::mat4(1.0f);
 
-    // posição do pássaro
+    // posição
     model = glm::translate(model, position);
 
-    // Corração da orientação do pássaro
-    // model = glm::rotate(model, rotationY, glm::vec3(0,1,0));
-    // model = glm::rotate(model, rotationX, glm::vec3(1,0,0));
-    // model = glm::rotate(model, rotationZ, glm::vec3(0,0,1));
+    // correção do modelo OBJ
     model = glm::rotate(
         model,
         glm::radians(90.0f),
         glm::vec3(0.0f, 1.0f, 0.0f)
     );
-    
-    // yaw (virar esquerda/direita)
+
+    // yaw
     model = glm::rotate(
         model,
         rotationY,
         glm::vec3(0.0f, 1.0f, 0.0f)
     );
 
-    // pitch (subir/descer)
+    // pitch
     model = glm::rotate(
         model,
         rotationX,
         glm::vec3(1.0f, 0.0f, 0.0f)
     );
 
-    // roll (inclinação nas curvas)
+    // roll
     model = glm::rotate(
         model,
         rotationZ,

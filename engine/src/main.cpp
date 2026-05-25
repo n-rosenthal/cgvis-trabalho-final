@@ -419,11 +419,11 @@ int main(int argc, char* argv[])
 
     //  TERRENO geração procedural
     ProceduralTerrain terrain(
-        256,   // width
-        256,   // depth
-        1.0f,  // spacing
-        3.0f,  // amplitude
-        0.005f  // frequency
+        512,   // width
+        512,   // depth
+        2.0f,  // spacing
+        4.0f,  // amplitude
+        0.05f  // frequency
     );
     terrain.generate();
 
@@ -670,7 +670,10 @@ int main(int argc, char* argv[])
                 g_Bird.getPosition()
             );
 
-            ring.draw(g_model_uniform);
+            //  Desabilita e habilita face culling
+            glDisable(GL_CULL_FACE);
+            ring.draw(g_model_uniform, view);
+            glEnable(GL_CULL_FACE);
         }
 
         // =========================================================`

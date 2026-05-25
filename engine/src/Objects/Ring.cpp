@@ -1,5 +1,6 @@
 #include "Objects/Ring.hpp"
 
+#include <GLFW/glfw3.h>
 #include <vector>
 #include <cmath>
 
@@ -57,7 +58,7 @@ bool Ring::checkCollision(glm::vec3 birdPos)
     {
         collected = true;
 
-        // TODO:
+        // TODO:if (collected)
         // tocar som aqui
         // playSound("ring.wav");
 
@@ -72,20 +73,35 @@ bool Ring::isDead() const
     return destroyTimer > 1.0f;
 }
 
-void Ring::draw(GLuint model_uniform)
-{
-    float pulse =
-        1.0f + sin(pulseTime * 4.0f) * 0.08f;
+void Ring::draw(
+    GLuint model_uniform,
+    const glm::mat4& view
+){
+    //  Pulsação do anel
+    float pulse = 1.0f + sin(pulseTime * 4.0f) * 0.08f;
 
+    //  Matriz de transformação do anel
     glm::mat4 model = glm::mat4(1.0f);
 
+    //  Translação do anel à posição correta
     model = glm::translate(model, position);
 
-    model = glm::scale(
-        model,
+    // billboard
+    glm::mat4 billboard = glm::inverse(view);
+
+    // remove translação
+    billboard[3] = glm::vec4(0,0,0,1);
+
+    // aplica billboard
+    model *= billboard;
+
+    //  Escala do anel
+    model *= glm::scale(
+        glm::mat4(1.0f),
         glm::vec3(scale * pulse)
     );
 
+    //  Envia a matriz de modelagem para o shader
     glUniformMatrix4fv(
         model_uniform,
         1,
@@ -93,30 +109,31 @@ void Ring::draw(GLuint model_uniform)
         glm::value_ptr(model)
     );
 
+    //  Desenha o anel
     glBindVertexArray(VAO);
-
     glDrawElements(
         GL_TRIANGLES,
         indexCount,
         GL_UNSIGNED_INT,
         0
     );
-
     glBindVertexArray(0);
 }
 
 void Ring::setupMesh()
 {
+    //  Geração da geometria
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
 
-    const int segments = 64;
+    //  Quantidade de segmentos
+    const int segments = 128;
 
+    //  Raio externo e interno
     float outerRadius = radius;
-    float innerRadius = radius * 0.75f;
+    float innerRadius = radius * 0.55f;
 
-    for (int i = 0; i <= segments; i++)
-    {
+    for (int i = 0; i <= segments; i++) {
         float theta =
             (float)i / (float)segments
             * 2.0f
@@ -156,8 +173,7 @@ void Ring::setupMesh()
         vertices.push_back(1.0f);
     }
 
-    for (int i = 0; i < segments; i++)
-    {
+    for (int i = 0; i < segments; i++) {
         int start = i * 2;
 
         indices.push_back(start);

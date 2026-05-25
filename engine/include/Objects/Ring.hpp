@@ -8,7 +8,7 @@ public:
     Ring(glm::vec3 pos, float radius);
 
     void update(float dt);
-    void draw(GLuint model_uniform);
+    void draw(GLuint model_uniform, const glm::mat4& view);
     bool checkCollision(glm::vec3 birdPos);
     bool isDead() const;
 
