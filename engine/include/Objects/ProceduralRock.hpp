@@ -24,6 +24,12 @@ public:
 
     void Draw(GLuint model_uniform);
 
+    //  Colisão: retorna true se o ponto estiver dentro do rocha
+    bool checkCollision(glm::vec3 point, float radius);
+
+    //  Getter: posição da rocha
+    glm::vec3 getPosition() const { return position; }
+
 private:
 
     // =====================================================
@@ -45,6 +51,7 @@ private:
     GLuint VBO = 0;
     GLuint EBO = 0;
 
+    bool collided = false;
     glm::vec3 position;
     float rockScale;
 

@@ -428,9 +428,9 @@ int main(int argc, char* argv[])
     ProceduralTerrain terrain(
         512,   // width
         512,   // depth
-        2.0f,  // spacing
-        4.0f,  // amplitude
-        0.05f  // frequency
+        3.0f,  // spacing
+        2.5f,  // amplitude
+        0.025f  // frequency
     );
     terrain.generate();
 
@@ -604,8 +604,8 @@ int main(int argc, char* argv[])
 
         // Note que, no sistema de coordenadas da câmera, os planos near e far
         // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
-        float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -50.0f; // Posição do "far plane"
+        float nearplane = -0.1f;    // Posição do "near plane"
+        float farplane  = -128.0f;  // Posição do "far plane"
 
         if (g_UsePerspectiveProjection)
         {
@@ -664,9 +664,55 @@ int main(int argc, char* argv[])
         );
 
         glUniform1i(g_object_id_uniform, BIRD);
-
         DrawVirtualObject("the_bird");
 
+        // =========================================
+        // PÁSSARO :: COLISÃO COM ROCHAS
+        // =========================================
+
+        //  Depois de desenhar o pássaro, vamos obter sua posição
+        //  e seu raio de colisão, a fim de verificar se este
+        //  está em colisão com algum objeto
+        float birdRadius = g_Bird.collisionRadius;
+
+        //  Decrementa o cooldown de colisão se não for zero
+        if (g_Bird.collisionCooldown > 0.0f)
+            g_Bird.collisionCooldown -= dt;
+
+        if (g_Bird.terrainCollisionCooldown > 0.0f) 
+            g_Bird.terrainCollisionCooldown -= dt;
+
+        // =========================================
+        // PÁSSARO :: COLISÃO COM TERRENO
+        // =========================================
+        // Altura do terreno em relação ao pássaro
+        float terrainHeight = terrain.getHeight(
+                birdPos.x,
+                birdPos.z
+        );
+
+        // offset do corpo do pássaro
+        float birdBottomOffset = 0.6f;
+
+        if (birdPos.y - birdBottomOffset <= terrainHeight) {
+            glm::vec3 terrainNormal =
+                terrain.getNormal(
+                    birdPos.x,
+                    birdPos.z
+                );
+
+            bool collided = g_Bird.onTerrainCollision(
+                    terrainHeight,
+                    terrainNormal
+                );
+
+            if (collided)
+            {
+                g_Sound.play(
+                    "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
+                );
+            }
+        }
         // =========================================================
         // TERRENO PROCEDURAL
         // =========================================================
@@ -696,6 +742,17 @@ int main(int argc, char* argv[])
         for (auto& rock : g_Rocks)
         {
             rock.Draw(g_model_uniform);
+
+            //  para cada rocha, verificar se há colisão com o pássaro
+            if (rock.checkCollision(birdPos, birdRadius)) {
+                //  se houver, toque o som de colisão pássaro-pedra
+                g_Sound.play("assets/audio/cartoonish-stone-sfx-slow.wav");
+
+                // colisão do pássaro contra rocha
+                g_Bird.onCollision(
+                    rock.getPosition()
+                );
+            }
         }
 
         // =========================================================

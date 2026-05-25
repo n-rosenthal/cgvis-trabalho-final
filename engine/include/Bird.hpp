@@ -1,56 +1,136 @@
-/** Header para implementação da Ave controlada pelo usuário
-*/
+/** Header para implementação da Ave controlada pelo usuário */
 
 #ifndef BIRD_HPP
 #define BIRD_HPP
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
 #include <glm/glm.hpp>
 
-class Bird {
-    /** A ave controlada pelo usuário */
+class Bird
+{
 public:
-    // Construtor
+
+    // =========================================================
+    // CONSTRUTOR
+    // =========================================================
+
     Bird();
 
-    //  Atualiza o estado da ave
+    // =========================================================
+    // UPDATE
+    // =========================================================
+
+    // Atualiza física e controles da ave
     void update(float dt, GLFWwindow* window);
 
-    // Desenha a ave
-    void draw(GLuint model_uniform) const; 
+    // =========================================================
+    // RENDER
+    // =========================================================
 
-    // Getters
-    //  Retorna a posição atual da ave
-    glm::vec3 getPosition() const { return position; }
+    // Envia a matriz de modelagem do pássaro
+    void setModelMatrixUniform(
+        GLuint model_uniform,
+        const glm::mat4& view,
+        const glm::mat4& projection
+    ) const;
 
-    // Retorna a velocidade atual da ave
-    float getSpeed() const { return speed; }
+    // =========================================================
+    // COLISÃO
+    // =========================================================
 
-    //  Para onde aponta o pássaro
+    // Trata colisão contra obstáculos
+    void onCollision(glm::vec3 obstaclePos);
+
+    // =========================================================
+    // GETTERS
+    // =========================================================
+
+    // posição atual
+    glm::vec3 getPosition() const
+    {
+        return position;
+    }
+
+    // direção para frente
     glm::vec3 getForward() const;
 
+    // velocidade escalar
+    float getSpeed() const
+    {
+        return speed;
+    }
 
-    //  Retorna o angulo Y de inclinação da ave
-    float getRotationY() const { return rotationY; }
+    // velocidade vetorial
+    glm::vec3 getVelocity() const
+    {
+        return velocity;
+    }
 
-    // Setters
-    //  Altera a posição da ave
-    void setModelMatrixUniform(GLuint model_uniform, const glm::mat4& view, const glm::mat4& projection) const;
+    // raio de colisão
+    float getCollisionRadius() const
+    {
+        return collisionRadius;
+    }
 
+    // yaw
+    float getRotationY() const
+    {
+        return rotationY;
+    }
+
+    // verifica crash
+    bool hasCrashed() const
+    {
+        return crashed;
+    }
+
+    // =========================================================
+    // COLISÃO
+    // =========================================================
+
+    float collisionRadius;
+
+    // cooldown entre colisões
+    float collisionCooldown;
+    float terrainCollisionCooldown;
+
+    // estado de crash
+    bool crashed;
+
+    // colisão contra terreno
+    bool onTerrainCollision(float terrainHeight, glm::vec3 terrainNormal);
 private:
-    glm::vec3 position;      // X, Y, Z
-    float rotationY;         // ângulo em radianos (para onde olha)
-    float rotationX;         // inclinação (pitch)
-    float rotationZ;         // inclinação (roll)
-    float speed;             // velocidade atual
-    
-    glm::vec3 velocity;       // velocidade vetorial
-    glm::vec3 acceleration;   // aceleração vetorial
 
-    // Parâmetros de controle
+    // =========================================================
+    // TRANSFORMAÇÃO
+    // =========================================================
+
+    glm::vec3 position;
+
+    // rotações
+    float rotationY; // yaw
+    float rotationX; // pitch
+    float rotationZ; // roll
+
+    // =========================================================
+    // FÍSICA
+    // =========================================================
+
+    glm::vec3 velocity;
+    glm::vec3 acceleration;
+
+    float speed;
+
+    // =========================================================
+    // CONTROLE
+    // =========================================================
+
     float moveSpeed;
     float rotationSpeed;
+
+
 };
 
 #endif

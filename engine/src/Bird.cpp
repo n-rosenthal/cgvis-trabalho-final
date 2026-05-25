@@ -6,17 +6,20 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 Bird::Bird()
-    : position(0.0f, 5.0f, 0.0f),
-      rotationY(0.0f),
-      rotationX(0.0f),
-      rotationZ(0.0f),
-      velocity(0.0f),
-      acceleration(0.0f),
-      speed(12.0f),
-      moveSpeed(12.0f),
-      rotationSpeed(2.0f)
-{
-}
+    :   position(0.0f, 5.0f, 0.0f),
+        rotationY(0.0f),
+        rotationX(0.0f),
+        rotationZ(0.0f),
+        velocity(0.0f),
+        acceleration(0.0f),
+        speed(12.0f),
+        moveSpeed(12.0f),
+        rotationSpeed(2.0f),
+        collisionRadius(0.5f),
+        collisionCooldown(0.0f),
+        terrainCollisionCooldown(0.0f),
+        crashed(false)
+    {}
 
 glm::vec3 Bird::getForward() const
 {
@@ -29,6 +32,180 @@ glm::vec3 Bird::getForward() const
     return glm::normalize(forward);
 }
 
+void Bird::onCollision(glm::vec3 obstaclePos)
+{
+    // evita múltiplas colisões consecutivas
+    if (collisionCooldown > 0.0f)
+        return;
+
+    collisionCooldown = 1.0f;
+
+    // =========================================================
+    // DIREÇÃO DO IMPACTO
+    // =========================================================
+
+    glm::vec3 away =
+        glm::normalize(position - obstaclePos);
+
+    // =========================================================
+    // IMPULSO
+    // =========================================================
+
+    // empurra o pássaro para longe
+    velocity += away * 20.0f;
+
+    // impulso vertical
+    velocity.y += 6.0f;
+
+    // =========================================================
+    // PERDA DE VELOCIDADE
+    // =========================================================
+
+    speed *= 0.55f;
+
+    // evita velocidade negativa
+    if (speed < 2.0f)
+        speed = 2.0f;
+
+    // =========================================================
+    // DESORIENTAÇÃO VISUAL
+    // =========================================================
+
+    rotationZ += glm::radians(
+        (rand() % 2 == 0)
+            ? 60.0f
+            : -60.0f
+    );
+
+    rotationX += glm::radians(-20.0f);
+
+    // =========================================================
+    // CRASH
+    // =========================================================
+
+    if (speed > 22.0f)
+    {
+        crashed = true;
+    }
+}
+bool Bird::onTerrainCollision(
+    float terrainHeight,
+    glm::vec3 terrainNormal
+)
+{
+    // =========================================
+    // COOLDOWN
+    // =========================================
+
+    if (terrainCollisionCooldown > 0.0f)
+        return false;
+
+    terrainCollisionCooldown = 0.35f;
+
+    // =========================================
+    // POSICIONA SOBRE O SOLO
+    // =========================================
+
+    float bodyOffset = 0.6f;
+
+    position.y =
+        terrainHeight + bodyOffset;
+
+    // =========================================
+    // VELOCIDADE DO IMPACTO
+    // =========================================
+
+    float impactSpeed =
+        glm::length(velocity);
+
+    // =========================================
+    // ALINHAMENTO AO RELEVO
+    // =========================================
+
+    // inclinação frente/trás
+    float terrainPitch =
+        atan2(
+            terrainNormal.z,
+            terrainNormal.y
+        );
+
+    // inclinação lateral
+    float terrainRoll =
+        -atan2(
+            terrainNormal.x,
+            terrainNormal.y
+        );
+
+    // suaviza alinhamento
+    rotationX =
+        glm::mix(
+            rotationX,
+            terrainPitch,
+            0.35f
+        );
+
+    rotationZ =
+        glm::mix(
+            rotationZ,
+            terrainRoll,
+            0.35f
+        );
+
+    // =========================================
+    // IMPACTO LEVE
+    // =========================================
+
+    if (impactSpeed < 8.0f) {
+        // desliza sobre o terreno
+
+        velocity =
+            glm::reflect(
+                velocity,
+                terrainNormal
+            ) * 0.12f;
+
+        speed *= 0.75f;
+
+        return true;
+    }
+
+    // =========================================
+    // IMPACTO MÉDIO
+    // =========================================
+
+    if (impactSpeed < 18.0f){
+            // quique parcial
+
+        velocity =
+            glm::reflect(
+                velocity,
+                terrainNormal
+            ) * 0.30f;
+
+        velocity.y += 3.0f;
+
+        speed *= 0.45f;
+
+        rotationZ += glm::radians(
+            (rand() % 2 == 0)
+                ? 25.0f
+                : -25.0f
+        );
+
+        return true;
+    }
+
+    // =========================================
+    // CRASH
+    // =========================================
+
+    crashed = true;
+    velocity *= 0.1f;
+    velocity.y = 0.0f;
+    speed = 0.0f;
+
+    return true;
+}
 void Bird::update(float dt, GLFWwindow* window)
 {
     // =========================================

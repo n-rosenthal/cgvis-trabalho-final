@@ -26,6 +26,37 @@ void ProceduralRock::Generate()
     generateCube();
 }
 
+// Colisão: retorna true se o ponto estiver dentro do rocha
+bool ProceduralRock::checkCollision(
+    glm::vec3 point,
+    float radius
+)
+{
+    float distance =
+        glm::length(point - position);
+
+    float rockRadius =
+        rockScale * 0.8f;
+
+    bool isColliding =
+        distance < (radius + rockRadius);
+
+    // evento único
+    if (isColliding && !collided)
+    {
+        collided = true;
+        return true;
+    }
+
+    // reset quando afastar
+    if (!isColliding)
+    {
+        collided = false;
+    }
+
+    return false;
+}
+
 void ProceduralRock::generateCube()
 {
     vertices.clear();
