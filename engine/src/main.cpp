@@ -50,6 +50,10 @@
 #include "utils.h"
 #include "matrices.h"
 
+// ÁUDIO e gerenciador de áudio
+#include "audio/AudioManager.hpp"
+SoundManager g_Sound;
+
 //  Classe `Bird`: ave controlada pelo usuário
 #include "Bird.hpp"
 
@@ -299,6 +303,9 @@ int main(int argc, char* argv[])
         std::exit(EXIT_FAILURE);
     }
 
+    // Inicialização do gerenciador de áudio (lib. miniaudio)
+    g_Sound.init();
+
     // Definimos o callback para impressão de erros da GLFW no terminal
     glfwSetErrorCallback(ErrorCallback);
 
@@ -432,20 +439,55 @@ int main(int argc, char* argv[])
     const int rockCount = 250;
 
     for (int i = 0; i < rockCount; ++i) {
-        // espalhamento no mundo
-        float x = ((float)rand() / RAND_MAX) * 100.0f + 10.0f;
-        float z = ((float)rand() / RAND_MAX) * 100.0f + 10.0f;
+        // =====================================
+        // POSIÇÃO ALEATÓRIA NO TERRENO
+        // =====================================
 
-        float y = terrain.getHeight(x, z);
+        float x =
+            ((float)rand() / RAND_MAX - 0.5f)
+            * 200.0f;
 
-        // escala aleatória
+        float z =
+            ((float)rand() / RAND_MAX - 0.5f)
+            * 200.0f;
+
+        // =====================================
+        // ESCALA DA ROCHA
+        // =====================================
+
         float scale =
-            0.8f +
-            ((float)rand() / RAND_MAX) * 3.5f;
+            0.8f
+            + ((float)rand() / RAND_MAX) * 3.5f;
 
-        // cria rocha
+        // =====================================
+        // ALTURA DO TERRENO
+        // =====================================
+
+        float y =
+            terrain.getHeight(x, z);
+
+        // =====================================
+        // NORMAL DO TERRENO
+        // =====================================
+
+        glm::vec3 normal =
+            terrain.getNormal(x, z);
+
+        // =====================================
+        // POSIÇÃO FINAL
+        // =====================================
+
+        glm::vec3 pos(x, y, z);
+
+        // levanta a rocha para evitar clipping
+        pos += normal * scale * 0.5f;
+
+        // =====================================
+        // CRIA ROCHA
+        // =====================================
+
         g_Rocks.emplace_back(
-            glm::vec3(x, y, z),
+            pos,
             scale
         );
     }

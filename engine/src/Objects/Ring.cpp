@@ -1,5 +1,8 @@
 #include "Objects/Ring.hpp"
 
+#include "audio/AudioManager.hpp"
+extern SoundManager g_Sound;
+
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <cmath>
@@ -54,13 +57,13 @@ bool Ring::checkCollision(glm::vec3 birdPos)
         horizontalDistance < radius &&
         fabs(delta.y) < 2.0f;
 
-    if (insideRing)
-    {
+    if (insideRing) {
+        //  Marca como coletado (atravessado)
+        //  -> ativa animação para destruição do anel
         collected = true;
 
-        // TODO:if (collected)
-        // tocar som aqui
-        // playSound("ring.wav");
+        //  -> tocar som de coleta
+        g_Sound.play("assets/audio/drum-roll-and-bell_112bpm.wav");
 
         return true;
     }

@@ -231,11 +231,19 @@ void ProceduralTerrain::draw(GLuint model_uniform)
     glBindVertexArray(0);
 }
 
-float ProceduralTerrain::getHeight(float x, float z) const
-{
-    // converte coordenadas do mundo para grid local
-    float localX = x / m_spacing;
-    float localZ = z / m_spacing;
+float ProceduralTerrain::getHeight(float x, float z) const {
+    float halfWidth =
+        (m_width * m_spacing) * 0.5f;
+
+    float halfDepth =
+        (m_depth * m_spacing) * 0.5f;
+
+    // converte mundo -> grid local
+    float localX =
+        (x + halfWidth) / m_spacing;
+
+    float localZ =
+        (z + halfDepth) / m_spacing;
 
     int x0 = (int)floor(localX);
     int z0 = (int)floor(localZ);
@@ -243,25 +251,25 @@ float ProceduralTerrain::getHeight(float x, float z) const
     int x1 = x0 + 1;
     int z1 = z0 + 1;
 
-    // evita acesso inválido
+    // limites
     if (
         x0 < 0 || z0 < 0 ||
-        x1 >= m_width ||
-        z1 >= m_depth
+        x1 > m_width ||
+        z1 > m_depth
     )
     {
         return 0.0f;
     }
 
-    // fração dentro da célula
     float tx = localX - x0;
     float tz = localZ - z0;
 
-    // índices dos 4 vértices
-    int i00 = z0 * m_width + x0;
-    int i10 = z0 * m_width + x1;
-    int i01 = z1 * m_width + x0;
-    int i11 = z1 * m_width + x1;
+    int row = m_width + 1;
+
+    int i00 = z0 * row + x0;
+    int i10 = z0 * row + x1;
+    int i01 = z1 * row + x0;
+    int i11 = z1 * row + x1;
 
     float h00 = m_vertices[i00].position.y;
     float h10 = m_vertices[i10].position.y;
@@ -269,10 +277,15 @@ float ProceduralTerrain::getHeight(float x, float z) const
     float h11 = m_vertices[i11].position.y;
 
     // interpolação bilinear
-    float hx0 = h00 * (1.0f - tx) + h10 * tx;
-    float hx1 = h01 * (1.0f - tx) + h11 * tx;
+    float hx0 =
+        h00 * (1.0f - tx) + h10 * tx;
 
-    return hx0 * (1.0f - tz) + hx1 * tz;
+    float hx1 =
+        h01 * (1.0f - tx) + h11 * tx;
+
+    return
+        hx0 * (1.0f - tz)
+        + hx1 * tz;
 }
 
 glm::vec3 ProceduralTerrain::getNormal(float x, float z) const

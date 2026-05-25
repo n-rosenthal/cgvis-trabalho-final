@@ -7,6 +7,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Source files
 set(SOURCES
+  engine/src/audio/miniaudio.c
+  engine/src/audio/AudioManager.cpp
   engine/src/main.cpp
   engine/src/Objects/ProceduralTerrain.cpp
   engine/src/Objects/ProceduralRock.cpp
@@ -49,6 +51,7 @@ add_executable(${EXECUTABLE_NAME} ${SOURCES})
 # Include directories
 target_include_directories(${EXECUTABLE_NAME} BEFORE PRIVATE
   ${PROJECT_SOURCE_DIR}/engine/include
+  ${PROJECT_SOURCE_DIR}/engine/include/audio
   ${PROJECT_SOURCE_DIR}/external
   ${PROJECT_SOURCE_DIR}/include
 )
@@ -87,7 +90,7 @@ endif()
 
 # Linux linking
 if(UNIX)
-  target_compile_options(${EXECUTABLE_NAME} PRIVATE -Wall -Wno-unused-function)
+  target_compile_options(${EXECUTABLE_NAME} PRIVATE -Wall -Wno-unused-function -lpthread -lm)
   find_package(OpenGL REQUIRED)
   find_package(X11 REQUIRED)
   find_library(MATH_LIBRARY m)
