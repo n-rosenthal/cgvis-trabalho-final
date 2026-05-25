@@ -1716,15 +1716,6 @@ void TextRendering_ShowControlsPopup(GLFWwindow* window)
 
 void TextRendering_DrawWhiteQuad(GLFWwindow* window, float x, float y, float width, float height)
 {
-    int window_width, window_height;
-    glfwGetWindowSize(window, &window_width, &window_height);
-
-    // Converte coordenadas normalizadas (-1 a 1) para coordenadas de tela
-    float screen_x = (x + 1.0f) / 2.0f * window_width;
-    float screen_y = (y + 1.0f) / 2.0f * window_height;
-    float screen_width = width / 2.0f * window_width;
-    float screen_height = height / 2.0f * window_height;
-
     // Salva estado do OpenGL
     GLint current_program;
     glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
@@ -1733,20 +1724,49 @@ void TextRendering_DrawWhiteQuad(GLFWwindow* window, float x, float y, float wid
     GLint current_vertex_array;
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &current_vertex_array);
 
-    // Desabilita depth test e habilita blending para o fundo branco
+    // Desabilita depth test e habilita blending
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Usa um shader simples para cor sólida (usando o shader principal do programa)
-    glUseProgram(g_GpuProgramID);
+    // Usa shader simples para cor sólida 2D (sem matrizes de transformação)
+    const char* vertex_shader_source =
+        "#version 330\n"
+        "layout (location = 0) in vec2 position;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = vec4(position, 0.0, 1.0);\n"
+        "}\n";
 
-    // Cria vertices do quad em coordenadas de tela normalizadas
+    const char* fragment_shader_source =
+        "#version 330\n"
+        "out vec4 fragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    fragColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
+        "}\n";
+
+    GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
+    glCompileShader(vertex_shader);
+
+    GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
+    glCompileShader(fragment_shader);
+
+    GLuint shader_program = glCreateProgram();
+    glAttachShader(shader_program, vertex_shader);
+    glAttachShader(shader_program, fragment_shader);
+    glLinkProgram(shader_program);
+
+    glUseProgram(shader_program);
+
+    // Cria vertices do quad em coordenadas de clip space (-1 a 1)
     float quad_vertices[] = {
-        x, y, 0.0f,
-        x + width, y, 0.0f,
-        x, y - height, 0.0f,
-        x + width, y - height, 0.0f
+        x, y,
+        x + width, y,
+        x, y - height,
+        x + width, y - height
     };
 
     GLuint quad_vbo, quad_vao;
@@ -1757,21 +1777,9 @@ void TextRendering_DrawWhiteQuad(GLFWwindow* window, float x, float y, float wid
     glBindBuffer(GL_ARRAY_BUFFER, quad_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices, GL_DYNAMIC_DRAW);
 
-    // Configura atributo de posição (location = 0 no vertex shader)
+    // Configura atributo de posição (location = 0)
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-    // Define matrizes identidade para o quad
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 view = glm::mat4(1.0f);
-    glm::mat4 projection = glm::mat4(1.0f);
-
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    glUniformMatrix4fv(g_view_uniform, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(g_projection_uniform, 1, GL_FALSE, glm::value_ptr(projection));
-
-    // Define cor branca usando object_id que não existe (para garantir cor sólida)
-    glUniform1i(g_object_id_uniform, 999);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 
     // Desenha o quad
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -1779,6 +1787,9 @@ void TextRendering_DrawWhiteQuad(GLFWwindow* window, float x, float y, float wid
     // Limpa recursos
     glDeleteBuffers(1, &quad_vbo);
     glDeleteVertexArrays(1, &quad_vao);
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
+    glDeleteProgram(shader_program);
 
     // Restaura estado do OpenGL
     glUseProgram(current_program);
