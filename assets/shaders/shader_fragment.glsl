@@ -9,10 +9,12 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-#define SPHERE 0
-#define BUNNY  1
-#define PLANE  2
-#define ROCK   4
+#define SPHERE  0
+#define BUNNY   1
+#define PLANE   2
+#define BIRD    3
+#define ROCK    4
+#define RING    5
 
 uniform int object_id;
 
@@ -101,6 +103,31 @@ void main()
 
         color.rgb = rockColor * diffuse;
         color.a = 1.0;
+        return;
+    }
+
+    // ===== RING =====
+    else if (object_id == RING)
+    {
+        vec3 viewDir =
+            normalize(camera_position.xyz - p.xyz);
+
+        float fresnel =
+            pow(
+                1.0 - max(dot(n.xyz, viewDir), 0.0),
+                3.0
+            );
+
+        vec3 baseColor =
+            vec3(1.0, 0.1, 0.1);
+
+        vec3 emissive =
+            baseColor * (2.0 + fresnel * 4.0);
+
+        color.rgb = emissive;
+
+        color.a = 1.0;
+
         return;
     }
 

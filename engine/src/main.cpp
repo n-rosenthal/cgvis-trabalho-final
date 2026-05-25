@@ -62,6 +62,9 @@
 // Classes `ProceduralRock`: rochas geradas proceduralmente
 #include "Objects/ProceduralRock.hpp"
 
+// Classe `Ring`: anéis através dos quais o pássaro deve voar
+#include "Objects/Ring.hpp"
+
 /** função inline para obter o caminho para algum asset (textura, modelo) 
     uso:
     	// carregar uma textura
@@ -410,6 +413,7 @@ int main(int argc, char* argv[])
 
     float last_frame_time = (float)glfwGetTime();
 
+    // =============================== OBJETOS ===============================
     // Geração de árvores
     g_Tree.generate(NumberOfTrees);
 
@@ -443,6 +447,28 @@ int main(int argc, char* argv[])
         g_Rocks.emplace_back(
             glm::vec3(x, y, z),
             scale
+        );
+    }
+
+    // ANÉIS
+    std::vector<Ring> g_Rings;
+    int n_rings = 25;
+    for (int i = 0; i < n_rings; i++)
+    {
+        float x =
+            ((rand() % 200) - 100);
+
+        float z =
+            ((rand() % 200) - 100);
+
+        float y =
+            terrain.getHeight(x, z)
+            + 8.0f
+            + (rand() % 20);
+
+        g_Rings.emplace_back(
+            glm::vec3(x,y,z),
+            2.5f
         );
     }
 
@@ -573,6 +599,7 @@ int main(int argc, char* argv[])
         #define PLANE   2
         #define BIRD    3 
         #define ROCK    4
+        #define RING    5
 
         // =========================================================
         // ÁRVORE
@@ -629,7 +656,25 @@ int main(int argc, char* argv[])
             rock.Draw(g_model_uniform);
         }
 
+        // =========================================================
+        // ANÉIS
+        // =========================================================
+
+        glUniform1i(g_object_id_uniform, RING);
+
+        for (auto& ring : g_Rings)
+        {
+            ring.update(dt);
+
+            ring.checkCollision(
+                g_Bird.getPosition()
+            );
+
+            ring.draw(g_model_uniform);
+        }
+
         // =========================================================`
+
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -658,6 +703,19 @@ int main(int argc, char* argv[])
         // definidas anteriormente usando glfwSet*Callback() serão chamadas
         // pela biblioteca GLFW.
         glfwPollEvents();
+
+        // ANÉIS: remover os anéis já percorridos
+        g_Rings.erase(
+        std::remove_if(
+            g_Rings.begin(),
+            g_Rings.end(),
+            [](const Ring& r)
+            {
+                return r.isDead();
+            }
+        ),
+        g_Rings.end()
+        );
     }
 
     // Finalizamos o uso dos recursos do sistema operacional

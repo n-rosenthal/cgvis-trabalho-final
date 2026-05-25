@@ -10,6 +10,7 @@ set(SOURCES
   engine/src/main.cpp
   engine/src/Objects/ProceduralTerrain.cpp
   engine/src/Objects/ProceduralRock.cpp
+  engine/src/Objects/Ring.cpp
   engine/src/Bird.cpp
   engine/src/Tree.cpp
   engine/src/correcao.cpp
