@@ -244,9 +244,6 @@ bool g_UsePerspectiveProjection = true;
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
-// Variável que controla se o painel de depuração será mostrado na tela.
-bool g_ShowDebugPanel = true;
-
 // Variáveis que controlam o modo de dia/noite.
 bool g_ManualDayNight = false;
 bool g_DayTime = true;
@@ -278,6 +275,13 @@ int NumberOfTrees = 30;
  Tree g_Tree;
 
  Letter g_Letter;
+
+// Constantes para o target
+const float TARGET_CAPTURE_DISTANCE = 2.0f;  // Distância máxima para capturar a letter
+const float TARGET_SCALE_X = 2.0f;           // Escala X do target (diâmetro)
+const float TARGET_SCALE_Y = 0.1f;           // Escala Y do target (espessura)
+const float TARGET_SCALE_Z = 2.0f;           // Escala Z do target (diâmetro)
+const float CONTROLS_TEXT_OFFSET = 8.0f;      // Offset para centralizar texto do popup de controles
 
 // Variáveis para o target
 glm::vec3 g_TargetPosition = glm::vec3(0.0f, -1.0f, 0.0f); // Posição do target no plano
@@ -537,6 +541,7 @@ int main(int argc, char* argv[])
         #define TREE   3
         #define BIRD   4
         #define BIRD2  5
+        #define TARGET 6
 
         g_Tree.draw(g_model_uniform, g_object_id_uniform, TREE);
 
@@ -554,9 +559,9 @@ int main(int argc, char* argv[])
 
         // Desenhamos o target (círculo com vermelho e branco) no plano
         model = Matrix_Translate(g_TargetPosition.x, g_TargetPosition.y, g_TargetPosition.z);
-        model = model * Matrix_Scale(2.0f, 0.1f, 2.0f); // Círculo achatado no plano
+        model = model * Matrix_Scale(TARGET_SCALE_X, TARGET_SCALE_Y, TARGET_SCALE_Z); // Círculo achatado no plano
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, BUNNY); // Usa object_id do bunny para cor
+        glUniform1i(g_object_id_uniform, TARGET); // Usa object_id do target para cor
         DrawVirtualObject("sphere"); // Usa sphere como base para o target
         
 
@@ -1403,7 +1408,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
             glm::vec3 bird_pos = g_Bird.getPosition();
             glm::vec3 letter_pos = g_Letter.getPosition();
             float distance = glm::length(bird_pos - letter_pos);
-            if (distance < 2.0f) { // Distância máxima para capturar
+            if (distance < TARGET_CAPTURE_DISTANCE) { // Distância máxima para capturar
                 g_Letter.setCaptured(true);
             }
         }
@@ -1446,13 +1451,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
 
     }
 
-    // Se o usuario apertar a tecla T, fazemos um "toggle" do painel de depuracao.
-    if (key == GLFW_KEY_M && action == GLFW_PRESS)
-    {
-        g_ShowDebugPanel = !g_ShowDebugPanel;
-        fprintf(stdout,"Painel de depuracao toggled.\n");
-
-    }
 
     // Se o usuário apertar a tecla L, alternamos dia/noite manualmente além da lógica automática.
     if (key == GLFW_KEY_L && action == GLFW_PRESS)
@@ -1684,20 +1682,20 @@ void TextRendering_ShowControlsPopup(GLFWwindow* window)
     int num_lines = 12;
     float start_y = center_y + (num_lines * lineheight) / 2.0f;
 
-    TextRendering_PrintString(window, "=== CONTROLES ===", center_x - 8.0f * charwidth, start_y, 1.0f);
-    TextRendering_PrintString(window, "W: acelerar para frente", center_x - 8.0f * charwidth, start_y - 2*lineheight, 1.0f);
-    TextRendering_PrintString(window, "S: frear/parar", center_x - 8.0f * charwidth, start_y - 3*lineheight, 1.0f);
-    TextRendering_PrintString(window, "A/D: virar esquerda/direita", center_x - 8.0f * charwidth, start_y - 4*lineheight, 1.0f);
-    TextRendering_PrintString(window, "Q/E: subir/descer", center_x - 8.0f * charwidth, start_y - 5*lineheight, 1.0f);
-    TextRendering_PrintString(window, "SPACE: capturar/soltar letter", center_x - 8.0f * charwidth, start_y - 6*lineheight, 1.0f);
-    TextRendering_PrintString(window, "F: camera do passaro", center_x - 8.0f * charwidth, start_y - 7*lineheight, 1.0f);
-    TextRendering_PrintString(window, "L: alternar dia/noite", center_x - 8.0f * charwidth, start_y - 8*lineheight, 1.0f);
-    TextRendering_PrintString(window, "P/O: perspectiva/ortografica", center_x - 8.0f * charwidth, start_y - 9*lineheight, 1.0f);
-    TextRendering_PrintString(window, "R: recarregar shaders", center_x - 8.0f * charwidth, start_y - 10*lineheight, 1.0f);
-    TextRendering_PrintString(window, "M: mostrar/ocultar este painel", center_x - 8.0f * charwidth, start_y - 11*lineheight, 1.0f);
-    TextRendering_PrintString(window, "I: mostrar/ocultar informacoes", center_x - 8.0f * charwidth, start_y - 12*lineheight, 1.0f);
-    TextRendering_PrintString(window, "ESC: sair", center_x - 8.0f * charwidth, start_y - 13*lineheight, 1.0f);
-    TextRendering_PrintString(window, "Pressione M para fechar", center_x - 8.0f * charwidth, start_y - 14*lineheight, 1.0f);
+    TextRendering_PrintString(window, "=== CONTROLES ===", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y, 1.0f);
+    TextRendering_PrintString(window, "W: acelerar para frente", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 2*lineheight, 1.0f);
+    TextRendering_PrintString(window, "S: frear/parar", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 3*lineheight, 1.0f);
+    TextRendering_PrintString(window, "A/D: virar esquerda/direita", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 4*lineheight, 1.0f);
+    TextRendering_PrintString(window, "Q/E: subir/descer", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 5*lineheight, 1.0f);
+    TextRendering_PrintString(window, "SPACE: capturar/soltar letter", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 6*lineheight, 1.0f);
+    TextRendering_PrintString(window, "F: camera do passaro", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 7*lineheight, 1.0f);
+    TextRendering_PrintString(window, "L: alternar dia/noite", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 8*lineheight, 1.0f);
+    TextRendering_PrintString(window, "P/O: perspectiva/ortografica", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 9*lineheight, 1.0f);
+    TextRendering_PrintString(window, "R: recarregar shaders", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 10*lineheight, 1.0f);
+    TextRendering_PrintString(window, "M: mostrar/ocultar este painel", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 11*lineheight, 1.0f);
+    TextRendering_PrintString(window, "I: mostrar/ocultar informacoes", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 12*lineheight, 1.0f);
+    TextRendering_PrintString(window, "ESC: sair", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 13*lineheight, 1.0f);
+    TextRendering_PrintString(window, "Pressione M para fechar", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 14*lineheight, 1.0f);
 }
 
 // Função para debugging: imprime no terminal todas informações de um modelo

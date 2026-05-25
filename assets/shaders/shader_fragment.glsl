@@ -25,6 +25,7 @@ uniform mat4 projection;
 #define TREE   3
 #define BIRD   4
 #define BIRD2  5
+#define TARGET 6
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -165,6 +166,24 @@ void main()
 
 		// Obtemos a refletância difusa a partir da leitura da imagem TextureImage3 (falcon2.jpg do MTL)
 		Kd0 = texture(TextureImage4, vec2(U,V)).rgb;
+    }
+    else if ( object_id == TARGET )
+    {
+        // Target com padrão vermelho e branco (círculo alvo)
+        // Usa projeção esférica para criar padrão circular
+        vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
+        vec4 d = position_model - bbox_center;
+
+        float rho   = length(d);
+        float theta = atan(d.x,d.z);
+
+        // Cria padrão de anéis vermelhos e brancos
+        float ring_pattern = sin(theta * 8.0); // 8 anéis
+        if (ring_pattern > 0.0) {
+            Kd0 = vec3(1.0, 0.0, 0.0); // Vermelho
+        } else {
+            Kd0 = vec3(1.0, 1.0, 1.0); // Branco
+        }
     }
 
     // Equação de Iluminação
