@@ -36,12 +36,17 @@ public:
     //  Define se o pássaro está em modo standing (parado)
     void setStanding(bool standing) { this->standing = standing; }
 
+    // Tamanho do pássaro
+    glm::vec3 getSize() const { return size; }
+    void setSize(const glm::vec3& s) { size = s; }
+
 private:
     glm::vec3 position;      // X, Y, Z
     float rotationY;         // ângulo em radianos (para onde olha)
     float rotationX;         // inclinação (pitch)
     float speed;             // velocidade atual
     float verticalSpeed;     // velocidade de subida/descida
+    glm::vec3 size;          // Tamanho do pássaro (escala)
 
     // Parâmetros de controle
     float moveSpeed;

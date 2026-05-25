@@ -28,9 +28,14 @@ public:
     void setCaptured(bool captured) { this->captured = captured; }
     void setPosition(const glm::vec3& pos) { position = pos; }
 
+    // Tamanho da carta
+    glm::vec3 getSize() const { return size; }
+    void setSize(const glm::vec3& s) { size = s; }
+
 private:
     glm::vec3 position;      // X, Y, Z
     glm::vec3 velocity;      // Velocidade da letter
+    glm::vec3 size;          // Tamanho da carta (escala)
     bool captured;           // Flag indicando se foi capturada pelo pássaro
 
     // Parâmetros de física
