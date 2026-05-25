@@ -55,6 +55,7 @@
 
 // Classe `Tree`: árvores geradas aleatoriamente
 #include "Tree.hpp"
+#include "Letter.hpp"
 
 /** função inline para obter o caminho para algum asset (textura, modelo) 
     uso:
