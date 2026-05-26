@@ -374,9 +374,9 @@ int main(int argc, char* argv[])
     ComputeNormals(&tree1model);
     BuildTrianglesAndAddToVirtualScene(&tree1model);
 
-    ObjModel tree2model(asset_path("models/trees/tree2/GenTree_105_AE3D_03122023-F2.obj").c_str());
-    ComputeNormals(&tree2model);
-    BuildTrianglesAndAddToVirtualScene(&tree2model);
+    ObjModel lettermodel(asset_path("models/the_letter.obj").c_str());
+    ComputeNormals(&lettermodel);
+    BuildTrianglesAndAddToVirtualScene(&lettermodel);
 
 
     if ( argc > 1 )

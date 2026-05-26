@@ -21,7 +21,6 @@ void Tree::generate(int amount)
         tree.z = -8.0f + static_cast<float>(rand()) / RAND_MAX * 16.0f;
         tree.scale = 0.35f + static_cast<float>(rand()) / RAND_MAX * 0.35f;
         tree.rotY = static_cast<float>(rand()) / RAND_MAX * 6.28318f;
-        tree.type = rand() % 2; // 0 = tree1, 1 = tree2
 
         trees.push_back(tree);
     }
@@ -46,19 +45,10 @@ void Tree::draw(GLint model_uniform, GLint object_id_uniform, int object_id)
 
 void Tree::drawTreeParts(int type)
 {
-    if (type == 0)
-    {
         DrawVirtualObject("GenTree_100_Twigs_Leaf_Bearing_Mesh");
         DrawVirtualObject("GenTree_100-Main_Trunk_Material.012_-_TRUNK");
         DrawVirtualObject("leaves.001_Material.010_-_Leaves");
         DrawVirtualObject("GenTRee_100-Branches_L2.002_Material.011_-_Secondary_Limbs");
         DrawVirtualObject("GenTRee_100-Branches_L2.002_Material");
-    }
-    else
-    {
-        DrawVirtualObject("GenTree_-_Twigs_Leaf_Bearing_tree.003");
-        DrawVirtualObject("GenTree_-_Twigs_Leaf_Bearing_Material.Twigs");
-        DrawVirtualObject("leaves_Material-Leaves");
-        DrawVirtualObject("GenTree-Main_Trunk_Material.Trunk_and_Primary_Limbs");
-    }
+   
 }
