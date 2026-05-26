@@ -168,8 +168,6 @@ void TextRendering_ShowEulerAngles(GLFWwindow* window);
 void TextRendering_ShowProjection(GLFWwindow* window);
 void TextRendering_ShowFramesPerSecond(GLFWwindow* window);
 void TextRendering_ShowDebugPanel(GLFWwindow* window);
-void TextRendering_ShowControlsPopup(GLFWwindow* window);
-void TextRendering_DrawWhiteQuad(GLFWwindow* window, float x, float y, float width, float height);
 
 // Funções callback para comunicação com o sistema operacional e interação do
 // usuário. Veja mais comentários nas definições das mesmas, abaixo.
@@ -277,7 +275,7 @@ const float TARGET_CAPTURE_DISTANCE = 2.0f;  // Distância máxima para capturar
 const float TARGET_SCALE_X = 2.0f;           // Escala X do target (diâmetro)
 const float TARGET_SCALE_Y = 0.1f;           // Escala Y do target (espessura)
 const float TARGET_SCALE_Z = 2.0f;           // Escala Z do target (diâmetro)
-const float TARGET_Y_POSITION = 1.0f;       // Altura do target acima do plano
+const float TARGET_Y_POSITION = -0.5f;       // Altura do target acima do plano
 const float CONTROLS_TEXT_OFFSET = 8.0f;      // Offset para centralizar texto do popup de controles
 
 // Variáveis para o target
@@ -285,7 +283,6 @@ glm::vec3 g_TargetPosition = glm::vec3(0.0f, TARGET_Y_POSITION, 0.0f); // Posiç
 
 // Variáveis de controle para UI
 bool g_ShowInfoPanel = true;  // Mostra painel de informações
-bool g_ShowControlsPopup = false;  // Mostra popup de controls
 bool g_IsPaused = false;  // Jogo pausado
 
 int main(int argc, char* argv[])
@@ -554,7 +551,6 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, TARGET); // Usa object_id do target para cor
         DrawVirtualObject("sphere"); // Usa sphere como base para o target
-        
 
         // Desenhamos o plano do chão
         model = Matrix_Translate(0.0f,-1.1f,0.0f) * Matrix_Scale(10.0f,1.0f,10.0f);
@@ -578,9 +574,6 @@ int main(int argc, char* argv[])
 
         // Imprimimos o painel de informações no canto superior esquerdo
         TextRendering_ShowDebugPanel(window);
-
-        // Imprimimos o popup de controles no meio da tela se estiver ativo
-        TextRendering_ShowControlsPopup(window);
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
@@ -1405,11 +1398,10 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         }
     }
 
-    // Se o usuário apertar a tecla M, mostra/esconde popup de controls e pausa o jogo
+    // Se o usuário apertar a tecla M, mostra/esconde painel de informações
     if (key == GLFW_KEY_M && action == GLFW_PRESS)
     {
-        g_ShowControlsPopup = !g_ShowControlsPopup;
-        g_IsPaused = g_ShowControlsPopup;
+        g_ShowInfoPanel = !g_ShowInfoPanel;
     }
 
     // Se o usuário apertar a tecla I, mostra/esconde painel de informações
@@ -1653,130 +1645,6 @@ void TextRendering_ShowDebugPanel(GLFWwindow* window)
     snprintf(buffer, 256, "Estado: %s", g_IsPaused ? "PAUSADO" : "RODANDO");
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 9*lineheight, 1.0f);
 
-}
-
-void TextRendering_ShowControlsPopup(GLFWwindow* window)
-{
-    if (!g_ShowControlsPopup)
-    {
-        return;
-    }
-
-    float lineheight = TextRendering_LineHeight(window);
-    float charwidth = TextRendering_CharWidth(window);
-
-    // Popup no meio da tela
-    float center_x = 0.0f;
-    float center_y = 0.0f;
-    int num_lines = 14;
-    float start_y = center_y + (num_lines * lineheight) / 2.0f;
-
-    // Desenha fundo branco atrás do popup
-    float bg_width = CONTROLS_TEXT_OFFSET * 2.5f * charwidth;
-    float bg_height = (num_lines + 2) * lineheight;
-    float bg_x = center_x - bg_width / 2.0f;
-    float bg_y = start_y + lineheight;
-    TextRendering_DrawWhiteQuad(window, bg_x, bg_y, bg_width, bg_height);
-
-    TextRendering_PrintString(window, "=== CONTROLES ===", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y, 1.0f);
-    TextRendering_PrintString(window, "W: acelerar para frente", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 2*lineheight, 1.0f);
-    TextRendering_PrintString(window, "S: frear/parar", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 3*lineheight, 1.0f);
-    TextRendering_PrintString(window, "A/D: virar esquerda/direita", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 4*lineheight, 1.0f);
-    TextRendering_PrintString(window, "Q/E: subir/descer", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 5*lineheight, 1.0f);
-    TextRendering_PrintString(window, "SPACE: capturar/soltar letter", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 6*lineheight, 1.0f);
-    TextRendering_PrintString(window, "F: camera do passaro", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 7*lineheight, 1.0f);
-    TextRendering_PrintString(window, "L: alternar dia/noite", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 8*lineheight, 1.0f);
-    TextRendering_PrintString(window, "P/O: perspectiva/ortografica", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 9*lineheight, 1.0f);
-    TextRendering_PrintString(window, "R: recarregar shaders", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 10*lineheight, 1.0f);
-    TextRendering_PrintString(window, "M: mostrar/ocultar este painel", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 11*lineheight, 1.0f);
-    TextRendering_PrintString(window, "I: mostrar/ocultar informacoes", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 12*lineheight, 1.0f);
-    TextRendering_PrintString(window, "ESC: sair", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 13*lineheight, 1.0f);
-    TextRendering_PrintString(window, "Pressione M para fechar", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 14*lineheight, 1.0f);
-}
-
-void TextRendering_DrawWhiteQuad(GLFWwindow* window, float x, float y, float width, float height)
-{
-    // Salva estado do OpenGL
-    GLint current_program;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
-    GLint current_array_buffer;
-    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &current_array_buffer);
-    GLint current_vertex_array;
-    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &current_vertex_array);
-
-    // Desabilita depth test e habilita blending
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // Usa shader simples para cor sólida 2D (sem matrizes de transformação)
-    const char* vertex_shader_source =
-        "#version 330\n"
-        "layout (location = 0) in vec2 position;\n"
-        "void main()\n"
-        "{\n"
-        "    gl_Position = vec4(position, 0.0, 1.0);\n"
-        "}\n";
-
-    const char* fragment_shader_source =
-        "#version 330\n"
-        "out vec4 fragColor;\n"
-        "void main()\n"
-        "{\n"
-        "    fragColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
-        "}\n";
-
-    GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
-    glCompileShader(vertex_shader);
-
-    GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
-    glCompileShader(fragment_shader);
-
-    GLuint shader_program = glCreateProgram();
-    glAttachShader(shader_program, vertex_shader);
-    glAttachShader(shader_program, fragment_shader);
-    glLinkProgram(shader_program);
-
-    glUseProgram(shader_program);
-
-    // Cria vertices do quad em coordenadas de clip space (-1 a 1)
-    float quad_vertices[] = {
-        x, y,
-        x + width, y,
-        x, y - height,
-        x + width, y - height
-    };
-
-    GLuint quad_vbo, quad_vao;
-    glGenBuffers(1, &quad_vbo);
-    glGenVertexArrays(1, &quad_vao);
-
-    glBindVertexArray(quad_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, quad_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices, GL_DYNAMIC_DRAW);
-
-    // Configura atributo de posição (location = 0)
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-
-    // Desenha o quad
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    // Limpa recursos
-    glDeleteBuffers(1, &quad_vbo);
-    glDeleteVertexArrays(1, &quad_vao);
-    glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);
-    glDeleteProgram(shader_program);
-
-    // Restaura estado do OpenGL
-    glUseProgram(current_program);
-    glBindBuffer(GL_ARRAY_BUFFER, current_array_buffer);
-    glBindVertexArray(current_vertex_array);
-    glEnable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
 }
 
 // Função para debugging: imprime no terminal todas informações de um modelo

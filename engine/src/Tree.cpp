@@ -45,10 +45,13 @@ void Tree::draw(GLint model_uniform, GLint object_id_uniform, int object_id)
 
 void Tree::drawTreeParts(int type)
 {
-        DrawVirtualObject("GenTree_100_Twigs_Leaf_Bearing_Mesh");
-        DrawVirtualObject("GenTree_100-Main_Trunk_Material.012_-_TRUNK");
-        DrawVirtualObject("leaves.001_Material.010_-_Leaves");
-        DrawVirtualObject("GenTRee_100-Branches_L2.002_Material.011_-_Secondary_Limbs");
-        DrawVirtualObject("GenTRee_100-Branches_L2.002_Material");
-   
+    /*
+    DrawVirtualObject("GenTree_100_Twigs_Leaf_Bearing_Mesh");
+    DrawVirtualObject("GenTree_100-Main_Trunk_Material.012_-_TRUNK");
+    DrawVirtualObject("leaves.001_Material.010_-_Leaves");
+    DrawVirtualObject("GenTRee_100-Branches_L2.002_Material.011_-_Secondary_Limbs");
+    DrawVirtualObject("GenTRee_100-Branches_L2.002_Material");
+    */
+    // Usa o nome do objeto carregado em main.cpp
+    DrawVirtualObject("GenTree-103_AE3D_03122023-F1");
 }
