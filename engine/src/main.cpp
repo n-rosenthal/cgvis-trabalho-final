@@ -389,7 +389,8 @@ int main(int argc, char* argv[])
     ComputeNormals(&bird2model);
     BuildTrianglesAndAddToVirtualScene(&bird2model);
 
-    ObjModel tree1model(asset_path("models/trees/GenTree-103_AE3D_03122023-F1.obj").c_str());
+    ObjModel tree1model(asset_path("models/tree/Birch_Summer_1.obj").c_str());
+    //ObjModel tree1model(asset_path("models/trees/GenTree-103_AE3D_03122023-F1.obj").c_str());
     ComputeNormals(&tree1model);
     BuildTrianglesAndAddToVirtualScene(&tree1model);
 

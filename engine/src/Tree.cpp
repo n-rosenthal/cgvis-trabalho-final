@@ -38,17 +38,18 @@ void Tree::draw(GLint model_uniform, GLint object_id_uniform, int object_id)
 
         glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(object_id_uniform, object_id);
-
-        drawTreeParts(tree.type);
     }
 }
 
-void Tree::drawTreeParts(int type)
+void Tree::drawTreeParts()
 {
-        DrawVirtualObject("GenTree_100_Twigs_Leaf_Bearing_Mesh");
-        DrawVirtualObject("GenTree_100-Main_Trunk_Material.012_-_TRUNK");
-        DrawVirtualObject("leaves.001_Material.010_-_Leaves");
-        DrawVirtualObject("GenTRee_100-Branches_L2.002_Material.011_-_Secondary_Limbs");
-        DrawVirtualObject("GenTRee_100-Branches_L2.002_Material");
+    DrawVirtualObject("Birch_Branches");
    
+    /*
+    DrawVirtualObject("GenTree_100_Twigs_Leaf_Bearing_Mesh");
+    DrawVirtualObject("GenTree_100-Main_Trunk_Material.012_-_TRUNK");
+    DrawVirtualObject("leaves.001_Material.010_-_Leaves");
+    DrawVirtualObject("GenTRee_100-Branches_L2.002_Material.011_-_Secondary_Limbs");
+    DrawVirtualObject("GenTRee_100-Branches_L2.002_Material");
+   */
 }
