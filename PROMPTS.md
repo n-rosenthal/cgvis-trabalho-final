@@ -34,7 +34,7 @@ Criar painel de interface do usuário/depuração exibindo métricas de voo em t
 O painel aparece no canto superior esquerdo da tela e atualiza automaticamente a cada frame.
 
 ***
-## PPrompt #2
+## Prompt #2
 **Data:** 19/05/2026  
 **Autor:** Joana  
 **Objetivo:** Corrigir texturas
