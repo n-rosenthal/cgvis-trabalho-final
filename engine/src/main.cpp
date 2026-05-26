@@ -55,6 +55,7 @@
 
 // Classe `Tree`: árvores geradas aleatoriamente
 #include "Tree.hpp"
+#include "Letter.hpp"
 
 /** função inline para obter o caminho para algum asset (textura, modelo) 
     uso:
@@ -167,6 +168,8 @@ void TextRendering_ShowEulerAngles(GLFWwindow* window);
 void TextRendering_ShowProjection(GLFWwindow* window);
 void TextRendering_ShowFramesPerSecond(GLFWwindow* window);
 void TextRendering_ShowDebugPanel(GLFWwindow* window);
+void TextRendering_ShowControlsPopup(GLFWwindow* window);
+void TextRendering_DrawWhiteQuad(GLFWwindow* window, float x, float y, float width, float height);
 
 // Funções callback para comunicação com o sistema operacional e interação do
 // usuário. Veja mais comentários nas definições das mesmas, abaixo.
@@ -243,15 +246,15 @@ bool g_UsePerspectiveProjection = true;
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
-// Variável que controla se o painel de depuração será mostrado na tela.
-bool g_ShowDebugPanel = true;
-
 // Variáveis que controlam o modo de dia/noite.
 bool g_ManualDayNight = false;
 bool g_DayTime = true;
 
 // A variável abaixo controla se a câmera está em modo "bird view", ou seja, se ela
 bool g_BirdView = false;
+
+// Show or not the scenerio
+bool g_ShowScenario = false;
 
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
@@ -267,11 +270,29 @@ GLuint g_NumLoadedTextures = 0;
 int NumberOfTrees = 30;
 
 /**
- * BIRD: Ave controlada pelo usuário
+ * Instancias das classes
 */
  Bird g_Bird;
 
  Tree g_Tree;
+
+ Letter g_Letter;
+
+// Constantes para o target
+const float TARGET_CAPTURE_DISTANCE = 2.0f;  // Distância máxima para capturar a letter
+const float TARGET_SCALE_X = 2.0f;           // Escala X do target (diâmetro)
+const float TARGET_SCALE_Y = 0.1f;           // Escala Y do target (espessura)
+const float TARGET_SCALE_Z = 2.0f;           // Escala Z do target (diâmetro)
+const float TARGET_Y_POSITION = 1.0f;       // Altura do target acima do plano
+const float CONTROLS_TEXT_OFFSET = 8.0f;      // Offset para centralizar texto do popup de controles
+
+// Variáveis para o target
+glm::vec3 g_TargetPosition = glm::vec3(0.0f, TARGET_Y_POSITION, 0.0f); // Posição do target no plano
+
+// Variáveis de controle para UI
+bool g_ShowInfoPanel = true;  // Mostra painel de informações
+bool g_ShowControlsPopup = false;  // Mostra popup de controls
+bool g_IsPaused = false;  // Jogo pausado
 
 int main(int argc, char* argv[])
 {
@@ -347,10 +368,13 @@ int main(int argc, char* argv[])
     LoadShadersFromFiles();
 
     /* as texturas são armazenadas no diretório =assets/textures/= */
-    // Carregamos duas imagens para serem utilizadas como textura
+
     std::string tex_path = std::string(ASSETS_DIR);
-    LoadTextureImage(asset_path("textures/red_brick_diff_1k.jpg").c_str());		// TextureImage0
-    LoadTextureImage(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str());	// TextureImage1
+    LoadTextureImage(asset_path("textures/red_brick_diff_1k.jpg").c_str());		// TextureImage0 
+    LoadTextureImage(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str());	// TextureImage1 
+    LoadTextureImage(asset_path("textures/tree1_textures/Gentree_2_Twigs_AE3D_04022023-B-DIFFUSE.jpg").c_str()); // TextureImage2 (árvore)
+    LoadTextureImage(asset_path("models/bird/falcon2.jpg").c_str());		// TextureImage3 (pássaro)
+    LoadTextureImage(asset_path("models/bird_standing/falcon1.jpg").c_str());		// TextureImage4 (pássaro2)
     
     /* os objetos são armazenados no diretório =assets/models/= */
     // Construímos a representação de objetos geométricos através de malhas de triângulos
@@ -358,21 +382,27 @@ int main(int argc, char* argv[])
     ComputeNormals(&spheremodel);
     BuildTrianglesAndAddToVirtualScene(&spheremodel);
 
-    ObjModel bunnymodel(asset_path("models/bunny.obj").c_str());
-    ComputeNormals(&bunnymodel);
-    BuildTrianglesAndAddToVirtualScene(&bunnymodel);
 
     ObjModel planemodel(asset_path("models/plane.obj").c_str());
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
 
-    ObjModel birdmodel(asset_path("models/bird/0V3HJRW3DQ5QPF3J2O5PR4Z1M.obj").c_str());
+//    ObjModel birdmodel(asset_path("models/bird/0V3HJRW3DQ5QPF3J2O5PR4Z1M.obj").c_str());
+    ObjModel birdmodel(asset_path("models/bird2/1MWMHT4M2D4LN4H7TAH9H6HH5.obj").c_str());
     ComputeNormals(&birdmodel);
     BuildTrianglesAndAddToVirtualScene(&birdmodel);
+
+       ObjModel bird2model(asset_path("models/bird_standing/G1FXKUZIFSQHX0QERXO6AAO63.obj").c_str());
+    ComputeNormals(&bird2model);
+    BuildTrianglesAndAddToVirtualScene(&bird2model);
 
     ObjModel tree1model(asset_path("models/trees/tree1/GenTree-103_AE3D_03122023-F1.obj").c_str());
     ComputeNormals(&tree1model);
     BuildTrianglesAndAddToVirtualScene(&tree1model);
+
+    ObjModel lettermodel(asset_path("models/the_letter.obj").c_str());
+    ComputeNormals(&lettermodel);
+    BuildTrianglesAndAddToVirtualScene(&lettermodel);
 
     ObjModel lettermodel(asset_path("models/the_letter.obj").c_str());
     ComputeNormals(&lettermodel);
@@ -398,7 +428,10 @@ int main(int argc, char* argv[])
 
     float last_frame_time = (float)glfwGetTime();
 
-    g_Tree.generate(NumberOfTrees);
+    if (g_ShowScenario)
+    {
+        g_Tree.generate(NumberOfTrees);
+    } 
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -423,7 +456,7 @@ int main(int argc, char* argv[])
 
 
         if (isDayTime) {
-            glClearColor(0.9f, 0.9f, 1.0f, 1.0f); // Dia: céu claro
+           glClearColor(0.53f, 0.81f, 0.98f, 1.0f); // Dia: céu claro
         } else {
             glClearColor(0.1f, 0.1f, 0.2f, 1.0f); // Noite: céu escuro
         }
@@ -439,7 +472,14 @@ int main(int argc, char* argv[])
         float current_frame_time = (float)glfwGetTime();
         float dt = current_frame_time - last_frame_time;
         last_frame_time = current_frame_time;
-        g_Bird.update(dt, window); 
+
+        // Só atualiza física se não estiver pausado
+        if (!g_IsPaused) {
+            g_Bird.update(dt, window);
+
+            // Atualizar física da letter usando a classe Letter
+            g_Letter.update(dt, g_Bird.getPosition(), g_Bird.getRotationY(), g_Letter.isCaptured());
+        } 
 
         // Computamos a posição da câmera utilizando coordenadas esféricas.  As
         // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
@@ -476,7 +516,7 @@ int main(int argc, char* argv[])
             float field_of_view = 3.141592 / 2.0f;
             projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);
         }
-        else
+        else if (! g_UsePerspectiveProjection && g_BirdView )
         {
             // Projeção Ortográfica.
             // Para definição dos valores l, r, b, t ("left", "right", "bottom", "top"),
@@ -489,6 +529,7 @@ int main(int argc, char* argv[])
             float l = -r;
             projection = Matrix_Orthographic(l, r, b, t, nearplane, farplane);
         }
+        // else if (g_BirdView){}
 
         glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
 
@@ -501,14 +542,31 @@ int main(int argc, char* argv[])
         #define SPHERE 0
         #define BUNNY  1
         #define PLANE  2
-        #define BIRD  3
-        
-        g_Tree.draw(g_model_uniform, g_object_id_uniform, SPHERE);
-        
-        // Desenhamos o modelo do coelho usando a transformação controlada pela classe Bird
-        g_Bird.setModelMatrixUniform(g_model_uniform, view, projection);
-       glUniform1i(g_object_id_uniform, BIRD);
-        DrawVirtualObject("the_bird");
+        #define TREE   3
+        #define BIRD   4
+        #define BIRD2  5
+        #define TARGET 6
+
+        g_Tree.draw(g_model_uniform, g_object_id_uniform, TREE);
+
+        // Desenhamos o modelo do pássaro usando a transformação controlada pela classe Bird
+        // Determina se está no chão (standing) ou voando baseado na altura
+        if (g_Bird.getPosition().y <= -0.8f) {
+            g_Bird.setStanding(true); // No chão: usa modelo standing
+        } else {
+            g_Bird.setStanding(false); // Voando: usa modelo voando
+        }
+        g_Bird.draw(g_model_uniform, g_object_id_uniform);
+
+        // Desenhamos o cilindro (the_letter) usando a classe Letter
+        g_Letter.draw(g_model_uniform, g_object_id_uniform);
+
+        // Desenhamos o target (círculo com vermelho e branco) no plano
+        model = Matrix_Translate(g_TargetPosition.x, g_TargetPosition.y, g_TargetPosition.z);
+        model = model * Matrix_Scale(TARGET_SCALE_X, TARGET_SCALE_Y, TARGET_SCALE_Z); // Círculo achatado no plano
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, TARGET); // Usa object_id do target para cor
+        DrawVirtualObject("sphere"); // Usa sphere como base para o target
         
 
         // Desenhamos o plano do chão
@@ -531,8 +589,11 @@ int main(int argc, char* argv[])
         // por segundo (frames per second).
         TextRendering_ShowFramesPerSecond(window);
 
-        // Imprimimos o painel de depuração com métricas de voo
+        // Imprimimos o painel de informações no canto superior esquerdo
         TextRendering_ShowDebugPanel(window);
+
+        // Imprimimos o popup de controles no meio da tela se estiver ativo
+        TextRendering_ShowControlsPopup(window);
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
@@ -671,7 +732,7 @@ void LoadShadersFromFiles()
     //       |
     //       o-- shader_fragment.glsl
     //
-    	GLuint vertex_shader_id   = LoadShader_Vertex(vert_path.c_str());
+    GLuint vertex_shader_id   = LoadShader_Vertex(vert_path.c_str());
 	GLuint fragment_shader_id = LoadShader_Fragment(frag_path.c_str());
 
 
@@ -697,6 +758,8 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
     glUseProgram(0);
 }
 
@@ -1338,16 +1401,34 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         g_AngleZ += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
     }
 
-    // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.
+    // Se o usuário apertar a tecla espaço, captura ou solta a letter
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
     {
-        g_AngleX = 0.0f;
-        g_AngleY = 0.0f;
-        g_AngleZ = 0.0f;
-        g_ForearmAngleX = 0.0f;
-        g_ForearmAngleZ = 0.0f;
-        g_TorsoPositionX = 0.0f;
-        g_TorsoPositionY = 0.0f;
+        if (g_Letter.isCaptured()) {
+            // Se a letter está capturada e o pássaro está voando, solta a letter
+            g_Letter.setCaptured(false);
+        } else {
+            // Se a letter não está capturada, verifica se o pássaro está perto para capturar
+            glm::vec3 bird_pos = g_Bird.getPosition();
+            glm::vec3 letter_pos = g_Letter.getPosition();
+            float distance = glm::length(bird_pos - letter_pos);
+            if (distance < TARGET_CAPTURE_DISTANCE) { // Distância máxima para capturar
+                g_Letter.setCaptured(true);
+            }
+        }
+    }
+
+    // Se o usuário apertar a tecla M, mostra/esconde popup de controls e pausa o jogo
+    if (key == GLFW_KEY_M && action == GLFW_PRESS)
+    {
+        g_ShowControlsPopup = !g_ShowControlsPopup;
+        g_IsPaused = g_ShowControlsPopup;
+    }
+
+    // Se o usuário apertar a tecla I, mostra/esconde painel de informações
+    if (key == GLFW_KEY_I && action == GLFW_PRESS)
+    {
+        g_ShowInfoPanel = !g_ShowInfoPanel;
     }
 
     // Se o usuário apertar a tecla P, utilizamos projeção perspectiva.
@@ -1374,13 +1455,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
 
     }
 
-    // Se o usuario apertar a tecla T, fazemos um "toggle" do painel de depuracao.
-    if (key == GLFW_KEY_M && action == GLFW_PRESS)
-    {
-        g_ShowDebugPanel = !g_ShowDebugPanel;
-        fprintf(stdout,"Painel de depuracao toggled.\n");
-
-    }
 
     // Se o usuário apertar a tecla L, alternamos dia/noite manualmente além da lógica automática.
     if (key == GLFW_KEY_L && action == GLFW_PRESS)
@@ -1538,19 +1612,8 @@ void TextRendering_ShowFramesPerSecond(GLFWwindow* window)
 
 void TextRendering_ShowDebugPanel(GLFWwindow* window)
 {
-    if (!g_ShowDebugPanel)
+    if (!g_ShowInfoPanel)
     {
-        float lineheight = TextRendering_LineHeight(window);
-        float charwidth = TextRendering_CharWidth(window);
-
-        TextRendering_PrintString(
-            window,
-            "Pressione M para mostrar o painel",
-            -1.0f + charwidth,
-            1.0f - lineheight,
-            1.0f
-        );
-
         return;
     }
 
@@ -1567,40 +1630,168 @@ void TextRendering_ShowDebugPanel(GLFWwindow* window)
     bool isDayTime = g_ManualDayNight ? g_DayTime : actualDayTime;
     const char* timeMode = g_ManualDayNight ? "Manual" : "Automatico";
 
-    // Título do painel
-    TextRendering_PrintString(window, "=== PAINEL DE INFORMAÇÕES ===", -1.0f + charwidth, 1.0f - lineheight, 1.0f);
+    // Calcular distância entre letter e target
+    float letter_target_distance = glm::length(g_Letter.getPosition() - g_TargetPosition);
+
+    // Título do painel de informações
+    TextRendering_PrintString(window, "=== INFORMAÇÕES ===", -1.0f + charwidth, 1.0f - lineheight, 1.0f);
 
     char buffer[256];
 
-     glm::vec3 birdPosition = g_Bird.getPosition();
-    snprintf(buffer, 256, "Posicao: X=%.2f Y=%.2f Z=%.2f", birdPosition.x, birdPosition.y, birdPosition.z);
+    glm::vec3 birdPosition = g_Bird.getPosition();
+    snprintf(buffer, 256, "Posicao Bird: X=%.2f Y=%.2f Z=%.2f", birdPosition.x, birdPosition.y, birdPosition.z);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 2*lineheight, 1.0f);
+
+    glm::vec3 letterPosition = g_Letter.getPosition();
+    snprintf(buffer, 256, "Posicao Letter: X=%.2f Y=%.2f Z=%.2f", letterPosition.x, letterPosition.y, letterPosition.z);
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 3*lineheight, 1.0f);
+
+    snprintf(buffer, 256, "Distancia Letter-Target: %.2f", letter_target_distance);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 4*lineheight, 1.0f);
+
+    snprintf(buffer, 256, "Letter Capturada: %s", g_Letter.isCaptured() ? "SIM" : "NAO");
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 5*lineheight, 1.0f);
 
     snprintf(buffer, 256, "Rotacao Y: %.2f rad (%.1f graus)",
             g_Bird.getRotationY(),
             g_Bird.getRotationY() * 180.0f / 3.141592f);
-    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 4*lineheight, 1.0f);
-
-    snprintf(buffer, 256, "Clima: %s (%s)", isDayTime ? "DIA" : "NOITE", timeMode);
-    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 5*lineheight, 1.0f);
-
-    snprintf(buffer, 256, "Relogio: %02d:%02d:%02d", hour, minute, second);
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 6*lineheight, 1.0f);
 
-    snprintf(buffer, 256, "Camera: %s", g_BirdView ? "Passaro" : "Livre");
+    snprintf(buffer, 256, "Clima: %s (%s)", isDayTime ? "DIA" : "NOITE", timeMode);
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 7*lineheight, 1.0f);
 
-    TextRendering_PrintString(window, "Controles:", -1.0f + charwidth, 1.0f - 9*lineheight, 1.0f);
-    TextRendering_PrintString(window, "W: acelerar para frente", -1.0f + charwidth, 1.0f - 10*lineheight, 1.0f);
-    TextRendering_PrintString(window, "S: frear/parar", -1.0f + charwidth, 1.0f - 11*lineheight, 1.0f);
-    TextRendering_PrintString(window, "A/D: virar esquerda/direita", -1.0f + charwidth, 1.0f - 12*lineheight, 1.0f);
-    TextRendering_PrintString(window, "Q/E: subir/descer", -1.0f + charwidth, 1.0f - 13*lineheight, 1.0f);
-    TextRendering_PrintString(window, "F: camera do passaro", -1.0f + charwidth, 1.0f - 14*lineheight, 1.0f);
-    TextRendering_PrintString(window, "L: alternar dia/noite", -1.0f + charwidth, 1.0f - 15*lineheight, 1.0f);
-    TextRendering_PrintString(window, "P/O: perspectiva/ortografica", -1.0f + charwidth, 1.0f - 16*lineheight, 1.0f);
-    TextRendering_PrintString(window, "R: recarregar shaders", -1.0f + charwidth, 1.0f - 17*lineheight, 1.0f);
-    TextRendering_PrintString(window, "M: mostrar/ocultar painel", -1.0f + charwidth, 1.0f - 18*lineheight, 1.0f);
-    TextRendering_PrintString(window, "ESC: sair", -1.0f + charwidth, 1.0f - 19*lineheight, 1.0f);
+    snprintf(buffer, 256, "Relogio: %02d:%02d:%02d", hour, minute, second);
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 8*lineheight, 1.0f);
+
+    snprintf(buffer, 256, "Estado: %s", g_IsPaused ? "PAUSADO" : "RODANDO");
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 9*lineheight, 1.0f);
+
+    snprintf(buffer, 256, "Camera: %s", g_BirdView ? "Passaro" : "Livre");
+    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 10*lineheight, 1.0f);
+}
+
+void TextRendering_ShowControlsPopup(GLFWwindow* window)
+{
+    if (!g_ShowControlsPopup)
+    {
+        return;
+    }
+
+    float lineheight = TextRendering_LineHeight(window);
+    float charwidth = TextRendering_CharWidth(window);
+
+    // Popup no meio da tela
+    float center_x = 0.0f;
+    float center_y = 0.0f;
+    int num_lines = 14;
+    float start_y = center_y + (num_lines * lineheight) / 2.0f;
+
+    // Desenha fundo branco atrás do popup
+    float bg_width = CONTROLS_TEXT_OFFSET * 2.5f * charwidth;
+    float bg_height = (num_lines + 2) * lineheight;
+    float bg_x = center_x - bg_width / 2.0f;
+    float bg_y = start_y + lineheight;
+    TextRendering_DrawWhiteQuad(window, bg_x, bg_y, bg_width, bg_height);
+
+    TextRendering_PrintString(window, "=== CONTROLES ===", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y, 1.0f);
+    TextRendering_PrintString(window, "W: acelerar para frente", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 2*lineheight, 1.0f);
+    TextRendering_PrintString(window, "S: frear/parar", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 3*lineheight, 1.0f);
+    TextRendering_PrintString(window, "A/D: virar esquerda/direita", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 4*lineheight, 1.0f);
+    TextRendering_PrintString(window, "Q/E: subir/descer", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 5*lineheight, 1.0f);
+    TextRendering_PrintString(window, "SPACE: capturar/soltar letter", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 6*lineheight, 1.0f);
+    TextRendering_PrintString(window, "F: camera do passaro", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 7*lineheight, 1.0f);
+    TextRendering_PrintString(window, "L: alternar dia/noite", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 8*lineheight, 1.0f);
+    TextRendering_PrintString(window, "P/O: perspectiva/ortografica", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 9*lineheight, 1.0f);
+    TextRendering_PrintString(window, "R: recarregar shaders", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 10*lineheight, 1.0f);
+    TextRendering_PrintString(window, "M: mostrar/ocultar este painel", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 11*lineheight, 1.0f);
+    TextRendering_PrintString(window, "I: mostrar/ocultar informacoes", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 12*lineheight, 1.0f);
+    TextRendering_PrintString(window, "ESC: sair", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 13*lineheight, 1.0f);
+    TextRendering_PrintString(window, "Pressione M para fechar", center_x - CONTROLS_TEXT_OFFSET * charwidth, start_y - 14*lineheight, 1.0f);
+}
+
+void TextRendering_DrawWhiteQuad(GLFWwindow* window, float x, float y, float width, float height)
+{
+    // Salva estado do OpenGL
+    GLint current_program;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
+    GLint current_array_buffer;
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &current_array_buffer);
+    GLint current_vertex_array;
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &current_vertex_array);
+
+    // Desabilita depth test e habilita blending
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Usa shader simples para cor sólida 2D (sem matrizes de transformação)
+    const char* vertex_shader_source =
+        "#version 330\n"
+        "layout (location = 0) in vec2 position;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = vec4(position, 0.0, 1.0);\n"
+        "}\n";
+
+    const char* fragment_shader_source =
+        "#version 330\n"
+        "out vec4 fragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    fragColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
+        "}\n";
+
+    GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
+    glCompileShader(vertex_shader);
+
+    GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
+    glCompileShader(fragment_shader);
+
+    GLuint shader_program = glCreateProgram();
+    glAttachShader(shader_program, vertex_shader);
+    glAttachShader(shader_program, fragment_shader);
+    glLinkProgram(shader_program);
+
+    glUseProgram(shader_program);
+
+    // Cria vertices do quad em coordenadas de clip space (-1 a 1)
+    float quad_vertices[] = {
+        x, y,
+        x + width, y,
+        x, y - height,
+        x + width, y - height
+    };
+
+    GLuint quad_vbo, quad_vao;
+    glGenBuffers(1, &quad_vbo);
+    glGenVertexArrays(1, &quad_vao);
+
+    glBindVertexArray(quad_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, quad_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices, GL_DYNAMIC_DRAW);
+
+    // Configura atributo de posição (location = 0)
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+
+    // Desenha o quad
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    // Limpa recursos
+    glDeleteBuffers(1, &quad_vbo);
+    glDeleteVertexArrays(1, &quad_vao);
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
+    glDeleteProgram(shader_program);
+
+    // Restaura estado do OpenGL
+    glUseProgram(current_program);
+    glBindBuffer(GL_ARRAY_BUFFER, current_array_buffer);
+    glBindVertexArray(current_vertex_array);
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
 }
 
 // Função para debugging: imprime no terminal todas informações de um modelo

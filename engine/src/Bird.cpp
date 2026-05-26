@@ -4,15 +4,19 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+extern void DrawVirtualObject(const char* object_name);
+
 Bird::Bird()
     : position(0.0f, 0.0f, 0.0f),
       rotationY(0.0f),
       rotationX(0.0f),
       speed(0.0f),
       verticalSpeed(0.0f),
+      size(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE),
       moveSpeed(5.0f),
       rotationSpeed(2.0f),
-      verticalSpeedFactor(3.0f) {}
+      verticalSpeedFactor(3.0f),
+      standing(false) {}
 
 
 void Bird::update(float dt, GLFWwindow* window) {
@@ -62,4 +66,32 @@ void Bird::setModelMatrixUniform(GLuint model_uniform, const glm::mat4& view, co
     model = glm::rotate(model, rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::rotate(model, rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
     glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+}
+
+void Bird::draw(GLuint model_uniform, GLuint object_id_uniform) const {
+    // Define o object_id baseado no modelo (BIRD para voando, BIRD2 para standing)
+    if (standing) {
+        glUniform1i(object_id_uniform, 5); // BIRD2
+        glm::mat4 model = glm::mat4(1.0f);
+        glm::vec3 draw_position = position;
+        draw_position.y = -0.5f; // Posição fixa y = -0.5 quando standing
+        model = glm::translate(model, draw_position);
+        model = glm::rotate(model, rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
+        // Usa tamanho ajustado para standing (menor para corrigir proporção)
+        glm::vec3 standing_size = size * STANDING_SCALE_FACTOR;
+        model = glm::scale(model, standing_size);
+        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        DrawVirtualObject("the_bird2");
+        DrawVirtualObject("Object_color_0.031360-0.009440-0.009440.jpg");
+    } else {
+        glUniform1i(object_id_uniform, 4); // BIRD
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, position);
+        model = glm::rotate(model, rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::scale(model, size); // Usa tamanho configurado
+        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        DrawVirtualObject("the_bird");
+    }
 }
