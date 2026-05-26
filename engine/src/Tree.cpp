@@ -38,12 +38,10 @@ void Tree::draw(GLint model_uniform, GLint object_id_uniform, int object_id)
 
         glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(object_id_uniform, object_id);
-
-        drawTreeParts(tree.type);
     }
 }
 
-void Tree::drawTreeParts(int type)
+void Tree::drawTreeParts()
 {
     /*
     DrawVirtualObject("GenTree_100_Twigs_Leaf_Bearing_Mesh");

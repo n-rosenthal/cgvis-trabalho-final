@@ -1,0 +1,29 @@
+# Blender MTL File: 'Birch_Summer_1.blend'
+# Material Count: 2
+
+newmtl Birch_Bark
+Ns 33.062499
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.0 0.0 0.0
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump Textures\\Birch_Trunk_Normal.png
+map_Kd Textures\\Birch_Trunk_Color.png
+map_Ns Textures\\Birch_Trunk_Roughness.png
+
+newmtl Birch_Leaves
+Ns 33.062499
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.0 0.0 0.0
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump Textures\\Birch_Summer_Leaves_Normal.png
+map_Kd Textures\\Birch_Summer_Leaves_Color.png
+map_Ns Textures\\Birch_Summer_Leaves_Roughness.jpg
+map_d Textures\\Birch_Summer_Leaves_Color.png

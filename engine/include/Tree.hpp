@@ -13,7 +13,6 @@ struct TreeInstance
     float z;
     float scale;
     float rotY;
-    int type;
 };
 
 class Tree
@@ -25,7 +24,7 @@ public:
 private:
     std::vector<TreeInstance> trees;
 
-    void drawTreeParts(int type);
+    void drawTreeParts();
 };
 
 #endif
