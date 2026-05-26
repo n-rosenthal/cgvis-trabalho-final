@@ -250,12 +250,6 @@ bool g_ShowInfoText = true;
 bool g_ManualDayNight = false;
 bool g_DayTime = true;
 
-// A variável abaixo controla se a câmera está em modo "bird view", ou seja, se ela
-bool g_BirdView = false;
-
-// Show or not the scenerio
-bool g_ShowScenario = false;
-
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
 GLint g_model_uniform;
@@ -387,22 +381,17 @@ int main(int argc, char* argv[])
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
 
-//    ObjModel birdmodel(asset_path("models/bird/0V3HJRW3DQ5QPF3J2O5PR4Z1M.obj").c_str());
-    ObjModel birdmodel(asset_path("models/bird2/1MWMHT4M2D4LN4H7TAH9H6HH5.obj").c_str());
+    ObjModel birdmodel(asset_path("models/bird/0V3HJRW3DQ5QPF3J2O5PR4Z1M.obj").c_str());
     ComputeNormals(&birdmodel);
     BuildTrianglesAndAddToVirtualScene(&birdmodel);
 
-       ObjModel bird2model(asset_path("models/bird_standing/G1FXKUZIFSQHX0QERXO6AAO63.obj").c_str());
+    ObjModel bird2model(asset_path("models/bird_standing/G1FXKUZIFSQHX0QERXO6AAO63.obj").c_str());
     ComputeNormals(&bird2model);
     BuildTrianglesAndAddToVirtualScene(&bird2model);
 
-    ObjModel tree1model(asset_path("models/trees/tree1/GenTree-103_AE3D_03122023-F1.obj").c_str());
+    ObjModel tree1model(asset_path("models/trees/GenTree-103_AE3D_03122023-F1.obj").c_str());
     ComputeNormals(&tree1model);
     BuildTrianglesAndAddToVirtualScene(&tree1model);
-
-    ObjModel lettermodel(asset_path("models/the_letter.obj").c_str());
-    ComputeNormals(&lettermodel);
-    BuildTrianglesAndAddToVirtualScene(&lettermodel);
 
     ObjModel lettermodel(asset_path("models/the_letter.obj").c_str());
     ComputeNormals(&lettermodel);
@@ -428,10 +417,9 @@ int main(int argc, char* argv[])
 
     float last_frame_time = (float)glfwGetTime();
 
-    if (g_ShowScenario)
-    {
-        g_Tree.generate(NumberOfTrees);
-    } 
+   
+    g_Tree.generate(NumberOfTrees);
+   
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -516,7 +504,7 @@ int main(int argc, char* argv[])
             float field_of_view = 3.141592 / 2.0f;
             projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);
         }
-        else if (! g_UsePerspectiveProjection && g_BirdView )
+        else
         {
             // Projeção Ortográfica.
             // Para definição dos valores l, r, b, t ("left", "right", "bottom", "top"),
@@ -529,7 +517,6 @@ int main(int argc, char* argv[])
             float l = -r;
             projection = Matrix_Orthographic(l, r, b, t, nearplane, farplane);
         }
-        // else if (g_BirdView){}
 
         glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
 
@@ -1666,8 +1653,6 @@ void TextRendering_ShowDebugPanel(GLFWwindow* window)
     snprintf(buffer, 256, "Estado: %s", g_IsPaused ? "PAUSADO" : "RODANDO");
     TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 9*lineheight, 1.0f);
 
-    snprintf(buffer, 256, "Camera: %s", g_BirdView ? "Passaro" : "Livre");
-    TextRendering_PrintString(window, buffer, -1.0f + charwidth, 1.0f - 10*lineheight, 1.0f);
 }
 
 void TextRendering_ShowControlsPopup(GLFWwindow* window)
