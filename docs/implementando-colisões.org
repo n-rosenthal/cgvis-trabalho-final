@@ -1,0 +1,134 @@
+:PROPERTIES:
+:ZID:      202605291843
+:ID:       1eec42c9-48ae-449f-a0a4-9974cc13f587
+:END:
+#+title: Implementando o Sistema de Colisões
+
+* Uma ingênua /teoria de colisões/
+** representações
+*** do pássaro
+Representamos o pássaro por um ponto central
+
+\[
+P = (p_x, p_y, p_z)
+\]
+
+associado a um raio de colisão \(r_P\). O par \((P,r_P)\) define uma *esfera de colisão* (*bounding sphere*).
+
+Além da posição, o pássaro possui uma velocidade vetorial
+
+\[
+v_P = (v_x, v_y, v_z)
+\]
+
+e uma aceleração vetorial
+
+\[
+a_P = (a_x, a_y, a_z).
+\]
+
+*** dos objetos em geral
+Cada obstáculo do cenário (rochas, árvores e anéis) também pode ser aproximado por uma esfera de colisão com centro
+
+\[
+O = (o_x, o_y, o_z)
+\]
+
+e raio \(r_O\).
+
+Utilizamos /esferas de colisão/, neste momento, por sua simplicidade de implementação, baixo custo computacional e independência da orientação do objeto. *Esta estratégia*, entretanto, *produz colisões fantasma* e é uma *aproiximação grosseira* da geometria real dos objetos. Quanto mais distante é a geometria de um objeto de uma esfera, mais inadequada é esta representação. 
+
+*** quando ocorre uma colisão entre o pássaro e objetos gerais
+Dizemos que ocorreu colisão quando a distância entre os centros das duas esferas torna-se menor ou igual à soma de seus raios:
+
+\[
+\|P - O\| \le r_P + r_O.
+\]
+
+A distância euclidiana tridimensional é dada por
+
+\[
+\|P-O\| = \sqrt{(p_x-o_x)^2 + (p_y-o_y)^2 + (p_z-o_z)^2}.
+\]
+
+
+
+* Pássaro
+Na iteração atual do desenvolvimento, nossa classe =Bird= ganha alguns campos relacionados ao sistema de colisões:
+
+| campo                    | tipo                     | função                                                                          |
+|--------------------------+--------------------------+---------------------------------------------------------------------------------|
+| =collisionRadius=          | =float=                    | raio de colisão                                                                 |
+| =collisionCooldown=        | =float=                    | tempo em segundos após uma colisão para que possa ocorrer uma segunda colisão   |
+| =onCollision()=            | =glm::vec3 -> void=        | método que agrupa as consequências /ao pássaro/ após uma colisão /contra um objeto/ |
+| =terrainCollisionCooldown= | =float=                    | idem, para o chão/terreno                                                           |
+| =crashed=                  | =bool=                     | *verdadeiro* se o pássaro colidiu com o chão/terreno                              |
+| =onTerrainCollision()=     | =float, glm::vec3 -> bool= | método que agrupa as consequências /ao pássaro/ de uma colisão /contra o terreno/.|  
+
+** Quando o pássaro colide /contra um /objeto geral/
+A fim de melhor representar os efeitos físicos de uma colisão, diversos efeitos deverão ocorrer.
+1. O pássaro sofre um impulso contrário a sua direção de movimento.
+
+Quando uma colisão é detectada, aplicamos consequências físicas à dinâmica do voo.
+
+*** ricochete, impulso contrário à colisão
+Primeiramente calcula-se o vetor que aponta /do obstáculo/ *para o pássaro*:
+
+\[
+d = P - O.
+\]
+
+Normalizando este vetor obtemos um vetor *direção unitário*
+
+\[
+\hat d = \frac{d}{\|d\|}.
+\]
+
+Utilizamos o vetor direção para aplicar um *impulso contrário ao sentido da colisão* (/ricochete/). A velocidade do pássaro é modificada por
+
+\[
+v'_P = v_P + k \hat d,
+\]
+
+onde \(k\) representa a *intensidade do impacto*.
+
+*** redução da magnitude da velocidade
+A magnitude da velocidade do pássaro é diminuída proporcionalmente à intensidade do impacto.
+
+*** deslocamento vertical para cima
+Após uma colisão, o pássaro é deslocado para cima, proporcionalmente ao impacto. Isto auxilia que o jogador continue voando e produz maior fluidez ao jogo.
+
+*** inclinação do bico para baixo
+A fim de simular mais fielmente os efeitos de um choque, aplica-se uma transformação rotacional ao modelo, inclinando-o para baixo.
+
+*** invulnerabilidade temporária à novas colisões
+Após uma colisão, existe um breve período de /cooldown/ até que outra colisão seja possível. Caso contrário, o movimento torna-se travado, repetitivo, pouco realista.
+
+** Quando o pássaro colide /contra o terreno/
+O terreno define uma função de altura
+
+\[
+h(x,z)
+\]
+
+que associa a cada coordenada horizontal uma elevação do terreno.
+
+Durante cada quadro de animação, consulta-se a altura do solo na posição atual do pássaro:
+
+\[
+h = h(p_x,p_z).
+\]
+
+Uma colisão é detectada quando a parte inferior da esfera de colisão do pássaro encontra-se abaixo da superfície:
+
+\[
+p_y - r_P \le h.
+\]
+
+Quando isso ocorre, o pássaro é reposicionado sobre o solo e um novo comportamento é escolhido em função da velocidade do impacto:
+
+- impactos leves produzem um deslizamento;
+- impactos moderados produzem um pequeno quique;
+- impactos severos provocam um acidente.
+
+A *normal da superfície* do terreno também é utilizada para alinhar a orientação do pássaro ao relevo local, produzindo uma transição visual mais natural durante pousos e colisões.

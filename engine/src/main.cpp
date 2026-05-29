@@ -721,6 +721,8 @@ int main(int argc, char* argv[])
             Matrix_Translate(0.0f, -1.1f, 0.0f)
             * Matrix_Scale(10.0f, 1.0f, 10.0f);
 
+        
+
         glUniformMatrix4fv(
             g_model_uniform,
             1,
