@@ -1,4 +1,15 @@
 *   implementando objetos
+**  implementando /rochas procedurais/
+As rochas procedurais são implementadas a partir de um cubo que é truncado em $8$, $16$ ou $24$ pontos.
+
+1. tome um cubo de vértices \[v_1, v_2, ..., v_8\] e decida entre \[k = 8\], \[k = 16\] ou \[k = 24\] pontos para fraturar o cubo.
+2. desenhe triângulos ...
+3. compute a /maior esfera possível que compreende a maior parte dos vértices da rocha produzida/.
+
+A /maior esfera possível que compreende a maior parte dos vértices da rocha produzida/ é uma aproximação para o sistema de colisões. Quanto maior o truncamento do cubo, mais próximo este se torna de uma esfera. Se a rocha for ainda tratada, para razões de colisão, como um cubo, as colisões se tornarão grosseiras, irrealistas e teremos muitas colisões-fantasma. Entretanto, é necessário computar uma esfera adequada para cada rocha.
+
+Em termos geométricos, /descobrir a esfera/ é, na verdade, descobrir qual o /raio mais adequado/ ao centro da rocha. Devido ao método procedural de produção da rocha, sabemos que seu centro será o centro do cubo e que é daí que partirá o raio. 
+
 **  implementar o /chão/ da cena do jogo
 
 1.      Definir um arquivo /header/ para conter os objetos a serem desenhados; talvez torne-se interessante implementar diversos /headers/ no futuro, armazenando objetos conforme sua natureza na cena;

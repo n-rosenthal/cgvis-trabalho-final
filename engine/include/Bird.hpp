@@ -68,12 +68,6 @@ public:
         return velocity;
     }
 
-    // raio de colisão
-    float getCollisionRadius() const
-    {
-        return collisionRadius;
-    }
-
     // yaw
     float getRotationY() const
     {
@@ -88,9 +82,12 @@ public:
 
     // =========================================================
     // COLISÃO
+    // O pássaro é representado por um modelo de colisão do tipo
+    // cápsula.
     // =========================================================
-
-    float collisionRadius;
+    // cápsula de colisão
+    float capsuleRadius;
+    float capsuleHalfLength;
 
     // cooldown entre colisões
     float collisionCooldown;
@@ -101,6 +98,19 @@ public:
 
     // colisão contra terreno
     bool onTerrainCollision(float terrainHeight, glm::vec3 terrainNormal);
+
+    float getCapsuleRadius() const {
+        return capsuleRadius;
+    }
+
+    float getCapsuleHalfLength() const {
+        return capsuleHalfLength;
+    }
+
+    glm::vec3 getCapsuleStart() const;
+
+    glm::vec3 getCapsuleEnd() const;
+
 private:
 
     // =========================================================

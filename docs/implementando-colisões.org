@@ -6,26 +6,232 @@
 
 * Uma ingênua /teoria de colisões/
 ** representações
+Existem diversas maneiras de representar objetos quanto ao sistema de colisões. A seleção da representação deve considerar tanto a /computação do método/ quanto a /fidelidade física/.
+Os sistemas mais grosseiros quanto à física, mas facilmente computáveis, são aqueles que /envolvem o objeto em um espaço de colisão/. Nesses casos, imaginamos uma *esfera* ou uma *caixa* que envolvem os objetos, e são esses envoltórios que são testados: havendo coincidência de pontos, assumimos que uma colisão está ocorrendo.
+Existem modelos mais refinados, mas de custo computacional mais elevado. Podemos envolver objetos em *cilíndros* que respeitam mais sua geometria do que caixas ou esferas; podemos também envolver o objeto em *elipsoide* ou em *cápsula*, quando isto se aproxima mais de sua geometria geral. Ainda podemos *assumir diversas primitivas*, dividindo o objeto em suas partes e, para cada parte, encontrando um envoltório adequado.
+Por fim, os métodos *colisão malha-triângulo* ou por *mapa de alturas* são muito mais finos e conseguem adequar-se muito melhor às geometrias reais. Estes métodos, entretanto, são muito custosos.
+
+Para a implementação do sistema de colisões do nosso jogo, decidimos *implementar o mecanismo de colisão que consideramos mais adequado para cada objeto*, sem assumir um sistema global.
+
 *** do pássaro
-Representamos o pássaro por um ponto central
+Devido à geometria do pássaro, é inviável representá-lo pelos métodos mais simples (caixa, esfera). Embora simples e eficiente, tal aproximação possui limitações importantes. O modelo geométrico do pássaro é significativamente mais comprido do que largo, possuindo regiões distintas (bico, tronco e cauda) distribuídas ao longo de um eixo principal.
+
+Ao utilizar uma esfera, grandes regiões vazias passam a ser consideradas parte do volume de colisão, resultando em colisões prematuras e pouco realistas.
+
+Uma representação mais adequada consiste em aproximar o pássaro por uma *cápsula*.
+
+Visualmente:
+
+#+begin_example
+
+      ( )
+     /   \
+    |     |
+    |     |
+    |     |
+     \   /
+      ( )
+
+#+end_example
+
+Uma cápsula pode ser interpretada como um cilindro cujas extremidades foram substituídas por hemisférios.
+
+**** Definição matemática
+Uma cápsula é definida por:
+
+- um ponto inicial $A$;
+- um ponto final $B$;
+- um raio $r$.
+
+isto é,
 
 \[
-P = (p_x, p_y, p_z)
+C = (A, B, r)
 \]
 
-associado a um raio de colisão \(r_P\). O par \((P,r_P)\) define uma *esfera de colisão* (*bounding sphere*).
+O segmento $\overline{AB}$ define o eixo principal da cápsula.
 
-Além da posição, o pássaro possui uma velocidade vetorial
+No caso do pássaro:
+
+- $A$ é associado à região da cauda;
+- $B$ é associado à região do bico;
+- $r$ representa aproximadamente metade da largura do corpo.
+
+**** Construção da cápsula
+
+A posição do pássaro já é dada por
 
 \[
-v_P = (v_x, v_y, v_z)
+P=(p_x,p_y,p_z)
 \]
 
-e uma aceleração vetorial
+e sua orientação é descrita pelo vetor unitário
 
 \[
-a_P = (a_x, a_y, a_z).
+F=(f_x,f_y,f_z)
 \]
+
+obtido pela função =getForward()=.
+
+Definimos então:
+
+\[
+A = P - F \cdot L
+\]
+
+\[
+B = P + F \cdot L
+\]
+
+onde $L$ representa metade do comprimento do pássaro.
+
+Assim, a cápsula acompanha automaticamente a orientação do voo.
+
+#+begin_example
+
+A ----------- P ----------- B
+        ---> F
+
+#+end_example
+
+Sempre que o pássaro gira, o segmento $\overline{AB}$ gira juntamente com ele.
+
+**** Novos atributos da classe Bird
+
+A implementação passa a armazenar dois novos parâmetros:
+
+| campo           | tipo  | função                           |
+|-----------------+-------+----------------------------------|
+| =capsuleHalfSize= | =float= | metade do comprimento da cápsula |
+| =capsuleRadius=   | =float= | raio da cápsula                  |
+
+Exemplo:
+
+#+begin_src cpp
+float capsuleHalfSize = 1.2f;
+float capsuleRadius   = 0.4f;
+#+end_src
+
+**** Obtendo os extremos da cápsula
+#+begin_src cpp
+glm::vec3 Bird::getCapsuleStart() const {
+    return position - getForward() * capsuleHalfSize;
+}
+
+glm::vec3 Bird::getCapsuleEnd() const {
+    return position + getForward() * capsuleHalfSize;
+}
+#+end_src
+
+Esses pontos serão utilizados por todos os algoritmos de colisão.
+
+**** Colisão cápsula-esfera
+
+Considere uma rocha representada por:
+
+\[
+S=(C,r_s)
+\]
+
+onde:
+
+- $C$ é o centro;
+- $r_s$ é o raio.
+
+Primeiramente calculamos o ponto do segmento $\overline{AB}$ mais próximo do centro da esfera.
+
+seja
+
+\[
+t =
+\frac{(C-A)\cdot(B-A)}
+     {\|B-A\|^2}
+\]
+
+então limitamos
+
+\[
+t \in [0,1]
+\]
+
+e obtemos
+
+\[
+Q=A+t(B-A)
+\]
+
+O ponto $Q$ é o ponto da cápsula mais próximo da esfera. A colisão ocorre quando:
+
+\[
+\|Q-C\| < r+r_s
+\]
+
+onde $r$ é o raio da cápsula.
+
+**** Colisão cápsula-cilindro
+
+Para objetos representados por cilindros:
+
+\[
+T=(C,h,r_t)
+\]
+
+podemos inicialmente projetar o problema no plano =XZ=.
+
+A colisão ocorre quando a distância horizontal entre o eixo do cilindro e o segmento da cápsula for menor que:
+
+\[
+r+r_t
+\]
+
+e houver sobreposição vertical.
+
+Essa abordagem produz resultados muito mais realistas do que uma simples esfera.
+
+**** Colisão cápsula-terreno
+
+Para o terreno, utilizamos a altura:
+
+\[
+h(x,z)
+\]
+
+já fornecida pela classe =ProceduralTerrain=.
+
+Percorremos alguns pontos ao longo do segmento da cápsula:
+
+\[
+P_i = A + \lambda_i(B-A)
+\]
+
+com
+
+\[
+\lambda_i \in [0,1]
+\]
+
+Por exemplo:
+
+\[
+\lambda =
+0,\,
+0.25,\,
+0.5,\,
+0.75,\,
+1
+\]
+
+Se qualquer ponto satisfizer:
+
+\[
+P_i.y - r
+<
+h(P_i.x,P_i.z)
+\]
+
+então existe colisão com o solo.
+
+Dessa forma não apenas o centro do pássaro é considerado, mas todo o seu corpo.
 
 *** dos objetos em geral
 Cada obstáculo do cenário (rochas, árvores e anéis) também pode ser aproximado por uma esfera de colisão com centro

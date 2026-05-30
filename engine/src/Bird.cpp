@@ -6,30 +6,57 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 Bird::Bird()
-    :   position(0.0f, 5.0f, 0.0f),
+    :   // matriz de transformação inicial (pos, rot)
+        position(0.0f, 5.0f, 0.0f),
         rotationY(0.0f),
         rotationX(0.0f),
         rotationZ(0.0f),
+
+        //  movimento, vetores velocidade, aceleração
         velocity(0.0f),
         acceleration(0.0f),
+
+        //  movimento, magnitudes
         speed(12.0f),
         moveSpeed(12.0f),
         rotationSpeed(2.0f),
-        collisionRadius(0.5f),
+
+        //  sistema de colisão, valores da cápsula, variáveis
+        capsuleRadius(0.45f),
+        capsuleHalfLength(0.9f),    
         collisionCooldown(0.0f),
         terrainCollisionCooldown(0.0f),
         crashed(false)
     {}
 
-glm::vec3 Bird::getForward() const
-{
+
+glm::vec3 Bird::getForward() const {
     glm::vec3 forward;
 
-    forward.x = sin(rotationY);
-    forward.y = 0.0f;
-    forward.z = cos(rotationY);
+    forward.x =
+        sin(rotationY)
+        * cos(rotationX);
+
+    forward.y =
+        sin(rotationX);
+
+    forward.z =
+        cos(rotationY)
+        * cos(rotationX);
 
     return glm::normalize(forward);
+}
+
+glm::vec3 Bird::getCapsuleStart() const {
+    return
+        position
+        - getForward() * capsuleHalfLength;
+}
+
+glm::vec3 Bird::getCapsuleEnd() const {
+    return
+        position
+        + getForward() * capsuleHalfLength;
 }
 
 void Bird::onCollision(glm::vec3 obstaclePos)
