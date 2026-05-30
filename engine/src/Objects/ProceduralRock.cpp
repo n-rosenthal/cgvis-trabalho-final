@@ -1,32 +1,219 @@
 #include "Objects/ProceduralRock.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/constants.hpp>
 
+#include <cmath>
 #include <cstdlib>
-#include <ctime>
 
-ProceduralRock::ProceduralRock(glm::vec3 pos, float scale)
+// ============================================================
+// RUÍDO
+// ============================================================
+
+static float noise(float x, float y, float z)
 {
-    position  = pos;
-    rockScale = scale;
+    return
+        sin(x * 8.0f) *
+        cos(y * 7.0f) *
+        sin(z * 9.0f);
+}
 
-    Generate();
-    SetupBuffers();
+static float fbm(glm::vec3 p)
+{
+    constexpr int octaves = 5;
+
+    float value = 0.0f;
+    float amplitude = 1.0f;
+    float frequency = 1.0f;
+
+    for (int i = 0; i < octaves; i++)
+    {
+        value += amplitude *
+            noise(
+                p.x * frequency,
+                p.y * frequency,
+                p.z * frequency
+            );
+
+        frequency *= 2.0f;
+        amplitude *= 0.5f;
+    }
+
+    return value;
+}
+
+// ============================================================
+// CONSTRUTOR
+// ============================================================
+
+ProceduralRock::ProceduralRock(
+    glm::vec3 pos,
+    float s,
+    int subdivisions
+)
+{
+    position = pos;
+    scale = s;
+
+    generateSphere(subdivisions);
+
+    computeNormals();
+
+    setupBuffers();
+
+    collisionRadius = scale * 0.95f;
+
+    model = glm::mat4(1.0f);
 }
 
 ProceduralRock::~ProceduralRock()
 {
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+    if (VAO)
+        glDeleteVertexArrays(1, &VAO);
+
+    if (VBO)
+        glDeleteBuffers(1, &VBO);
+
+    if (EBO)
+        glDeleteBuffers(1, &EBO);
 }
 
-void ProceduralRock::Generate()
+// ============================================================
+// NORMAIS
+// ============================================================
+
+void ProceduralRock::computeNormals()
 {
-    generateCube();
+    for (auto& v : vertices)
+        v.normal = glm::vec3(0.0f);
+
+    for (size_t i = 0; i < indices.size(); i += 3)
+    {
+        RockVertex& a = vertices[indices[i]];
+        RockVertex& b = vertices[indices[i + 1]];
+        RockVertex& c = vertices[indices[i + 2]];
+
+        glm::vec3 edge1 =
+            b.position - a.position;
+
+        glm::vec3 edge2 =
+            c.position - a.position;
+
+        glm::vec3 n =
+            glm::normalize(
+                glm::cross(edge1, edge2)
+            );
+
+        a.normal += n;
+        b.normal += n;
+        c.normal += n;
+    }
+
+    for (auto& v : vertices)
+    {
+        v.normal =
+            glm::normalize(v.normal);
+    }
 }
 
-// Colisão: retorna true se o ponto estiver dentro do rocha
+// ============================================================
+// ESFERA PROCEDURAL
+// ============================================================
+
+void ProceduralRock::generateSphere(int subdivisions)
+{
+    vertices.clear();
+    indices.clear();
+
+    int stacks =
+        8 * (subdivisions + 1);
+
+    int slices =
+        16 * (subdivisions + 1);
+
+    for (int stack = 0; stack <= stacks; ++stack)
+    {
+        float v =
+            (float)stack /
+            (float)stacks;
+
+        float phi =
+            v * glm::pi<float>();
+
+        for (int slice = 0; slice <= slices; ++slice)
+        {
+            float u =
+                (float)slice /
+                (float)slices;
+
+            float theta =
+                u * glm::two_pi<float>();
+
+            glm::vec3 p;
+
+            p.x = sin(phi) * cos(theta);
+            p.y = cos(phi);
+            p.z = sin(phi) * sin(theta);
+
+            // ==================================
+            // DEFORMAÇÃO PROCEDURAL
+            // ==================================
+
+            float displacement =
+                glm::smoothstep(
+                    -1.0f,
+                    1.0f,
+                    fbm(p * 0.8f)
+                ) * 2.0f - 1.0f;
+
+            float radius =
+                1.0f +
+                displacement * 0.08f;
+
+            p *= radius;
+
+            RockVertex vertex;
+
+            vertex.position = p;
+            vertex.normal =
+                glm::normalize(p);
+
+            vertex.texcoords =
+                glm::vec2(u, v);
+
+            vertices.push_back(vertex);
+        }
+    }
+
+    for (int stack = 0; stack < stacks; ++stack)
+    {
+        for (int slice = 0; slice < slices; ++slice)
+        {
+            int first =
+                stack * (slices + 1) +
+                slice;
+
+            int second =
+                first +
+                slices +
+                1;
+
+            indices.push_back(first);
+            indices.push_back(first + 1);
+            indices.push_back(second);
+
+            indices.push_back(second);
+            indices.push_back(first + 1);
+            indices.push_back(second + 1);
+        }
+    }
+}
+
+// ============================================================
+// COLISÃO
+// ============================================================
+
 bool ProceduralRock::checkCollision(
     glm::vec3 point,
     float radius
@@ -35,21 +222,17 @@ bool ProceduralRock::checkCollision(
     float distance =
         glm::length(point - position);
 
-    float rockRadius =
-        rockScale * 0.8f;
+    bool collision =
+        distance <
+        (collisionRadius + radius);
 
-    bool isColliding =
-        distance < (radius + rockRadius);
-
-    // evento único
-    if (isColliding && !collided)
+    if(collision && !collided)
     {
         collided = true;
         return true;
     }
 
-    // reset quando afastar
-    if (!isColliding)
+    if(!collision)
     {
         collided = false;
     }
@@ -57,102 +240,11 @@ bool ProceduralRock::checkCollision(
     return false;
 }
 
-void ProceduralRock::generateCube()
-{
-    vertices.clear();
-    indices.clear();
+// ============================================================
+// OPENGL
+// ============================================================
 
-    float s = 0.5f;
-
-    // intensidade da deformação
-    float jitter = rockScale * 0.15f;
-
-    auto randOffset = [&]() -> float
-    {
-        return (
-            ((float) rand() / RAND_MAX) - 0.5f
-        ) * jitter;
-    };
-
-    // =====================================================
-    // VÉRTICES DO CUBO DEFORMADO
-    // =====================================================
-
-    glm::vec3 p0(-s + randOffset(), -s + randOffset(), -s + randOffset());
-    glm::vec3 p1( s + randOffset(), -s + randOffset(), -s + randOffset());
-    glm::vec3 p2( s + randOffset(),  s + randOffset(), -s + randOffset());
-    glm::vec3 p3(-s + randOffset(),  s + randOffset(), -s + randOffset());
-
-    glm::vec3 p4(-s + randOffset(), -s + randOffset(),  s + randOffset());
-    glm::vec3 p5( s + randOffset(), -s + randOffset(),  s + randOffset());
-    glm::vec3 p6( s + randOffset(),  s + randOffset(),  s + randOffset());
-    glm::vec3 p7(-s + randOffset(),  s + randOffset(),  s + randOffset());
-
-    // =====================================================
-    // HELPERS
-    // =====================================================
-
-    auto addTriangle =
-    [&](glm::vec3 a, glm::vec3 b, glm::vec3 c)
-    {
-        glm::vec3 normal =
-            glm::normalize(glm::cross(b - a, c - a));
-
-        unsigned int start = vertices.size();
-
-        vertices.push_back({
-            a,
-            normal,
-            glm::vec2(0.0f, 0.0f)
-        });
-
-        vertices.push_back({
-            b,
-            normal,
-            glm::vec2(1.0f, 0.0f)
-        });
-
-        vertices.push_back({
-            c,
-            normal,
-            glm::vec2(0.5f, 1.0f)
-        });
-
-        indices.push_back(start + 0);
-        indices.push_back(start + 1);
-        indices.push_back(start + 2);
-    };
-
-    // =====================================================
-    // 12 TRIÂNGULOS DO CUBO
-    // =====================================================
-
-    // Frente
-    addTriangle(p4, p5, p6);
-    addTriangle(p4, p6, p7);
-
-    // Trás
-    addTriangle(p1, p0, p3);
-    addTriangle(p1, p3, p2);
-
-    // Esquerda
-    addTriangle(p0, p4, p7);
-    addTriangle(p0, p7, p3);
-
-    // Direita
-    addTriangle(p5, p1, p2);
-    addTriangle(p5, p2, p6);
-
-    // Topo
-    addTriangle(p3, p7, p6);
-    addTriangle(p3, p6, p2);
-
-    // Base
-    addTriangle(p0, p1, p5);
-    addTriangle(p0, p5, p4);
-}
-
-void ProceduralRock::SetupBuffers()
+void ProceduralRock::setupBuffers()
 {
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -160,35 +252,28 @@ void ProceduralRock::SetupBuffers()
 
     glBindVertexArray(VAO);
 
-    // =====================================================
-    // VBO
-    // =====================================================
-
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
     glBufferData(
         GL_ARRAY_BUFFER,
-        vertices.size() * sizeof(RockVertex),
+        vertices.size() *
+        sizeof(RockVertex),
         vertices.data(),
         GL_STATIC_DRAW
     );
 
-    // =====================================================
-    // EBO
-    // =====================================================
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBindBuffer(
+        GL_ELEMENT_ARRAY_BUFFER,
+        EBO
+    );
 
     glBufferData(
         GL_ELEMENT_ARRAY_BUFFER,
-        indices.size() * sizeof(unsigned int),
+        indices.size() *
+        sizeof(unsigned int),
         indices.data(),
         GL_STATIC_DRAW
     );
-
-    // =====================================================
-    // POSITION
-    // =====================================================
 
     glVertexAttribPointer(
         0,
@@ -196,14 +281,12 @@ void ProceduralRock::SetupBuffers()
         GL_FLOAT,
         GL_FALSE,
         sizeof(RockVertex),
-        (void*)offsetof(RockVertex, position)
+        (void*)offsetof(
+            RockVertex,
+            position
+        )
     );
-
     glEnableVertexAttribArray(0);
-
-    // =====================================================
-    // NORMAL
-    // =====================================================
 
     glVertexAttribPointer(
         1,
@@ -211,14 +294,12 @@ void ProceduralRock::SetupBuffers()
         GL_FLOAT,
         GL_FALSE,
         sizeof(RockVertex),
-        (void*)offsetof(RockVertex, normal)
+        (void*)offsetof(
+            RockVertex,
+            normal
+        )
     );
-
     glEnableVertexAttribArray(1);
-
-    // =====================================================
-    // TEXCOORDS
-    // =====================================================
 
     glVertexAttribPointer(
         2,
@@ -226,17 +307,26 @@ void ProceduralRock::SetupBuffers()
         GL_FLOAT,
         GL_FALSE,
         sizeof(RockVertex),
-        (void*)offsetof(RockVertex, texcoords)
+        (void*)offsetof(
+            RockVertex,
+            texcoords
+        )
     );
-
     glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
 }
 
-void ProceduralRock::Draw(GLuint model_uniform)
+// ============================================================
+// RENDER
+// ============================================================
+
+void ProceduralRock::Draw(
+    GLuint model_uniform
+)
 {
-    model = glm::mat4(1.0f);
+    glm::mat4 model =
+        glm::mat4(1.0f);
 
     model = glm::translate(
         model,
@@ -245,7 +335,7 @@ void ProceduralRock::Draw(GLuint model_uniform)
 
     model = glm::scale(
         model,
-        glm::vec3(rockScale)
+        glm::vec3(scale)
     );
 
     glUniformMatrix4fv(
@@ -259,9 +349,11 @@ void ProceduralRock::Draw(GLuint model_uniform)
 
     glDrawElements(
         GL_TRIANGLES,
-        indices.size(),
+        static_cast<GLsizei>(
+            indices.size()
+        ),
         GL_UNSIGNED_INT,
-        0
+        nullptr
     );
 
     glBindVertexArray(0);

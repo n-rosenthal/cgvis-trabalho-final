@@ -47,16 +47,19 @@ glm::vec3 Bird::getForward() const {
     return glm::normalize(forward);
 }
 
-glm::vec3 Bird::getCapsuleStart() const {
-    return
-        position
-        - getForward() * capsuleHalfLength;
+glm::vec3 Bird::getCapsuleStart() const
+{
+    return position + glm::vec3(0.0f, -0.5f, 0.0f);
 }
 
-glm::vec3 Bird::getCapsuleEnd() const {
-    return
-        position
-        + getForward() * capsuleHalfLength;
+glm::vec3 Bird::getCapsuleEnd() const
+{
+    return position + glm::vec3(0.0f, 0.8f, 0.0f);
+}
+
+float Bird::getCapsuleRadius() const
+{
+    return 0.35f;
 }
 
 void Bird::onCollision(glm::vec3 obstaclePos)

@@ -99,10 +99,6 @@ public:
     // colisão contra terreno
     bool onTerrainCollision(float terrainHeight, glm::vec3 terrainNormal);
 
-    float getCapsuleRadius() const {
-        return capsuleRadius;
-    }
-
     float getCapsuleHalfLength() const {
         return capsuleHalfLength;
     }
@@ -110,6 +106,9 @@ public:
     glm::vec3 getCapsuleStart() const;
 
     glm::vec3 getCapsuleEnd() const;
+
+    float getCapsuleRadius() const; 
+    
 
 private:
 

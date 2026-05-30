@@ -69,6 +69,9 @@ SoundManager g_Sound;
 // Classe `Ring`: anéis através dos quais o pássaro deve voar
 #include "Objects/Ring.hpp"
 
+// Class `Building`: construções/edifícios retangulares
+#include "Objects/Building.hpp"
+
 /** função inline para obter o caminho para algum asset (textura, modelo) 
     uso:
     	// carregar uma textura
@@ -290,6 +293,45 @@ Tree g_Tree;
  * Rochas geradas proceduralmente
 */
 std::vector<ProceduralRock> g_Rocks;
+int rockCount = 50;
+
+
+/**
+ * Prédios, construções retangulares 
+ */
+std::vector<Building> g_Buildings;
+int buildingsCount = 10;
+
+
+/**
+ * @brief retorna a distância entre um ponto `p` e um segmento de reta `ab`
+ * 
+ * @param p 
+ *      ponto
+ * @param a 
+ *      ponto A do segumento AB
+ * @param b
+ *      ponto B do segmento AB
+ * @return float 
+ */
+float distancePointSegment(
+    glm::vec3 p,
+    glm::vec3 a,
+    glm::vec3 b
+) {
+    glm::vec3 ab = b - a;
+
+    float t =
+        glm::dot(p - a, ab) /
+        glm::dot(ab, ab);
+
+    t = glm::clamp(t, 0.0f, 1.0f);
+
+    glm::vec3 closest =
+        a + t * ab;
+
+    return glm::length(p - closest);
+}
 
 
 int main(int argc, char* argv[])
@@ -436,8 +478,6 @@ int main(int argc, char* argv[])
 
     //  ROCHAS geração procedural
     srand((unsigned int)time(nullptr));
-    const int rockCount = 250;
-
     for (int i = 0; i < rockCount; ++i) {
         // =====================================
         // POSIÇÃO ALEATÓRIA NO TERRENO
@@ -511,6 +551,23 @@ int main(int argc, char* argv[])
         g_Rings.emplace_back(
             glm::vec3(x,y,z),
             2.5f
+        );
+    }
+
+    // PRÉDIOS/CONSTRUÇÕES
+    for (int i = 0; i < buildingsCount; ++i){
+        float x = ((float)rand() / RAND_MAX) * 300.0f;
+        float z = ((float)rand() / RAND_MAX) * 300.0f;
+
+        float width = 5.0f + ((float)rand() / RAND_MAX) * 10.0f;
+        float depth = 5.0f + ((float)rand() / RAND_MAX) * 10.0f;
+        float height = 20.0f + ((float)rand() / RAND_MAX) * 60.0f;
+
+        g_Buildings.emplace_back(
+            glm::vec3(x, height * 0.5f, z),
+            width,
+            height,
+            depth
         );
     }
 
@@ -636,12 +693,13 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
         glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
-        #define SPHERE  0
-        #define BUNNY   1
-        #define PLANE   2
-        #define BIRD    3 
-        #define ROCK    4
-        #define RING    5
+        #define SPHERE      0
+        #define BUNNY       1
+        #define PLANE       2
+        #define BIRD        3 
+        #define ROCK        4
+        #define RING        5
+        #define BUILDING    6
 
         // =========================================================
         // ÁRVORE
@@ -666,21 +724,11 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, BIRD);
         DrawVirtualObject("the_bird");
 
-        // =========================================
-        // PÁSSARO :: COLISÃO COM ROCHAS
-        // =========================================
-
-        //  Depois de desenhar o pássaro, vamos obter sua posição
-        //  e seu raio de colisão, a fim de verificar se este
-        //  está em colisão com algum objeto
-        float birdRadius = g_Bird.collisionRadius;
-
-        //  Decrementa o cooldown de colisão se não for zero
-        if (g_Bird.collisionCooldown > 0.0f)
-            g_Bird.collisionCooldown -= dt;
-
-        if (g_Bird.terrainCollisionCooldown > 0.0f) 
-            g_Bird.terrainCollisionCooldown -= dt;
+        //  Depois de desenhar o pássaro, vamos obter
+        //  o vetor AB ao longo do comprimento do pássaro, e seu raio
+        glm::vec3 capsuleA  = g_Bird.getCapsuleStart();
+        glm::vec3 capsuleB  = g_Bird.getCapsuleEnd();
+        float capsuleRadius = g_Bird.getCapsuleRadius();
 
         // =========================================
         // PÁSSARO :: COLISÃO COM TERRENO
@@ -736,17 +784,23 @@ int main(int argc, char* argv[])
         terrain.draw(g_model_uniform);
 
         // =========================================================
-        // ROCHAS PROCEDURAIS
+        //  OBJETOS ESFÉRICOS   ::
+        //                          ROCHAS PROCEDURAIS
         // =========================================================
-
+        //  carregar sampler para ROCHA
         glUniform1i(g_object_id_uniform, ROCK);
 
-        for (auto& rock : g_Rocks)
-        {
+        //  para cada rocha, faça...
+        for (auto& rock : g_Rocks) {
+            //  desenhe a rocha na cena virtual
             rock.Draw(g_model_uniform);
 
-            //  para cada rocha, verificar se há colisão com o pássaro
-            if (rock.checkCollision(birdPos, birdRadius)) {
+            //  calcule a distância entre o centro da rocha (p)
+            //  e o segmento de reta AB (cápsula do pássaro)
+            float distance = distancePointSegment(rock.getPosition(), capsuleA, capsuleB);
+
+            //  verifique a distância contra a soma dos raios
+            if (distance < (capsuleRadius + rock.getCollisionRadius())) {
                 //  se houver, toque o som de colisão pássaro-pedra
                 g_Sound.play("assets/audio/cartoonish-stone-sfx-slow.wav");
 
@@ -777,6 +831,41 @@ int main(int argc, char* argv[])
             glEnable(GL_CULL_FACE);
         }
 
+        // =========================================================
+        // EDIFÍCIOS
+        // =========================================================
+
+        glUniform1i(
+            g_object_id_uniform,
+            BUILDING
+        );
+
+        for (auto& building : g_Buildings)
+        {
+            building.Draw(
+                g_model_uniform
+            );
+
+            if (
+                building.checkCollision(
+                    birdPos,
+                    g_Bird.getCapsuleRadius()
+                )
+            )
+            {
+                g_Sound.play(
+                    "assets/audio/building-hit.wav"
+                );
+
+                g_Bird.onCollision(
+                    building.getPosition()
+                );
+
+                printf(
+                    "colisão com edifício\n"
+                );
+            }
+        }
         // =========================================================`
 
 

@@ -1,14 +1,129 @@
 *   implementando objetos
 **  implementando /rochas procedurais/
-As rochas procedurais são implementadas a partir de um cubo que é truncado em $8$, $16$ ou $24$ pontos.
+*** Geração Procedural de Esferas
+A função =ProceduralRock::generateSphere()= é responsável por construir a malha triangular utilizada para representar uma rocha aproximadamente esférica. A abordagem gera uma esfera parametrizada em coordenadas esféricas, visando produzir uma geometria compatível com o modelo de colisão esférico adotado pelo sistema físico.
 
-1. tome um cubo de vértices \[v_1, v_2, ..., v_8\] e decida entre \[k = 8\], \[k = 16\] ou \[k = 24\] pontos para fraturar o cubo.
-2. desenhe triângulos ...
-3. compute a /maior esfera possível que compreende a maior parte dos vértices da rocha produzida/.
+*** Parametrização Esférica
+Cada vértice da esfera é obtido a partir de dois ângulos:
 
-A /maior esfera possível que compreende a maior parte dos vértices da rocha produzida/ é uma aproximação para o sistema de colisões. Quanto maior o truncamento do cubo, mais próximo este se torna de uma esfera. Se a rocha for ainda tratada, para razões de colisão, como um cubo, as colisões se tornarão grosseiras, irrealistas e teremos muitas colisões-fantasma. Entretanto, é necessário computar uma esfera adequada para cada rocha.
+- $\theta \in [0, 2\pi]$ (longitude)
+- $\phi \in [0, \pi]$ (latitude)
 
-Em termos geométricos, /descobrir a esfera/ é, na verdade, descobrir qual o /raio mais adequado/ ao centro da rocha. Devido ao método procedural de produção da rocha, sabemos que seu centro será o centro do cubo e que é daí que partirá o raio. 
+A conversão para coordenadas cartesianas é dada por:
+
+\[
+x = \sin(\phi)\cos(\theta)
+\]
+
+\[
+y = \cos(\phi)
+\]
+
+\[
+z = \sin(\phi)\sin(\theta)
+\]
+
+Como a esfera é inicialmente construída com raio unitário, todos os vértices encontram-se sobre a superfície da esfera de raio $1$ centrada na origem.
+
+*** Discretização da Superfície
+
+A superfície contínua é discretizada em duas direções:
+
+- =stacks=: divisões horizontais (latitudes);
+- =slices=: divisões verticais (longitudes).
+
+Cada par $(stack, slice)$ gera um vértice da malha.
+
+#+BEGIN_SRC text
+      stack 0
+   ----------------
+   ----------------
+   ----------------
+      stack N
+#+END_SRC
+
+Quanto maior o número de subdivisões, mais suave será a esfera produzida, ao custo de uma quantidade maior de vértices e triângulos.
+
+*** Normais
+
+Para uma esfera unitária, o vetor normal em cada ponto coincide com a direção do próprio vértice.
+
+Assim, para cada vértice $v$:
+
+\[
+n = \frac{v}{||v||}
+\]
+
+Como todos os vértices já pertencem à superfície de uma esfera de raio unitário, a normal pode ser obtida simplesmente normalizando a posição do vértice.
+
+Isso produz iluminação suave (/smooth shading/) sobre toda a superfície.
+
+*** Construção dos Triângulos
+
+Após gerar os vértices, a superfície é triangulada.
+
+Cada célula da grade formada por duas latitudes consecutivas e duas longitudes consecutivas é dividida em dois triângulos:
+
+#+BEGIN_SRC text
+A ----- B
+| \     |
+|   \   |
+|     \ |
+C ----- D
+#+END_SRC
+
+Triângulos gerados:
+
+- $(A,C,B)$
+- $(B,C,D)$
+
+Esse procedimento é repetido para todas as células da malha.
+
+*** Complexidade
+
+Sejam:
+
+- $S$ o número de =stacks=
+- $L$ o número de =slices=
+
+A quantidade de vértices gerada é:
+
+\[
+(S+1)(L+1)
+\]
+
+e a quantidade de triângulos é:
+
+\[
+2SL
+\]
+
+Portanto, o custo de geração da esfera é:
+
+\[
+O(SL)
+\]
+
+sendo executado apenas durante a criação da rocha.
+
+*** Relação com o Sistema de Colisão
+
+A utilização de uma esfera como geometria base permite empregar um modelo de colisão igualmente esférico.
+
+Dessa forma, a colisão entre pássaro e rocha reduz-se ao teste da distância entre dois centros:
+
+\[
+||P - R|| < r_P + r_R
+\]
+
+onde:
+
+- $P$ é o centro do pássaro;
+- $R$ é o centro da rocha;
+- $r_P$ é o raio de colisão do pássaro;
+- $r_R$ é o raio de colisão da rocha.
+
+Esse teste possui custo constante $O(1)$ e evita a necessidade de verificar interseções contra todos os triângulos da malha.
 
 **  implementar o /chão/ da cena do jogo
 
