@@ -10,6 +10,10 @@ set(SOURCES
   engine/src/audio/miniaudio.c
   engine/src/audio/AudioManager.cpp
   engine/src/main.cpp
+  engine/src/Objects/TerrainLayer.cpp
+  engine/src/Objects/SineLayer.cpp
+  engine/src/Objects/MountainLayer.cpp
+  engine/src/Objects/LakeLayer.cpp
   engine/src/Objects/ProceduralTerrain.cpp
   engine/src/Objects/ProceduralRock.cpp
   engine/src/Objects/Ring.cpp

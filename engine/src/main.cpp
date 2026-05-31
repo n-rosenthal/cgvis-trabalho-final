@@ -63,6 +63,11 @@ SoundManager g_Sound;
 // Classe `ProceduralTerrain`: terreno gerado proceduralmente
 #include "Objects/ProceduralTerrain.hpp"
 
+//  Classes de CAMADAS DE RELEVO para formação do TERRENO
+#include "Objects/SineLayer.hpp"
+#include "Objects/MountainLayer.hpp"
+#include "Objects/LakeLayer.hpp"
+
 // Classes `ProceduralRock`: rochas geradas proceduralmente
 #include "Objects/ProceduralRock.hpp"
 
@@ -466,14 +471,97 @@ int main(int argc, char* argv[])
     // Geração de árvores
     g_Tree.generate(NumberOfTrees);
 
-    //  TERRENO geração procedural
-    ProceduralTerrain terrain(
-        512,   // width
-        512,   // depth
-        3.0f,  // spacing
-        2.5f,  // amplitude
-        0.025f  // frequency
+
+    // =============================== TERRENO ================================
+    // Constantes para o terreno
+    int terrain_base_width      = 512;      //  largura de todo o mapa
+    int terrain_base_depth      = 512;      //  comprimento de todo o mapa
+    float terrain_base_center   = 256;      //  centro do mapa (256, 256)
+
+    //  Quadrantes
+    int terrain_quadrant_width  = 256;      //  largura de um quadrante
+    int terrain_quadrant_depth  = 256;      //  profundidade de um quadrante
+
+    //  sudoeste [0, 256] x [0, 256]        campo (SineLayer, a=4, f=0.02)
+    float terrain_sw_amplitude  = 4.0f;     //  amplitude
+    float terrain_sw_frequency  = 0.02f;    //  frequência
+
+    //  noroeste [0, 256] x [256, 512]      montanha (MountainLayer, c=(50, 50), H=120, r=60)
+    float terrain_nw_xcenter    = 50.0f;    // c_x, c_y
+    float terrain_nw_zcenter    = 50.0f;    //  centro da montanha
+    float terrain_nw_H          = 120.0f;   //  altura da montanha
+    float terrain_nw_radius     = 60.0f;    //  raio da montanha
+
+    //  nordeste [256, 512] x [256, 512]    lago (LakeLayer, c=(400, 400), r=100)
+    float terrain_ne_xcenter    = 400.0f;   //  centro do lago
+    float terrain_ne_zcenter    = 400.0f;   //  centro do lago
+    float terrain_ne_H          = 100.0f;
+    float terrain_ne_radius     = 100.0f;   //  raio do lago
+
+    //  sudeste [256, 512] x [0, 256]      campo (SineLayer, a=2, f=0.1)
+    float terrain_se_amplitude  = 2.0f;     //  amplitude
+    float terrain_se_frequency  = 0.1f;     //  frequência
+
+    //  TERRENO: construção do mapa total
+    ProceduralTerrain terrain = ProceduralTerrain(512, 512, 2.0f);
+
+    //  Quadrante Sudoeste
+    //  CAMADA de RELEVO SINUSOIDAL com amplitude 4.0 e frequência 0.02
+    terrain.addLayer(
+        std::make_shared<SineLayer>(
+                terrain_sw_amplitude,
+                terrain_sw_frequency
+            )
     );
+
+    //  CAMADA de RELEVO MONTANHOSO
+    //      com centro (x, z) em (50.0, 50.0)
+    //      altura H = 30.0, raio = 60.0
+    terrain.addLayer(
+        std::make_shared<MountainLayer>(
+            glm::vec2(
+                terrain_nw_xcenter,
+                terrain_nw_zcenter
+            ),
+            terrain_nw_H,
+            terrain_nw_radius
+        )
+    );
+
+        terrain.addLayer(
+        std::make_shared<MountainLayer>(
+            glm::vec2(
+                terrain_nw_xcenter + 15,
+                terrain_nw_zcenter + 15
+            ),
+            terrain_nw_H + 20,
+            terrain_nw_radius + 50
+        )
+    );
+
+    //  CAMADA de RELEVO LAGO
+    //      com centro (x, z) em (400.0, 400.0)
+    //      altura H = 30.0, raio = 60.0
+    terrain.addLayer(
+        std::make_shared<LakeLayer>(
+            glm::vec2(
+                terrain_ne_xcenter,
+                terrain_ne_zcenter
+            ),
+            terrain_ne_H,
+            terrain_ne_radius
+        )
+    );
+
+    //  CAMADA de RELEVO SINUSOIDAL com amplitude 2.0 e frequência 0.1
+    terrain.addLayer(
+        std::make_shared<SineLayer>(
+                terrain_se_amplitude,
+                terrain_se_frequency
+            )
+    );
+
+    //  TERRENO: geração
     terrain.generate();
 
     //  ROCHAS geração procedural
@@ -662,7 +750,7 @@ int main(int argc, char* argv[])
         // Note que, no sistema de coordenadas da câmera, os planos near e far
         // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
         float nearplane = -0.1f;    // Posição do "near plane"
-        float farplane  = -128.0f;  // Posição do "far plane"
+        float farplane  = -512.0f;  // Posição do "far plane"
 
         if (g_UsePerspectiveProjection)
         {

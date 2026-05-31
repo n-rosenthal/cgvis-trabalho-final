@@ -1,0 +1,91 @@
+* elementos de relevo
+** =TerrainLayer=
+A interface =TerrainLayer= permite a definição de diversos tipos de relevo parametrizado. Através desta classe, definimos outras:
+1. =HillLayer=: colinas, morros, relevo baseado em distribuições gaussianas;
+2. =MountainLayer=: montanhas;
+3. =LakeLayer=: lagos;
+4. =NoiseLayer=: terreno baseado em funções de ruído regular.
+
+Para definir o terreno, consideramos que queremos saber a *altura* do terreno para todos os pontos \[x, z\]. Dessa forma, toda /função de relevo/ é uma função que associa ao par =(x, z)= um valor de =y=.
+
+Definimos então uma /interface/ para camadas de relevo (=Objects/TerrainLayer.hpp=):
+
+#+begin_src cpp :tangle Objects/TerrainLayer.hpp
+#pragma once
+
+/**
+ * @brief Interface para camadas de relevo.
+ *
+ * Cada camada recebe uma coordenada (x,z) e retorna uma contribuição para a altura.
+ */
+class TerrainLayer
+{
+public:
+    virtual ~TerrainLayer() = default;
+
+    /**
+     * @brief Avalia a camada em uma posição.
+     */
+    virtual float sample(
+        float x,
+        float z
+    ) const = 0;
+};
+#+end_src
+
+As classes mencionadas acima implementarão a interface =TerrainLayer= e, de acordo com suas necessidades individuais, implementarão =sample()= de maneira distinta.
+
+Por se tratar de uma /interface/, o arquivo =TerrainLayer.cpp= é trivial:
+
+#+begin_src cpp :tangle Objects/TerrainLayer.cpp
+#include "Objects/TerrainLayer.hpp"
+#+end_src
+
+** =SineLayer=
+Utilizamos funções seno e cosseno para produzir relevos ondulados. Esta é a base para o /chão/ de modo geral do jogo.
+
+*** Implementação
+
+** colinas
+*** definição matemática
+Podemos somar colinas ao terreno através da soma de distribuições gaussianas. Dessa forma, para uma colina centrada em \[(x_c, z_c)\], definimos a altura $h$ da colina no ponto $(x, z)$ como
+
+\[
+h(x, z) = H \cdot \exp{(- \frac{(x - x_c)^{2} + (z - z_c)^{2}}{2 \cdot \sigma^{2}})}
+\]
+
+onde $H$ é a altura que desejamos ao centro da colina e $\sigma$ é a largura da colina.
+
+*** implementação
+As colinas são construídas através da classe =HillLayer=, que implementa a /interface/ =TerrainLayer=.
+
+#begin_src cpp
+/**
+*   Retorna a altura h (y) de uma colina, para o ponto (=x=, =z=),
+*   considerando o centro (=x_c=, =z_c=), a altura base H (=center=)
+*   e o raio da colina (=radius=, \sigma)
+*/
+float hill(
+    float x,
+    float z,
+    glm::vec2 center,
+    float height,
+    float radius)
+{
+    //  computa a variação do centro ao ponto atual da colina
+    float dx = x - center.x;
+    float dz = z - center.y;
+
+    //  soma dos quadrados das distâncias
+    float dist2 = dx*dx + dz*dz;
+
+    return
+        height *
+        exp(
+            -dist2 /
+            (2.0f * radius * radius)
+        );
+}
+#+end_src
+
+A função =hill()= produz a altura (valor de =y=) para o ponto que desejamos de uma colina. Para implementar o terreno
