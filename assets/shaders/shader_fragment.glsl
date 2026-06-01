@@ -4,6 +4,8 @@ in vec4 position_world;
 in vec4 normal;
 in vec4 position_model;
 in vec2 texcoords;
+in vec3 terrain_color;
+flat in int terrain_material;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -85,8 +87,17 @@ void main()
     // ===== TERRENO =====
     else if ( object_id == PLANE )
     {
-        color.rgb = vec3(0.2, 0.7, 0.2);
+        vec3 N = normalize(n.xyz);
+        vec3 L = normalize(l.xyz);
+
+        float diffuse =
+            max(dot(N, L), 0.15);
+
+        color.rgb =
+            terrain_color * diffuse;
+
         color.a = 1.0;
+
         return;
     }
 

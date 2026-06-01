@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(OWL VERSION 1.0.0 LANGUAGES C CXX)   # Fixed: no "SIMULATOR"
+project(OWL VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,17 +9,22 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(SOURCES
   engine/src/audio/miniaudio.c
   engine/src/audio/AudioManager.cpp
+
   engine/src/main.cpp
+
+  engine/src/Objects/TerrainRegion.cpp
   engine/src/Objects/TerrainLayer.cpp
   engine/src/Objects/SineLayer.cpp
   engine/src/Objects/MountainLayer.cpp
   engine/src/Objects/LakeLayer.cpp
-  engine/src/Objects/ProceduralTerrain.cpp
+  engine/src/Objects/Terrain.cpp
+
   engine/src/Objects/ProceduralRock.cpp
   engine/src/Objects/Ring.cpp
   engine/src/Objects/Building.cpp
   engine/src/Bird.cpp
   engine/src/Tree.cpp
+  
   engine/src/correcao.cpp
   engine/src/textrendering.cpp
   engine/src/Objects.cpp

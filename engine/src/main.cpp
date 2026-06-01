@@ -61,7 +61,9 @@ SoundManager g_Sound;
 #include "Tree.hpp"
 
 // Classe `ProceduralTerrain`: terreno gerado proceduralmente
-#include "Objects/ProceduralTerrain.hpp"
+#include "Objects/Terrain.hpp"
+#include "Objects/TerrainRegion.hpp"
+#include "Objects/TerrainType.hpp"
 
 //  Classes de CAMADAS DE RELEVO para formação do TERRENO
 #include "Objects/SineLayer.hpp"
@@ -471,98 +473,143 @@ int main(int argc, char* argv[])
     // Geração de árvores
     g_Tree.generate(NumberOfTrees);
 
+    // =====================================================
+    // TERRENO
+    // =====================================================
+    //  Este é o território inteiro do mapa
+    Terrain terrain(
+        512,    // width
+        512,    // depth
+        2.0f    // spacing
+    );
 
-    // =============================== TERRENO ================================
-    // Constantes para o terreno
-    int terrain_base_width      = 512;      //  largura de todo o mapa
-    int terrain_base_depth      = 512;      //  comprimento de todo o mapa
-    float terrain_base_center   = 256;      //  centro do mapa (256, 256)
+    // =====================================================
+    // MATERIAIS do TERRENO
+    // =====================================================
 
-    //  Quadrantes
-    int terrain_quadrant_width  = 256;      //  largura de um quadrante
-    int terrain_quadrant_depth  = 256;      //  profundidade de um quadrante
+    TerrainMaterial grassMaterial;
+    grassMaterial.id = 0;
 
-    //  sudoeste [0, 256] x [0, 256]        campo (SineLayer, a=4, f=0.02)
-    float terrain_sw_amplitude  = 4.0f;     //  amplitude
-    float terrain_sw_frequency  = 0.02f;    //  frequência
+    TerrainMaterial mountainMaterial;
+    mountainMaterial.id = 1;
 
-    //  noroeste [0, 256] x [256, 512]      montanha (MountainLayer, c=(50, 50), H=120, r=60)
-    float terrain_nw_xcenter    = 50.0f;    // c_x, c_y
-    float terrain_nw_zcenter    = 50.0f;    //  centro da montanha
-    float terrain_nw_H          = 120.0f;   //  altura da montanha
-    float terrain_nw_radius     = 60.0f;    //  raio da montanha
+    TerrainMaterial waterMaterial;
+    waterMaterial.id = 2;
 
-    //  nordeste [256, 512] x [256, 512]    lago (LakeLayer, c=(400, 400), r=100)
-    float terrain_ne_xcenter    = 400.0f;   //  centro do lago
-    float terrain_ne_zcenter    = 400.0f;   //  centro do lago
-    float terrain_ne_H          = 100.0f;
-    float terrain_ne_radius     = 100.0f;   //  raio do lago
+    // =====================================================
+    // REGIÃO SUDOESTE
+    // Campo suave
+    // =====================================================
+    //  delimitação da REGIÃO do terreno
+    auto southwest =
+        std::make_shared<TerrainRegion>(
+            glm::vec2(0.0f,   0.0f),            //  x_min, z_min
+            glm::vec2(256.0f, 256.0f),          //  x_max, z_max
+            glm::vec3(0.20f, 0.80f, 0.20f),     //  cor
+            grassMaterial                       //  material
+        );
 
-    //  sudeste [256, 512] x [0, 256]      campo (SineLayer, a=2, f=0.1)
-    float terrain_se_amplitude  = 2.0f;     //  amplitude
-    float terrain_se_frequency  = 0.1f;     //  frequência
-
-    //  TERRENO: construção do mapa total
-    ProceduralTerrain terrain = ProceduralTerrain(512, 512, 2.0f);
-
-    //  Quadrante Sudoeste
-    //  CAMADA de RELEVO SINUSOIDAL com amplitude 4.0 e frequência 0.02
-    terrain.addLayer(
+    //  adição de uma CAMADA de RELEVO à REGIÃO SUDOESTE
+    southwest->addLayer(
         std::make_shared<SineLayer>(
-                terrain_sw_amplitude,
-                terrain_sw_frequency
-            )
-    );
-
-    //  CAMADA de RELEVO MONTANHOSO
-    //      com centro (x, z) em (50.0, 50.0)
-    //      altura H = 30.0, raio = 60.0
-    terrain.addLayer(
-        std::make_shared<MountainLayer>(
-            glm::vec2(
-                terrain_nw_xcenter,
-                terrain_nw_zcenter
-            ),
-            terrain_nw_H,
-            terrain_nw_radius
+            4.0f,
+            0.02f
         )
     );
 
-        terrain.addLayer(
+    //  inclusão da REGIÃO ao TERRITÓRIO (terreno total)
+    terrain.addRegion(southwest);
+
+    // =====================================================
+    // REGIÃO NOROESTE
+    // Montanhas
+    // =====================================================
+    auto northwest =
+        std::make_shared<TerrainRegion>(
+            glm::vec2(0.0f,   256.0f),
+            glm::vec2(256.0f, 512.0f),
+            glm::vec3(0.45f, 0.45f, 0.45f),
+            mountainMaterial
+        );
+
+    northwest->addLayer(
         std::make_shared<MountainLayer>(
             glm::vec2(
-                terrain_nw_xcenter + 15,
-                terrain_nw_zcenter + 15
+                50.0f,
+                350.0f
             ),
-            terrain_nw_H + 20,
-            terrain_nw_radius + 50
+            120.0f,
+            60.0f
         )
     );
 
-    //  CAMADA de RELEVO LAGO
-    //      com centro (x, z) em (400.0, 400.0)
-    //      altura H = 30.0, raio = 60.0
-    terrain.addLayer(
+    northwest->addLayer(
+        std::make_shared<MountainLayer>(
+            glm::vec2(
+                65.0f,
+                365.0f
+            ),
+            140.0f,
+            110.0f
+        )
+    );
+
+    terrain.addRegion(northwest);
+
+    // =====================================================
+    // REGIÃO NORDESTE
+    // Lago
+    // =====================================================
+
+    auto northeast =
+        std::make_shared<TerrainRegion>(
+            glm::vec2(256.0f, 256.0f),
+            glm::vec2(512.0f, 512.0f),
+            glm::vec3(0.10f, 0.25f, 0.90f),
+            waterMaterial
+        );
+
+    northeast->addLayer(
         std::make_shared<LakeLayer>(
             glm::vec2(
-                terrain_ne_xcenter,
-                terrain_ne_zcenter
+                400.0f,
+                400.0f
             ),
-            terrain_ne_H,
-            terrain_ne_radius
+            100.0f,
+            100.0f
         )
     );
 
-    //  CAMADA de RELEVO SINUSOIDAL com amplitude 2.0 e frequência 0.1
-    terrain.addLayer(
+    terrain.addRegion(northeast);
+
+    // =====================================================
+    // REGIÃO SUDESTE
+    // Campo ondulado
+    // =====================================================
+
+    auto southeast =
+        std::make_shared<TerrainRegion>(
+            glm::vec2(256.0f, 0.0f),
+            glm::vec2(512.0f, 256.0f),
+            glm::vec3(0.35f, 0.90f, 0.35f),
+            grassMaterial
+        );
+
+    southeast->addLayer(
         std::make_shared<SineLayer>(
-                terrain_se_amplitude,
-                terrain_se_frequency
-            )
+            2.0f,
+            0.10f
+        )
     );
 
-    //  TERRENO: geração
+    terrain.addRegion(southeast);
+
+    // =====================================================
+    // TERRENO :: GERAÇÃO
+    // =====================================================
+
     terrain.generate();
+
 
     //  ROCHAS geração procedural
     srand((unsigned int)time(nullptr));

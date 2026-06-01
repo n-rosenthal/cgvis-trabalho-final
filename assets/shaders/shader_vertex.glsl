@@ -2,9 +2,12 @@
 
 // Atributos de vértice recebidos como entrada ("in") pelo Vertex Shader.
 // Veja a função BuildTrianglesAndAddToVirtualScene() em "main.cpp".
-layout (location = 0) in vec4 model_coefficients;
-layout (location = 1) in vec4 normal_coefficients;
-layout (location = 2) in vec2 texture_coefficients;
+layout(location = 0) in vec4 model_coefficients;
+layout(location = 1) in vec4 normal_coefficients;
+layout(location = 2) in vec2 texture_coefficients;
+
+layout(location = 3) in vec3 vertex_color;
+layout(location = 4) in int vertex_material;
 
 // Matrizes computadas no código C++ e enviadas para a GPU
 uniform mat4 model;
@@ -19,6 +22,8 @@ out vec4 position_world;
 out vec4 position_model;
 out vec4 normal;
 out vec2 texcoords;
+out vec3 terrain_color;
+flat out int terrain_material;
 
 void main()
 {
@@ -63,5 +68,15 @@ void main()
 
     // Coordenadas de textura obtidas do arquivo OBJ (se existirem!)
     texcoords = texture_coefficients;
+
+    // =====================================
+    // TERRENO
+    // =====================================
+
+    terrain_color =
+        vertex_color;
+
+    terrain_material =
+        vertex_material;
 }
 
