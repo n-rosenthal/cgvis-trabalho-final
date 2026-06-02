@@ -79,6 +79,9 @@ SoundManager g_Sound;
 // Class `Building`: construções/edifícios retangulares
 #include "Objects/Building.hpp"
 
+//  Sistema de Colisões
+#include "Collision/CollisionSystem.hpp"
+
 /** função inline para obter o caminho para algum asset (textura, modelo) 
     uso:
     	// carregar uma textura
@@ -287,14 +290,11 @@ GLint g_bbox_max_uniform;
 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
-int NumberOfTrees = 30;
 
 /**
  * BIRD: Ave controlada pelo usuário
 */
 Bird g_Bird;
-
-Tree g_Tree;
 
 /**
  * Rochas geradas proceduralmente
@@ -469,10 +469,6 @@ int main(int argc, char* argv[])
 
     float last_frame_time = (float)glfwGetTime();
 
-    // =============================== OBJETOS ===============================
-    // Geração de árvores
-    g_Tree.generate(NumberOfTrees);
-
     // =====================================================
     // TERRENO
     // =====================================================
@@ -586,29 +582,111 @@ int main(int argc, char* argv[])
     // REGIÃO SUDESTE
     // Campo ondulado
     // =====================================================
+    glm::vec2 southeast_min             = glm::vec2(256.0f, 0.0f);
+    glm::vec2 southeast_max             = glm::vec2(512.0f, 256.0f);
+    glm::vec3 southeast_color           = glm::vec3(0.35f, 0.90f, 0.35f);
+    float southeast_sineLayer_amplitude = 16.0f;
+    float southeast_sineLayer_frequency = 0.05;
 
+    //  Definição da região southeast
     auto southeast =
         std::make_shared<TerrainRegion>(
-            glm::vec2(256.0f, 0.0f),
-            glm::vec2(512.0f, 256.0f),
-            glm::vec3(0.35f, 0.90f, 0.35f),
+            southeast_min,
+            southeast_max,
+            southeast_color,
             grassMaterial
         );
 
+    //  Aplicação de uma camada sinusoidal à região southeast
     southeast->addLayer(
         std::make_shared<SineLayer>(
-            2.0f,
-            0.10f
+            southeast_sineLayer_amplitude,
+            southeast_sineLayer_frequency
         )
     );
 
+    //  Adicionar a região ao terreno
     terrain.addRegion(southeast);
-
-    // =====================================================
-    // TERRENO :: GERAÇÃO
-    // =====================================================
-
     terrain.generate();
+
+    //  ÁRVORES da região southeast
+    std::vector<std::shared_ptr<Tree>> southeastTrees;
+    glm::vec3 southeastTrees_center     = glm::vec3(
+        southeast_min[0] + southeast_max[0] / 2.0f,
+        0.0f,
+        southeast_min[1] + southeast_max[1] / 2.0f
+    );
+    glm::vec3 southeastTrees_scale      = glm::vec3(
+        1.0f,
+        1.0f,
+        1.0f
+    );
+    glm::vec3 southeastTrees_rotation   = glm::vec3(
+        0.0f,
+        0.0f,
+        0.0f
+    );
+
+    int southeastTrees_num              = 15;
+    float southeastTrees_xdistance      = 10.0f;
+    float southeastTrees_zdistance      = 10.0f;
+    
+    //  para t entre [0, 15]
+    for (int t = 0; t < southeastTrees_num; t++) {
+        //  calcule a posição (x, z) da árvore
+        float tree_x = southeastTrees_center[0] - t * southeastTrees_xdistance;
+        float tree_z = southeastTrees_center[2] - t * southeastTrees_zdistance;
+
+        //  extraia a altura do terreno e o vetor normal para a posição
+        glm::vec3 normal = terrain.getNormal(tree_x, tree_z);
+        float height     = terrain.getHeight(tree_x, tree_z);
+
+        printf(
+            "normal (%f,%f) -> (%f,%f,%f)\n",
+            tree_x,
+            tree_z,
+            normal.x,
+            normal.y,
+            normal.z
+        );
+
+        printf(
+            "altura (%f, %f) -> %f\n",
+            tree_x,
+            tree_z,
+            height
+        );
+
+        float pitch = atan2(normal.z, normal.y);
+        float roll  = -atan2(normal.x, normal.y);
+
+        //  calcule a rotação da árvore, conforme a normal do terreno
+        glm::vec3 tree_rotation(
+            pitch,
+            0.0f,
+            roll
+        );
+
+
+        //  construa o vetor posição da árvore
+        glm::vec3 tree_position = glm::vec3(
+            tree_x,
+            height,
+            tree_z
+        );
+
+        //  defina a árvore e adicione ao vetor de árvores
+        southeastTrees.push_back(
+            std::make_shared<Tree>(
+                tree_position,
+                tree_rotation,
+                southeastTrees_scale,
+                0
+            )
+        );
+    }
+
+
 
 
     //  ROCHAS geração procedural
@@ -835,16 +913,7 @@ int main(int argc, char* argv[])
         #define ROCK        4
         #define RING        5
         #define BUILDING    6
-
-        // =========================================================
-        // ÁRVORE
-        // =========================================================
-
-        g_Tree.draw(
-            g_model_uniform,
-            g_object_id_uniform,
-            SPHERE
-        );
+        #define TREE        7
 
         // =========================================================
         // PÁSSARO
@@ -861,9 +930,9 @@ int main(int argc, char* argv[])
 
         //  Depois de desenhar o pássaro, vamos obter
         //  o vetor AB ao longo do comprimento do pássaro, e seu raio
-        glm::vec3 capsuleA  = g_Bird.getCapsuleStart();
-        glm::vec3 capsuleB  = g_Bird.getCapsuleEnd();
-        float capsuleRadius = g_Bird.getCapsuleRadius();
+        glm::vec3 capsuleA  = g_Bird.getCollider().p0;
+        glm::vec3 capsuleB  = g_Bird.getCollider().p1;
+        float capsuleRadius = g_Bird.getCollider().radius;
 
         // =========================================
         // PÁSSARO :: COLISÃO COM TERRENO
@@ -897,7 +966,7 @@ int main(int argc, char* argv[])
             }
         }
         // =========================================================
-        // TERRENO PROCEDURAL
+        // TERRENO
         // =========================================================
 
         model =
@@ -947,6 +1016,18 @@ int main(int argc, char* argv[])
         }
 
         // =========================================================
+        //  ÁRVORES
+        // =========================================================
+        //  árvores
+        for (auto& tree : southeastTrees) {
+                tree->draw(
+                    g_model_uniform,
+                    g_object_id_uniform,
+                    SPHERE
+                );
+            }
+
+        // =========================================================
         // ANÉIS
         // =========================================================
 
@@ -984,7 +1065,7 @@ int main(int argc, char* argv[])
             if (
                 building.checkCollision(
                     birdPos,
-                    g_Bird.getCapsuleRadius()
+                    g_Bird.getCollider().radius
                 )
             )
             {

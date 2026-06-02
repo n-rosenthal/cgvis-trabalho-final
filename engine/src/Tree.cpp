@@ -1,47 +1,155 @@
-#include "Tree.hpp"
-
-#include <cstdlib>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-// Função que existe no main.cpp
+#include "Tree.hpp"
+
+#include "Collision/CylindricalCollider.hpp"
+#include "Collision/SphereCollider.hpp"
+
+// existe em main.cpp
 extern void DrawVirtualObject(const char* object_name);
 
-void Tree::generate(int amount)
+/**
+ * @brief Construidor padrão para árvore
+ * 
+ * @param position  (glm::vec3)
+ *          posição
+ * @param rotation  (glm::vec3)
+ *          rotação
+ * @param scale     (glm::vec3)
+ *          escala
+ * @param type      (int)
+ *          tipo de árvore (0, )
+ */
+Tree::Tree(
+    const glm::vec3& position,
+    const glm::vec3& rotation,
+    const glm::vec3& scale,
+    int type) : m_position(position),
+                m_rotation(rotation),
+                m_scale(scale),
+                m_type(type),
+                m_trunkHeight(4.0f * scale.y),
+                m_trunkRadius(0.5f * scale.x),
+                m_canopyRadius(2.0f * scale.x),
+
+            m_trunkCollider(
+                position,
+                0.5f * scale.x,
+                4.0f * scale.y
+            ),
+
+            m_canopyCollider(
+                position + glm::vec3(
+                    0.0f,
+                    4.0f * scale.y,
+                    0.0f
+                ),
+                2.0f * scale.x
+            ) {};
+
+/**
+ * @brief Atualiza os colisores da árvore
+ */
+void Tree::updateColliders()
 {
-    srand(10);
+    m_trunkCollider.center = m_position;
 
-    trees.clear();
+    m_trunkCollider.radius = m_trunkRadius;
 
-    for (int i = 0; i < amount; i++)
-    {
-        TreeInstance tree;
+    m_trunkCollider.height = m_trunkHeight;
 
-        tree.x = -8.0f + static_cast<float>(rand()) / RAND_MAX * 16.0f;
-        tree.z = -8.0f + static_cast<float>(rand()) / RAND_MAX * 16.0f;
-        tree.scale = 0.35f + static_cast<float>(rand()) / RAND_MAX * 0.35f;
-        tree.rotY = static_cast<float>(rand()) / RAND_MAX * 6.28318f;
-        tree.type = rand() % 2; // 0 = tree1, 1 = tree2
+    m_canopyCollider.center =
+        m_position +
+        glm::vec3(
+            0.0f,
+            m_trunkHeight,
+            0.0f
+        );
 
-        trees.push_back(tree);
-    }
-}
+    m_canopyCollider.radius =
+        m_canopyRadius;
+};
 
-void Tree::draw(GLint model_uniform, GLint object_id_uniform, int object_id)
+/**
+ * @brief Renderizador da árvore
+ * 
+ * @param model_uniform 
+ * @param object_id_uniform 
+ * @param object_id 
+ */
+void Tree::draw(
+    GLint model_uniform,
+    GLint object_id_uniform,
+    int object_id
+)
 {
-    for (const TreeInstance& tree : trees)
-    {
-        glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 model(1.0f);
 
-        model = glm::translate(model, glm::vec3(tree.x, -1.1f, tree.z));
-        model = glm::rotate(model, tree.rotY, glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(tree.scale));
+    // =====================================
+    // TRANSLAÇÃO
+    // =====================================
 
-        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-        glUniform1i(object_id_uniform, object_id);
+    model = glm::translate(
+        model,
+        m_position
+    );
 
-        drawTreeParts(tree.type);
-    }
+    // =====================================
+    // ROTAÇÕES
+    // =====================================
+
+    // yaw
+    model = glm::rotate(
+        model,
+        m_rotation.y,
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    // pitch
+    model = glm::rotate(
+        model,
+        m_rotation.x,
+        glm::vec3(1.0f, 0.0f, 0.0f)
+    );
+
+    // roll
+    model = glm::rotate(
+        model,
+        m_rotation.z,
+        glm::vec3(0.0f, 0.0f, 1.0f)
+    );
+
+    // =====================================
+    // ESCALA
+    // =====================================
+
+    model = glm::scale(
+        model,
+        m_scale
+    );
+
+    // =====================================
+    // ENVIO PARA SHADER
+    // =====================================
+
+    glUniformMatrix4fv(
+        model_uniform,
+        1,
+        GL_FALSE,
+        glm::value_ptr(model)
+    );
+
+    glUniform1i(
+        object_id_uniform,
+        object_id
+    );
+
+    // =====================================
+    // DESENHO
+    // =====================================
+
+    drawTreeParts(m_type);
 }
 
 void Tree::drawTreeParts(int type)
@@ -61,4 +169,4 @@ void Tree::drawTreeParts(int type)
         DrawVirtualObject("leaves_Material-Leaves");
         DrawVirtualObject("GenTree-Main_Trunk_Material.Trunk_and_Primary_Limbs");
     }
-}
+};

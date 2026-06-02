@@ -1,0 +1,283 @@
+* Módulo =Collision=
+1. O módulo =Collision= reúne as implementações para distintos sistemas de colisões entre objetos.
+2. Implementamos uma interface para /colisores/. Esta interface define o *tipo de colisão* associado.
+
+** Estrutura
+#+begin_example
+engine/
+├── Collision/
+│   ├── Collider.hpp
+│   ├── SphereCollider.hpp
+│   ├── AABBCollider.hpp
+│   ├── CapsuleCollider.hpp
+│   ├── CollisionSystem.hpp
+│   └── Collision.cpp
+│
+├── Objects/
+│   ├── Bird.hpp
+│   ├── Tree.hpp
+│   ├── Rock.hpp
+│   └── ...
+#+end_example
+
+* Implementação
+** Interface =Collider=
+A interface associa um objeto colisor a um =CollisionType=. Os detalhes do sistema de colisão dependem do tipo de colisão associado, e são implementados nas classes que implementam a interface =Collider=.
+
+#+name collider-interface
+#+begin_src cpp :tangle Collision/Collider.hpp
+/**
+ * @brief   tipos de colisão
+ * @details
+ *  1.  =Sphere=: colisão esférica (ou esfera-esfera)
+ *  2.  =AABB=: colisão retangular (bounding-boxes)
+ *  3.  =Capsule=: colisão capsular
+ */
+enum class ColliderType {
+    Sphere,
+    AABB,
+    Capsule
+};
+
+/**
+ * @brief   Interface para colisão
+ */
+class Collider {
+public:
+    /**
+     * @brief Destruidor padrão para colisores
+     */
+    virtual ~Collider() = default;
+
+    /**
+     * @brief   Retorna o tipo de colisão
+     * @return  ColliderType
+     */
+    virtual ColliderType type() const = 0;
+};
+#+end_src
+
+*** Colisor /Esfera-Esfera/
+A colisão entre objetos esféricos (colisão esférica ou esfera-esfera) é implementada em =SphereCollider=:
+
+#+name sphere-collider
+#+begin_src cpp :tangle Collision/SphereCollider.hpp
+/**
+ * @brief   Colisor esférico
+ * @details Uma colisão esfera-esfera consiste na verificação
+ *          entre os centros das esferas e a soma dos seus raios.
+ */
+class SphereCollider : public Collider {
+public:
+    //  centro da esfera
+    glm::vec3 center;
+
+    //  raio da esfera
+    float radius;
+
+    /**
+     * @brief Construtor padrão para colisor esférico
+     * 
+     * @param c (glm::vec3)
+     *          centro da esfera
+     * @param r (float)
+     *          raio da esfera
+     */
+    SphereCollider(glm::vec3 c, float r) : 
+        center(c),
+        radius(r) {}
+
+    /**
+     * @brief   Acessador para tipo do colisor
+     * 
+     * @return  ColliderType::Sphere
+     */
+    ColliderType type() const override { return ColliderType::Sphere; }
+};
+
+*** Colisor Retangular (/AABB/)
+O colisor retangular implementa colisão por /bounding-boxes/:
+
+#+name aabb-collider
+#+begin_src cpp :tangle Collision/AABBCollider.hpp
+class AABBCollider : public Collider {
+public:
+    //  cantos, corners
+    glm::vec3 minCorner;    //  "menor canto"
+    glm::vec3 maxCorner;    //  "maior canto"
+
+    /**
+     * @brief   Construtor padrão para um colisor retangular (AABB, bounding-box)
+     * 
+     * @param min (glm::vec3)
+     *          menor canto
+     * @param max (glm::vec3)
+     *          maior canto
+     */
+    AABBCollider(glm::vec3 min, glm::vec3 max) : minCorner(min), maxCorner(max) {}
+
+    /**
+     * @brief   Retorna o tipo de colisão
+     * 
+     * @return  ColliderType::AABB
+     */
+    ColliderType type() const override {
+        return ColliderType::AABB;
+    }
+};
+#+end_src
+
+*** Colisor Capsular
+Implementamos o colisor para modelos baseados em cápsulas (/capsule/, hemisférios unidos por um cilindro ou segmento de reta):
+
+
+#+name capsule-collider
+#+begin_src cpp :tangle Collision/CapsuleCollider.hpp
+/**
+ * @brief   Colisor capsular
+ */
+class CapsuleCollider : public Collider {
+public:
+    //  pontos extremos
+    glm::vec3 p0;
+    glm::vec3 p1;
+
+    //  raio da cápsula
+    float radius;
+
+    /**
+     * @brief   Construtor padrão para colisor capsular
+     * @param p0 (glm::vec3)
+     *          primeiro ponto
+     * 
+     * @param p1 (glm::vec3)
+     *          segundo ponto
+     * 
+     * @param r (float)
+     *          raio da cápsula
+     */
+    CapsuleCollider(glm::vec3 p0, glm::vec3 p1, float r) : 
+        p0(p0),
+        p1(p1),
+        radius(r) {}
+
+    /**
+     * @brief   Acessador para tipo do colisor
+     * 
+     * @return  ColliderType::Capsule
+     */
+    ColliderType type() const override
+    {
+        return ColliderType::Capsule;
+    }
+};
+#+end_src
+
+*** Associado colisores à objetos
+Após definir os colisores e seus parâmetros necessários aos testes de colisão, devemos associar o colisor ao objeto que melhor se enquadra com o tipo de colisão que desejamos. O pássaro controlado pelo jogador atualmente é modelado através do tipo /cápsula/, portanto devemos modificar sua implementar para associar o colisor:
+
+#+name associating-collider-to-bird
+#+begin_src cpp
+class Bird {
+    public:
+    
+    ...
+
+    // =========================================================
+    // COLISÃO
+    // =========================================================
+
+    std::shared_ptr<Collider> collider;
+
+    ...
+}
+#+end_src
+
+*** Sistema de Colisão
+O sistema de colisão é implementado em um módulo à parte. A classe =CollisionSystem= reúne em si
+1. funções necessárias para testar colisões, como intersecção entre raios ou teste de um segmento de reta contra um triângulo em uma malha de triângulos; e
+2. funções /dispatcher/ que gerenciam os efeitos da colisão.
+
+#+name collision-system
+#+begin_src cpp :tangle Collision/CollisionSystem.hpp
+/**
+ * @brief   Sistema de colisão
+ */
+class CollisionSystem {
+public:
+    /**
+     * @brief   Verifica a colisão entre dois colisores
+     * 
+     * @param a
+     *          Primeiro colisor
+     * @param b 
+     *          Segundo colisor
+     * @return true, caso haja colisão
+     * @return false, caso contrário
+     */
+    static bool intersects(const Collider& a, const Collider& b);
+
+    /**
+     * @brief   Verifica a colisão entre dois colisores esféricos
+     */
+    bool sphereSphere(const SphereCollider& a, const SphereCollider& b);
+
+    /**
+     * @brief   Verifica a colisão entre um colisor esférico e um colisor retangular (AABB, bounding-box)
+     */
+    bool sphereAABB(const SphereCollider& a, const AABBCollider& b);
+
+    /**
+     * @brief   Verifica a colisão entre um colisor esférico e um colisor capsular
+     */
+    bool sphereCapsule(const SphereCollider& a, const CapsuleCollider& b);
+
+    /**
+     * @brief   Verifica a colisão entre um colisor retangular (AABB, bounding-box) e um colisor capsular
+     */
+    bool aabbCapsule(const AABBCollider& a, const CapsuleCollider& b);
+};
+#+end_src
+
+**** /Dispatching/
+A implementação de /intersects()/ envolve duas etapas:
+1. verificação dos tipos de colisores para os objetos que estão, possivelmente, em colisão; e
+2. /dispatching/ para a implementação de colisão adequada.
+
+
+#+name collision-system--dispatching
+#+begin_src cpp :tangle Collision/CollisionSystem.hpp
+bool CollisionSystem::intersects(const Collider& a, const Collider& b) {
+    //  Se os colisores dos objetos `a` e `b` forem colisores esféricos
+    if (
+        a.type() == ColliderType::Sphere &&
+        b.type() == ColliderType::Sphere
+    ) {
+        // (dispatch:) então invoque a função que lida com colisão esfera-esfera
+        return sphereSphere(
+            static_cast<const SphereCollider&>(a),
+            static_cast<const SphereCollider&>(b)
+        );
+    }
+
+    ...
+
+    return false;
+}
+#+end_src
+
+
+**** Colisão Esfera-Esfera
+#+name collision-system--sphereSphere
+#+begin_src cpp :tangle Collision/CollisionSystem.hpp
+bool sphereSphere(const SphereCollider& a, const SphereCollider& b) {
+    float d =
+        glm::distance(
+            a.center,
+            b.center
+        );
+
+    return d <
+        (a.radius + b.radius);
+}
+

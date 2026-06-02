@@ -5,6 +5,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+/**
+ * @brief   Construtor padrão para o pássaro
+*/
 Bird::Bird()
     :   // matriz de transformação inicial (pos, rot)
         position(0.0f, 5.0f, 0.0f),
@@ -21,45 +24,62 @@ Bird::Bird()
         moveSpeed(12.0f),
         rotationSpeed(2.0f),
 
-        //  sistema de colisão, valores da cápsula, variáveis
-        capsuleRadius(0.45f),
-        capsuleHalfLength(0.9f),    
-        collisionCooldown(0.0f),
-        terrainCollisionCooldown(0.0f),
-        crashed(false)
+        //  colisor capsular
+        m_collider(
+            glm::vec3(0.0f, -1.5f, 0.0f), // start
+            glm::vec3(0.0f,  1.5f, 0.0f), // end
+            1.0f                          // radius
+        )
     {}
 
 
+/**
+ * @brief   Retorna o vetor forward do pássaro
+ * @details O "vetor foward" do pássaro é um vetor unitário
+ *          que indica a direção para a qual aponta o bico
+ *          do pássaro.
+ * 
+ * @return glm::vec3 
+ */
 glm::vec3 Bird::getForward() const {
     glm::vec3 forward;
 
-    forward.x =
-        sin(rotationY)
-        * cos(rotationX);
-
-    forward.y =
-        sin(rotationX);
-
-    forward.z =
-        cos(rotationY)
-        * cos(rotationX);
+    forward.x = sin(rotationY) * cos(rotationX);
+    forward.y = sin(rotationX);
+    forward.z = cos(rotationY) * cos(rotationX);
 
     return glm::normalize(forward);
 }
 
-glm::vec3 Bird::getCapsuleStart() const
-{
-    return position + glm::vec3(0.0f, -0.5f, 0.0f);
+/**
+ * @brief Acessador ao colisor do pássaro
+ * 
+ * @return const CapsuleCollider& 
+ */
+const CapsuleCollider& Bird::getCollider() const {
+    return m_collider;
 }
 
-glm::vec3 Bird::getCapsuleEnd() const
-{
-    return position + glm::vec3(0.0f, 0.8f, 0.0f);
+/**
+ * @brief   Acessador ao colisor do pássaro?
+ * 
+ * @return CapsuleCollider& 
+ */
+CapsuleCollider& Bird::getCollider() {
+    return m_collider;
 }
 
-float Bird::getCapsuleRadius() const
-{
-    return 0.35f;
+/**
+ * @brief   Atualiza o colisor do pássaro
+ * @details Re-computa, com baste na posição atual o pássaro,
+ *          os valores de início e fim da cápsula de colisão.
+ */
+void Bird::updateCollider() {
+    glm::vec3 start = position + glm::vec3(0.0f, -1.5f, 0.0f);
+    glm::vec3 end   = position + glm::vec3(0.0f, 1.5f, 0.0f);
+
+    m_collider.p0   = start;
+    m_collider.p1   = end;
 }
 
 void Bird::onCollision(glm::vec3 obstaclePos)
@@ -108,15 +128,6 @@ void Bird::onCollision(glm::vec3 obstaclePos)
     );
 
     rotationX += glm::radians(-20.0f);
-
-    // =========================================================
-    // CRASH
-    // =========================================================
-
-    if (speed > 22.0f)
-    {
-        crashed = true;
-    }
 }
 bool Bird::onTerrainCollision(
     float terrainHeight,
@@ -225,19 +236,22 @@ bool Bird::onTerrainCollision(
         return true;
     }
 
-    // =========================================
-    // CRASH
-    // =========================================
-
-    crashed = true;
-    velocity *= 0.1f;
-    velocity.y = 0.0f;
-    speed = 0.0f;
-
     return true;
 }
-void Bird::update(float dt, GLFWwindow* window)
-{
+
+/**
+ * @brief   Atualiza o pássaro ao longo do jogo
+ * @details Leitura de input do teclado
+ * 
+ * @param dt 
+ * @param window 
+ */
+void Bird::update(float dt, GLFWwindow* window) {
+    //  ========================================
+    //  Atualização do COLISOR do pássaro
+    //  ========================================
+    updateCollider();
+
     // =========================================
     // INPUT
     // =========================================

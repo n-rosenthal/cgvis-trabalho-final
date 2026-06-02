@@ -19,6 +19,8 @@ set(SOURCES
   engine/src/Objects/LakeLayer.cpp
   engine/src/Objects/Terrain.cpp
 
+  engine/src/Collision/CollisionSystem.cpp
+
   engine/src/Objects/ProceduralRock.cpp
   engine/src/Objects/Ring.cpp
   engine/src/Objects/Building.cpp

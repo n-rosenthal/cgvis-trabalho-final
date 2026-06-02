@@ -87,6 +87,19 @@ void Terrain::computeNormals()
         glm::vec3 edge1 = b - a;
         glm::vec3 edge2 = c - a;
 
+        if(i < 30)
+            {
+                printf(
+                    "\nTRI\n"
+                    "A=(%f,%f,%f)\n"
+                    "B=(%f,%f,%f)\n"
+                    "C=(%f,%f,%f)\n",
+                    a.x,a.y,a.z,
+                    b.x,b.y,b.z,
+                    c.x,c.y,c.z
+                );
+            }
+
         glm::vec3 normal =
             glm::normalize(
                 glm::cross(edge1, edge2)
@@ -95,6 +108,17 @@ void Terrain::computeNormals()
         m_vertices[ia].normal += normal;
         m_vertices[ib].normal += normal;
         m_vertices[ic].normal += normal;
+    }
+
+    for(size_t i = 0; i < 20; ++i)
+    {
+        printf(
+            "accum normal[%zu] = (%f,%f,%f)\n",
+            i,
+            m_vertices[i].normal.x,
+            m_vertices[i].normal.y,
+            m_vertices[i].normal.z
+        );
     }
 
     // normaliza
@@ -493,6 +517,7 @@ float Terrain::getHeight(
 
     return 0.0f;
 }
+
 /**
  * @brief Retorna a normal interpolada do terreno em (x,z).
  */
@@ -501,11 +526,17 @@ glm::vec3 Terrain::getNormal(
     float z
 ) const
 {
+    if (m_vertices.empty())
+    {
+        return glm::vec3(0.0f, 1.0f, 0.0f);
+    }
+
     float halfWidth =
         (m_width * m_spacing) * 0.5f;
 
     float halfDepth =
         (m_depth * m_spacing) * 0.5f;
+
 
     // =========================================
     // MUNDO -> GRID
@@ -517,11 +548,8 @@ glm::vec3 Terrain::getNormal(
     float localZ =
         (z + halfDepth) / m_spacing;
 
-    int x0 = (int)std::floor(localX);
-    int z0 = (int)std::floor(localZ);
-
-    int x1 = x0 + 1;
-    int z1 = z0 + 1;
+    int x0 = static_cast<int>(std::floor(localX));
+    int z0 = static_cast<int>(std::floor(localZ));
 
     // =========================================
     // LIMITES
@@ -530,8 +558,8 @@ glm::vec3 Terrain::getNormal(
     if (
         x0 < 0 ||
         z0 < 0 ||
-        x1 > m_width ||
-        z1 > m_depth
+        x0 >= m_width ||
+        z0 >= m_depth
     )
     {
         return glm::vec3(
@@ -541,12 +569,16 @@ glm::vec3 Terrain::getNormal(
         );
     }
 
+    int x1 = x0 + 1;
+    int z1 = z0 + 1;
+
+
     // =========================================
     // COORDENADAS BILINEARES
     // =========================================
 
-    float tx = localX - x0;
-    float tz = localZ - z0;
+    float tx = localX - static_cast<float>(x0);
+    float tz = localZ - static_cast<float>(z0);
 
     int row = m_width + 1;
 
@@ -555,26 +587,34 @@ glm::vec3 Terrain::getNormal(
     int i01 = z1 * row + x0;
     int i11 = z1 * row + x1;
 
+    // segurança extra
+    if (
+        i00 < 0 || i00 >= (int)m_vertices.size() ||
+        i10 < 0 || i10 >= (int)m_vertices.size() ||
+        i01 < 0 || i01 >= (int)m_vertices.size() ||
+        i11 < 0 || i11 >= (int)m_vertices.size()
+    )
+    {
+        return glm::vec3(
+            0.0f,
+            1.0f,
+            0.0f
+        );
+    }
+
     glm::vec3 n00 = m_vertices[i00].normal;
     glm::vec3 n10 = m_vertices[i10].normal;
     glm::vec3 n01 = m_vertices[i01].normal;
     glm::vec3 n11 = m_vertices[i11].normal;
 
-    // =========================================
-    // INTERPOLAÇÃO BILINEAR
-    // =========================================
-
     glm::vec3 nx0 =
-        n00 * (1.0f - tx) +
-        n10 * tx;
+        glm::mix(n00, n10, tx);
 
     glm::vec3 nx1 =
-        n01 * (1.0f - tx) +
-        n11 * tx;
+        glm::mix(n01, n11, tx);
 
     glm::vec3 normal =
-        nx0 * (1.0f - tz) +
-        nx1 * tz;
+        glm::mix(nx0, nx1, tz);
 
     return glm::normalize(normal);
 }

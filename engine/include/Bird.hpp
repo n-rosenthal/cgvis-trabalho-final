@@ -8,27 +8,29 @@
 
 #include <glm/glm.hpp>
 
-class Bird
-{
+//  Pássaro é descrito através do modelo capsular para o sistema de colisões
+#include "Collision/CapsuleCollider.hpp"
+
+class Bird {
 public:
-
-    // =========================================================
-    // CONSTRUTOR
-    // =========================================================
-
+    /**
+     * @brief Construtor padrão para o pássaro
+     */
     Bird();
 
-    // =========================================================
-    // UPDATE
-    // =========================================================
-
-    // Atualiza física e controles da ave
+    /**
+     * @brief   Atualização do modelo do pássaro ao longo do jogo
+     * 
+     * @param dt (float)
+     *          delta time
+     * @param window (GLFWwindow*)
+     *          ponteiro para janela do jogo (OpenGL)
+     */
     void update(float dt, GLFWwindow* window);
 
     // =========================================================
     // RENDER
     // =========================================================
-
     // Envia a matriz de modelagem do pássaro
     void setModelMatrixUniform(
         GLuint model_uniform,
@@ -39,9 +41,22 @@ public:
     // =========================================================
     // COLISÃO
     // =========================================================
+    //  Retorna o colisor do pássaro
+    const CapsuleCollider& getCollider() const;
+    CapsuleCollider& getCollider();
 
-    // Trata colisão contra obstáculos
+    //  Atualiza o colisor do pássaro
+    void updateCollider();
+
+    //  Consequências de uma colisão, para o pássaro
     void onCollision(glm::vec3 obstaclePos);
+
+    //  Consequências de uma colisão contra o terreno, para o pássaro
+    bool onTerrainCollision(
+        float terrainHeight,
+        glm::vec3 terrainNormal
+    );
+
 
     // =========================================================
     // GETTERS
@@ -73,45 +88,9 @@ public:
     {
         return rotationY;
     }
-
-    // verifica crash
-    bool hasCrashed() const
-    {
-        return crashed;
-    }
-
-    // =========================================================
-    // COLISÃO
-    // O pássaro é representado por um modelo de colisão do tipo
-    // cápsula.
-    // =========================================================
-    // cápsula de colisão
-    float capsuleRadius;
-    float capsuleHalfLength;
-
-    // cooldown entre colisões
-    float collisionCooldown;
-    float terrainCollisionCooldown;
-
-    // estado de crash
-    bool crashed;
-
-    // colisão contra terreno
-    bool onTerrainCollision(float terrainHeight, glm::vec3 terrainNormal);
-
-    float getCapsuleHalfLength() const {
-        return capsuleHalfLength;
-    }
-
-    glm::vec3 getCapsuleStart() const;
-
-    glm::vec3 getCapsuleEnd() const;
-
-    float getCapsuleRadius() const; 
     
 
 private:
-
     // =========================================================
     // TRANSFORMAÇÃO
     // =========================================================
@@ -139,7 +118,14 @@ private:
     float moveSpeed;
     float rotationSpeed;
 
+    // =========================================
+    // COLISÃO
+    // =========================================
 
+    CapsuleCollider m_collider;
+
+    float collisionCooldown;
+    float terrainCollisionCooldown;
 };
 
 #endif
