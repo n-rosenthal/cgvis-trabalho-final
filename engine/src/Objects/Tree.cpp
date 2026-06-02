@@ -2,7 +2,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Tree.hpp"
-
 #include "Collision/CylindricalCollider.hpp"
 #include "Collision/SphereCollider.hpp"
 
@@ -25,20 +24,36 @@ Tree::Tree(
     const glm::vec3& position,
     const glm::vec3& rotation,
     const glm::vec3& scale,
-    int type) : m_position(position),
-                m_rotation(rotation),
-                m_scale(scale),
-                m_type(type),
-                m_trunkHeight(4.0f * scale.y),
-                m_trunkRadius(0.5f * scale.x),
-                m_canopyRadius(2.0f * scale.x),
+    int type,
+    const std::string& meshPath)
+        : 
+            //  matriz de posição
+            m_position(position),
 
+            //  matriz de rotação
+            m_rotation(rotation),
+
+            //  matriz de escala
+            m_scale(scale),
+
+            //  tipo da árvore
+            m_type(type),
+
+            //  altura, raio do tronco
+            m_trunkHeight(4.0f * scale.y),
+            m_trunkRadius(0.5f * scale.x),
+
+            //  raio dos galhos, folhas
+            m_canopyRadius(2.0f * scale.x),
+
+            //  colisor cilíndrico para o tronco
             m_trunkCollider(
                 position,
                 0.5f * scale.x,
                 4.0f * scale.y
             ),
 
+            //  colisor esférico para a copa
             m_canopyCollider(
                 position + glm::vec3(
                     0.0f,
@@ -51,14 +66,15 @@ Tree::Tree(
 /**
  * @brief Atualiza os colisores da árvore
  */
-void Tree::updateColliders()
-{
+void Tree::updateColliders() {
+    //  centro do colisor do tronco <- posição da árvore
     m_trunkCollider.center = m_position;
 
+    //  raio, altura do colisor do tronco <- raio, altura do tronco
     m_trunkCollider.radius = m_trunkRadius;
-
     m_trunkCollider.height = m_trunkHeight;
 
+    //  centro, raio do colisor da copa <- centro, raio da copa
     m_canopyCollider.center =
         m_position +
         glm::vec3(
@@ -71,89 +87,8 @@ void Tree::updateColliders()
         m_canopyRadius;
 };
 
-/**
- * @brief Renderizador da árvore
- * 
- * @param model_uniform 
- * @param object_id_uniform 
- * @param object_id 
- */
-void Tree::draw(
-    GLint model_uniform,
-    GLint object_id_uniform,
-    int object_id
-)
-{
-    glm::mat4 model(1.0f);
 
-    // =====================================
-    // TRANSLAÇÃO
-    // =====================================
-
-    model = glm::translate(
-        model,
-        m_position
-    );
-
-    // =====================================
-    // ROTAÇÕES
-    // =====================================
-
-    // yaw
-    model = glm::rotate(
-        model,
-        m_rotation.y,
-        glm::vec3(0.0f, 1.0f, 0.0f)
-    );
-
-    // pitch
-    model = glm::rotate(
-        model,
-        m_rotation.x,
-        glm::vec3(1.0f, 0.0f, 0.0f)
-    );
-
-    // roll
-    model = glm::rotate(
-        model,
-        m_rotation.z,
-        glm::vec3(0.0f, 0.0f, 1.0f)
-    );
-
-    // =====================================
-    // ESCALA
-    // =====================================
-
-    model = glm::scale(
-        model,
-        m_scale
-    );
-
-    // =====================================
-    // ENVIO PARA SHADER
-    // =====================================
-
-    glUniformMatrix4fv(
-        model_uniform,
-        1,
-        GL_FALSE,
-        glm::value_ptr(model)
-    );
-
-    glUniform1i(
-        object_id_uniform,
-        object_id
-    );
-
-    // =====================================
-    // DESENHO
-    // =====================================
-
-    drawTreeParts(m_type);
-}
-
-void Tree::drawTreeParts(int type)
-{
+void Tree::draw(const DrawContext& ctx, int type){
     if (type == 0)
     {
         DrawVirtualObject("GenTree_100_Twigs_Leaf_Bearing_Mesh");
