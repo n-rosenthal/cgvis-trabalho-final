@@ -18,8 +18,8 @@
 #include <memory>
 #include <vector>
 
-#include "Objects/TerrainLayer.hpp"
-#include "Objects/TerrainRegion.hpp"
+#include "TerrainLayer.hpp"
+#include "TerrainRegion.hpp"
 
 /**
  * @brief Um vértice do terreno é uma 3-upla

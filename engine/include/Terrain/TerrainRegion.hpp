@@ -5,8 +5,8 @@
 #include <memory>
 #include <vector>
 
-#include "Objects/TerrainType.hpp"
-#include "Objects/TerrainLayer.hpp"
+#include "TerrainType.hpp"
+#include "TerrainLayer.hpp"
 /**
  * @brief   Uma `TerrainRegion` é uma região de terreno/relevo do mapa
  *          sobre a qual uma ou mais camadas de relevo (`TerrainLayer`)

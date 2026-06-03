@@ -10,22 +10,30 @@ set(SOURCES
   engine/src/audio/miniaudio.c
   engine/src/audio/AudioManager.cpp
 
+  engine/src/Loaders/ObjLoader.cpp
+  engine/src/Loaders/TextureLoader.cpp
+
+  engine/src/Renderer/ShaderLoader.cpp
+
+  engine/src/Window/InputCallbacks.cpp
+  engine/src/Window/WindowCallbacks.cpp
+
   engine/src/main.cpp
 
-  engine/src/Objects/TerrainRegion.cpp
-  engine/src/Objects/TerrainLayer.cpp
-  engine/src/Objects/SineLayer.cpp
-  engine/src/Objects/MountainLayer.cpp
-  engine/src/Objects/LakeLayer.cpp
-  engine/src/Objects/Terrain.cpp
+  engine/src/Terrain/TerrainRegion.cpp
+  engine/src/Terrain/TerrainLayer.cpp
+  engine/src/Terrain/SineLayer.cpp
+  engine/src/Terrain/MountainLayer.cpp
+  engine/src/Terrain/LakeLayer.cpp
+  engine/src/Terrain/Terrain.cpp
 
   engine/src/Collision/CollisionSystem.cpp
 
   engine/src/Objects/ProceduralRock.cpp
   engine/src/Objects/Ring.cpp
   engine/src/Objects/Building.cpp
-  engine/src/Bird.cpp
-  engine/src/Tree.cpp
+  engine/src/Objects/Tree.cpp
+  engine/src/Game/Bird.cpp
   
   engine/src/correcao.cpp
   engine/src/textrendering.cpp
