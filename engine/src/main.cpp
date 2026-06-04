@@ -64,6 +64,10 @@
 #include "audio/AudioManager.hpp"
 SoundManager g_Sound;
 
+//  CÂMERA
+#include "Game/Camera.hpp"
+Camera g_Camera;
+
 //  Classe `Bird`: ave controlada pelo usuário
 #include "Game/Bird.hpp"
 
@@ -113,8 +117,7 @@ extern bool g_BirdView;
 // Distância entre ponto e segmento (já implementada)
 float distancePointSegment(glm::vec3 p, glm::vec3 a, glm::vec3 b);
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     // Inicialização GLFW
     int success = glfwInit();
     if (!success) {
@@ -375,102 +378,72 @@ int main(int argc, char* argv[])
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // =========================================================
-        // CÂMERA TERCEIRA PESSOA
+        //  CÂMERA TERCEIRA PESSOA
+        //      A câmera é atualizada com a posição atual do pássaro
+        //      e os seus vetores `up` (vertical para cima do pássaro)
+        //      e `foward` (para frente do pássaro), além do interv.
+        //      tempo.
         // =========================================================
+        g_Camera.update(
+                g_Bird.getPosition(),
+                g_Bird.getForward(),
+                g_Bird.getUp(),
+                dt
+        );
 
-        glm::vec3 birdPos = g_Bird.getPosition();
-        glm::vec3 birdForward = g_Bird.getForward();
-        glm::vec3 birdUp = g_Bird.getUp();
-
-        float cameraDistance = 12.0f;
-        float cameraHeight   = 4.0f;
-        float lookAhead      = 8.0f;
-
-        // posição desejada da câmera
-        glm::vec3 desiredCameraPos =
-            birdPos
-            - birdForward * cameraDistance
-            + birdUp * cameraHeight;
-
-        // ponto observado
-        glm::vec3 desiredTarget =
-            birdPos
-            + birdForward * lookAhead;
-
-        // suavização
-        static glm::vec3 cameraPos = desiredCameraPos;
-        static glm::vec3 cameraTarget = desiredTarget;
-
-        float smoothFactor =
-            1.0f - exp(-5.0f * dt);
-
-        cameraPos =
-            glm::mix(
-                cameraPos,
-                desiredCameraPos,
-                smoothFactor
-            );
-
-        cameraTarget =
-            glm::mix(
-                cameraTarget,
-                desiredTarget,
-                smoothFactor
-            );
-
-        glm::mat4 view =
-            glm::lookAt(
-                cameraPos,
-                cameraTarget,
-                glm::vec3(0,1,0)
-            );
-
+        //  a matriz de view é a matriz de view da câmera
+        glm::mat4 view = g_Camera.getViewMatrix();
 
         // =========================================================
-        // MATRIZ DE PROJEÇÃO (far plane aumentado)
+        //  MATRIZ DE PROJEÇÃO
+        //      
         // =========================================================
-        float nearplane = 0.1f;
-        float farplane  = 2000.0f;
         glm::mat4 projection;
-        if (g_UsePerspectiveProjection)
-        {
-            projection = glm::perspective(glm::radians(60.0f), g_ScreenRatio, nearplane, farplane);
-        }
-        else
-        {
-            float orthoSize = 30.0f;
-            float left = -orthoSize * g_ScreenRatio;
-            float right = orthoSize * g_ScreenRatio;
-            float bottom = -orthoSize;
-            float top = orthoSize;
-            projection = glm::ortho(left, right, bottom, top, nearplane, farplane);
-        }
 
-        printf(
-    "view[3] = %f %f %f %f\n",
-    view[3][0],
-    view[3][1],
-    view[3][2],
-    view[3][3]
-);
+        // Note que, no sistema de coordenadas da câmera, os planos near e far
+        // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
+        float nearplane = -0.1f;  // Posição do "near plane"
+        float farplane  = -512.0f; // Posição do "far plane"
 
-        // Envia matrizes para a GPU
+        // Projeção Perspectiva.
+        // Para definição do field of view (FOV), veja slides 205-215 do documento Aula_09_Projecoes.pdf.
+        float field_of_view = 3.141592 / 2.0f;
+        projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);
+        
+        // else
+        // {
+        //     // Projeção Ortográfica.
+        //     // Para definição dos valores l, r, b, t ("left", "right", "bottom", "top"),
+        //     // PARA PROJEÇÃO ORTOGRÁFICA veja slides 219-224 do documento Aula_09_Projecoes.pdf.
+        //     // Para simular um "zoom" ortográfico, computamos o valor de "t"
+        //     // utilizando a variável g_CameraDistance.
+        //     float t = 20.0f;
+        //     float b = -t;
+        //     float r = t*g_ScreenRatio;
+        //     float l = -r;
+
+        //     projection = Matrix_Orthographic(l, r, b, t, nearplane, farplane);
+        // };
+        glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
+
+        // Enviamos as matrizes "view" e "projection" para a placa de vídeo
+        // (GPU). Veja o arquivo "shader_vertex.glsl", onde estas são
+        // efetivamente aplicadas em todos os pontos.
         glUseProgram(g_GpuProgramID); CHECK_GL_ERROR();
 
-        // Envia matrizes para a GPU
         glUniformMatrix4fv(
             g_view_uniform,
             1,
             GL_FALSE,
             glm::value_ptr(view)
-        ); CHECK_GL_ERROR();
+        );  CHECK_GL_ERROR();
 
         glUniformMatrix4fv(
             g_projection_uniform,
             1,
             GL_FALSE,
             glm::value_ptr(projection)
-        ); CHECK_GL_ERROR();
+        );  CHECK_GL_ERROR();
 
         GLint p;
         glGetIntegerv(GL_CURRENT_PROGRAM, &p);
@@ -499,7 +472,7 @@ int main(int argc, char* argv[])
         // printf("object_id_uniform = %d\n", g_object_id_uniform);
 
         // Obtém colisor do pássaro (para detecção de colisões)
-        birdPos = g_Bird.getPosition();
+        glm::vec3 birdPos = g_Bird.getPosition();
         glm::vec3 capsuleA = g_Bird.getCollider().p0;
         glm::vec3 capsuleB = g_Bird.getCollider().p1;
         float capsuleRadius = g_Bird.getCollider().radius;
@@ -518,7 +491,8 @@ int main(int argc, char* argv[])
         // =====================================================
         // TERRENO
         // =====================================================
-        glm::mat4 model = glm::mat4(1.0f);
+        
+        model = Matrix_Identity(); // Transformação identidade de modelagem
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, 2); // PLANE
         terrain.draw(g_model_uniform); CHECK_GL_ERROR();
@@ -589,19 +563,6 @@ int main(int argc, char* argv[])
         // glUniform1i(g_object_id_uniform, 6);
         // for (auto& building : g_Buildings) { ... }
 
-        // Desenha uma esfera de teste na posição do alvo
-        glUniform1i(g_object_id_uniform, 0);   // SPHERE
-        glm::mat4 modelSphere =
-            glm::translate(
-                glm::mat4(1.0f),
-                birdPos + birdForward * 10.0f
-            );
-        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(modelSphere));
-        DrawVirtualObject("the_sphere"); CHECK_GL_ERROR();
-
-
-        glGetIntegerv(GL_CURRENT_PROGRAM, &p);
-        printf("After sphere = %d\n", p);
         // =====================================================
         // TEXTO NA TELA
         // =====================================================

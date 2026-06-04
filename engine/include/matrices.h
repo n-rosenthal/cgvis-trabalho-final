@@ -244,6 +244,11 @@ inline glm::mat4 Matrix_Camera_View(glm::vec4 position_c, glm::vec4 view_vector,
     float wy = w.y;
     float wz = w.z;
 
+    // depuração
+    if (norm(view_vector) < 0.0001f) {
+        printf("CAMERA VIEW VECTOR ZERO!\n");
+    }
+
     return Matrix(
         ux   , uy   , uz   , -dotproduct(u , position_c - origin_o) ,
         vx   , vy   , vz   , -dotproduct(v , position_c - origin_o) ,
@@ -255,14 +260,36 @@ inline glm::mat4 Matrix_Camera_View(glm::vec4 position_c, glm::vec4 view_vector,
 // Matriz de projeção paralela ortográfica
 inline glm::mat4 Matrix_Orthographic(float l, float r, float b, float t, float n, float f)
 {
+    printf("\n");
+    printf("l = %f\n", l);
+    printf("r = %f\n", r);
+    printf("b = %f\n", b);
+    printf("t = %f\n", t);
+    printf("n = %f\n", n);
+    printf("f = %f\n", f);
+
+    printf("r-l = %f\n", r-l);
+    printf("t-b = %f\n", t-b);
+    printf("f-n = %f\n", f-n);
+
     glm::mat4 M = Matrix(
-        2.0f/(r-l) , 0.0f       , 0.0f       , -(r+l)/(r-l) ,
-        0.0f       , 2.0f/(t-b) , 0.0f       , -(t+b)/(t-b) ,
-        0.0f       , 0.0f       , 2.0f/(f-n) , -(f+n)/(f-n) ,
+        2.0f/(r-l) , 0.0f       , 0.0f       , -(r+l)/(r-l),
+        0.0f       , 2.0f/(t-b) , 0.0f       , -(t+b)/(t-b),
+        0.0f       , 0.0f       , 2.0f/(f-n) , -(f+n)/(f-n),
         0.0f       , 0.0f       , 0.0f       , 1.0f
     );
 
     return M;
+}
+
+// Função que imprime uma matriz M no terminal
+inline void PrintMatrix(glm::mat4 M)
+{
+    printf("\n");
+    printf("[ %+0.2f  %+0.2f  %+0.2f  %+0.2f ]\n", M[0][0], M[1][0], M[2][0], M[3][0]);
+    printf("[ %+0.2f  %+0.2f  %+0.2f  %+0.2f ]\n", M[0][1], M[1][1], M[2][1], M[3][1]);
+    printf("[ %+0.2f  %+0.2f  %+0.2f  %+0.2f ]\n", M[0][2], M[1][2], M[2][2], M[3][2]);
+    printf("[ %+0.2f  %+0.2f  %+0.2f  %+0.2f ]\n", M[0][3], M[1][3], M[2][3], M[3][3]);
 }
 
 // Matriz de projeção perspectiva
@@ -317,18 +344,20 @@ inline glm::mat4 Matrix_Perspective(float field_of_view, float aspect, float n, 
     // precisamos utilizar a matriz -M*P para projeção perspectiva, de forma que
     // w seja positivo.
     //
+    
+
+    printf("aspect = %f\n", aspect);
+    printf("fov = %f\n", field_of_view);
+
+    printf("t = %f\n", t);
+    printf("b = %f\n", b);
+    printf("r = %f\n", r);
+    printf("l = %f\n", l);
+    
     return -M*P;
 }
 
-// Função que imprime uma matriz M no terminal
-inline void PrintMatrix(glm::mat4 M)
-{
-    printf("\n");
-    printf("[ %+0.2f  %+0.2f  %+0.2f  %+0.2f ]\n", M[0][0], M[1][0], M[2][0], M[3][0]);
-    printf("[ %+0.2f  %+0.2f  %+0.2f  %+0.2f ]\n", M[0][1], M[1][1], M[2][1], M[3][1]);
-    printf("[ %+0.2f  %+0.2f  %+0.2f  %+0.2f ]\n", M[0][2], M[1][2], M[2][2], M[3][2]);
-    printf("[ %+0.2f  %+0.2f  %+0.2f  %+0.2f ]\n", M[0][3], M[1][3], M[2][3], M[3][3]);
-}
+
 
 // Função que imprime um vetor v no terminal
 inline void PrintVector(glm::vec4 v)

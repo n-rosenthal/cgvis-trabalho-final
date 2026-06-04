@@ -13,11 +13,12 @@ set(SOURCES
 
   engine/src/Loaders/ObjLoader.cpp
   engine/src/Loaders/TextureLoader.cpp
-
   engine/src/Renderer/ShaderLoader.cpp
 
   engine/src/Window/InputCallbacks.cpp
   engine/src/Window/WindowCallbacks.cpp
+
+  engine/src/Game/Camera.cpp
 
   engine/src/main.cpp
 
