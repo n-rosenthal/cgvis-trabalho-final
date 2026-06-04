@@ -1,4 +1,6 @@
 #include "Renderer/ShaderLoader.hpp"
+#include "Loaders/TextureLoader.hpp"
+
 /**
  * @file        `ShaderLoader.cpp`
  * @brief       Loader para shaders
@@ -20,7 +22,6 @@ GLint  g_projection_uniform;
 GLint  g_object_id_uniform;
 GLint  g_bbox_min_uniform;
 GLint  g_bbox_max_uniform;
-GLuint g_NumLoadedTextures  = 0;
 
 /**
  * @brief Carrega os shaders de vértices e de fragmentos
@@ -67,6 +68,13 @@ void LoadShadersFromFiles() {
 
     // Variáveis em "shader_fragment.glsl" para acesso das imagens de textura
     glUseProgram(g_GpuProgramID);
+
+
+    GLint p;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &p);
+
+    printf("After glUseProgram = %d\n", p);
+    
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);

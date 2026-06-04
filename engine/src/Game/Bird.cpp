@@ -1,262 +1,120 @@
-#include "Bird.hpp"
-
+#include "Game/Bird.hpp"
+#include "Game/BirdDrawable.hpp"
+#include <glm/gtc/matrix_transform.hpp>
 #include <cmath>
 
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-/**
- * @brief   Construtor padrão para o pássaro
-*/
 Bird::Bird()
-    :   // matriz de transformação inicial (pos, rot)
-        position(0.0f, 5.0f, 0.0f),
-        rotationY(0.0f),
-        rotationX(0.0f),
-        rotationZ(0.0f),
+    : GameObject(std::make_unique<BirdDrawable>(),
+                 glm::vec3(0.0f, 5.0f, 0.0f), // posição inicial
+                 glm::vec3(0.0f, 0.0f, 0.0f), // rotação
+                 glm::vec3(1.0f))            // escala
+    , rotationY(0.0f), rotationX(0.0f), rotationZ(0.0f)
+    , velocity(0.0f), speed(18.0f), moveSpeed(12.0f), rotationSpeed(1.6f)
+    , collisionCooldown(0.0f), terrainCollisionCooldown(0.0f)
+    , m_collider(glm::vec3(0.0f, -1.5f, 0.0f), glm::vec3(0.0f, 1.5f, 0.0f), 1.0f)
+{
+    // Gera buffers (vazio)
+    if (m_drawable) m_drawable->generate();
+}
 
-        //  movimento, vetores velocidade, aceleração
-        velocity(0.0f),
-        acceleration(0.0f),
+std::vector<std::shared_ptr<Collider>> Bird::getColliders() {
+    std::vector<std::shared_ptr<Collider>> colliders;
+    // O Bird possui um colisor capsular, mas a interface Collider é uma classe base.
+    // Se CapsuleCollider herda de Collider, você pode retorná-lo.
+    colliders.push_back(std::make_shared<CapsuleCollider>(m_collider));
+    return colliders;
+}
 
-        //  movimento, magnitudes
-        speed(12.0f),
-        moveSpeed(12.0f),
-        rotationSpeed(2.0f),
+glm::vec3 Bird::getForward() const
+{
+    glm::mat4 rot(1.0f);
 
-        //  colisor capsular
-        m_collider(
-            glm::vec3(0.0f, -1.5f, 0.0f), // start
-            glm::vec3(0.0f,  1.5f, 0.0f), // end
-            1.0f                          // radius
-        )
-    {}
+    rot = glm::rotate(rot, rotationY, glm::vec3(0,1,0));
+    rot = glm::rotate(rot, rotationX, glm::vec3(1,0,0));
+    rot = glm::rotate(rot, rotationZ, glm::vec3(0,0,1));
 
-
-/**
- * @brief   Retorna o vetor forward do pássaro
- * @details O "vetor foward" do pássaro é um vetor unitário
- *          que indica a direção para a qual aponta o bico
- *          do pássaro.
- * 
- * @return glm::vec3 
- */
-glm::vec3 Bird::getForward() const {
-    glm::vec3 forward;
-
-    forward.x = sin(rotationY) * cos(rotationX);
-    forward.y = sin(rotationX);
-    forward.z = cos(rotationY) * cos(rotationX);
+    glm::vec3 forward = glm::vec3(rot * glm::vec4(1,0,0,0));
 
     return glm::normalize(forward);
 }
 
-/**
- * @brief Acessador ao colisor do pássaro
- * 
- * @return const CapsuleCollider& 
- */
+glm::vec3 Bird::getUp() const
+{
+    glm::mat4 rot(1.0f);
+
+    rot = glm::rotate(rot, rotationY, glm::vec3(0,1,0));
+    rot = glm::rotate(rot, rotationX, glm::vec3(1,0,0));
+    rot = glm::rotate(rot, rotationZ, glm::vec3(0,0,1));
+
+    return glm::normalize(
+        glm::vec3(rot * glm::vec4(0,1,0,0))
+    );
+}
+
 const CapsuleCollider& Bird::getCollider() const {
     return m_collider;
 }
 
-/**
- * @brief   Acessador ao colisor do pássaro?
- * 
- * @return CapsuleCollider& 
- */
-CapsuleCollider& Bird::getCollider() {
-    return m_collider;
-}
-
-/**
- * @brief   Atualiza o colisor do pássaro
- * @details Re-computa, com baste na posição atual o pássaro,
- *          os valores de início e fim da cápsula de colisão.
- */
-void Bird::updateCollider() {
-    glm::vec3 start = position + glm::vec3(0.0f, -1.5f, 0.0f);
-    glm::vec3 end   = position + glm::vec3(0.0f, 1.5f, 0.0f);
-
-    m_collider.p0   = start;
-    m_collider.p1   = end;
-}
-
-void Bird::onCollision(glm::vec3 obstaclePos)
+void Bird::updateColliders()
 {
-    // evita múltiplas colisões consecutivas
-    if (collisionCooldown > 0.0f)
-        return;
+    glm::vec3 forward = getForward();
 
+    m_collider.p0 =
+        m_position - forward * 1.5f;
+
+    m_collider.p1 =
+        m_position + forward * 1.5f;
+}
+
+void Bird::onCollision(glm::vec3 obstaclePos) {
+    if (collisionCooldown > 0.0f) return;
     collisionCooldown = 1.0f;
 
-    // =========================================================
-    // DIREÇÃO DO IMPACTO
-    // =========================================================
-
-    glm::vec3 away =
-        glm::normalize(position - obstaclePos);
-
-    // =========================================================
-    // IMPULSO
-    // =========================================================
-
-    // empurra o pássaro para longe
+    glm::vec3 away = glm::normalize(m_position - obstaclePos);
     velocity += away * 20.0f;
-
-    // impulso vertical
     velocity.y += 6.0f;
-
-    // =========================================================
-    // PERDA DE VELOCIDADE
-    // =========================================================
-
     speed *= 0.55f;
-
-    // evita velocidade negativa
-    if (speed < 2.0f)
-        speed = 2.0f;
-
-    // =========================================================
-    // DESORIENTAÇÃO VISUAL
-    // =========================================================
-
-    rotationZ += glm::radians(
-        (rand() % 2 == 0)
-            ? 60.0f
-            : -60.0f
-    );
-
+    if (speed < 2.0f) speed = 2.0f;
+    rotationZ += glm::radians((rand() % 2 == 0) ? 60.0f : -60.0f);
     rotationX += glm::radians(-20.0f);
 }
-bool Bird::onTerrainCollision(
-    float terrainHeight,
-    glm::vec3 terrainNormal
-)
-{
-    // =========================================
-    // COOLDOWN
-    // =========================================
 
-    if (terrainCollisionCooldown > 0.0f)
-        return false;
-
+bool Bird::onTerrainCollision(float terrainHeight, glm::vec3 terrainNormal) {
+    if (terrainCollisionCooldown > 0.0f) return false;
     terrainCollisionCooldown = 0.35f;
 
-    // =========================================
-    // POSICIONA SOBRE O SOLO
-    // =========================================
-
     float bodyOffset = 0.6f;
-
-    position.y =
-        terrainHeight + bodyOffset;
-
-    // =========================================
-    // VELOCIDADE DO IMPACTO
-    // =========================================
-
-    float impactSpeed =
-        glm::length(velocity);
-
-    // =========================================
-    // ALINHAMENTO AO RELEVO
-    // =========================================
-
-    // inclinação frente/trás
-    float terrainPitch =
-        atan2(
-            terrainNormal.z,
-            terrainNormal.y
-        );
-
-    // inclinação lateral
-    float terrainRoll =
-        -atan2(
-            terrainNormal.x,
-            terrainNormal.y
-        );
-
-    // suaviza alinhamento
-    rotationX =
-        glm::mix(
-            rotationX,
-            terrainPitch,
-            0.35f
-        );
-
-    rotationZ =
-        glm::mix(
-            rotationZ,
-            terrainRoll,
-            0.35f
-        );
-
-    // =========================================
-    // IMPACTO LEVE
-    // =========================================
+    m_position.y = terrainHeight + bodyOffset;
+    float impactSpeed = glm::length(velocity);
+    float terrainPitch = atan2(terrainNormal.z, terrainNormal.y);
+    float terrainRoll  = -atan2(terrainNormal.x, terrainNormal.y);
+    rotationX = glm::mix(rotationX, terrainPitch, 0.35f);
+    rotationZ = glm::mix(rotationZ, terrainRoll, 0.35f);
 
     if (impactSpeed < 8.0f) {
-        // desliza sobre o terreno
-
-        velocity =
-            glm::reflect(
-                velocity,
-                terrainNormal
-            ) * 0.12f;
-
+        velocity = glm::reflect(velocity, terrainNormal) * 0.12f;
         speed *= 0.75f;
-
         return true;
     }
-
-    // =========================================
-    // IMPACTO MÉDIO
-    // =========================================
-
-    if (impactSpeed < 18.0f){
-            // quique parcial
-
-        velocity =
-            glm::reflect(
-                velocity,
-                terrainNormal
-            ) * 0.30f;
-
+    if (impactSpeed < 18.0f) {
+        velocity = glm::reflect(velocity, terrainNormal) * 0.30f;
         velocity.y += 3.0f;
-
         speed *= 0.45f;
-
-        rotationZ += glm::radians(
-            (rand() % 2 == 0)
-                ? 25.0f
-                : -25.0f
-        );
-
+        rotationZ += glm::radians((rand() % 2 == 0) ? 25.0f : -25.0f);
         return true;
     }
-
     return true;
 }
 
-/**
- * @brief   Atualiza o pássaro ao longo do jogo
- * @details Leitura de input do teclado
- * 
- * @param dt 
- * @param window 
- */
-void Bird::update(float dt, GLFWwindow* window) {
-    //  ========================================
-    //  Atualização do COLISOR do pássaro
-    //  ========================================
-    updateCollider();
-
-    // =========================================
+void Bird::update(float dt, GLFWwindow* window)
+{
+    //--------------------------------------------------
     // INPUT
-    // =========================================
+    //--------------------------------------------------
 
     float yawInput = 0.0f;
+    float pitchInput = 0.0f;
+    float throttle = 0.0f;
 
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         yawInput = 1.0f;
@@ -264,71 +122,75 @@ void Bird::update(float dt, GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         yawInput = -1.0f;
 
-    // =========================================
-    // VELOCIDADE
-    // =========================================
-
-    float throttle = 0.0f;
-
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        throttle = 1.0f;
+        pitchInput = 1.0f;
 
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        pitchInput = -1.0f;
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        throttle = 1.0f;
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
         throttle = -1.0f;
 
-    speed += throttle * 18.0f * dt;
-
-    // drag
-    speed *= 0.996f;
-
-    // limites
-    speed = glm::clamp(speed, 6.0f, 32.0f);
-
-    // =========================================
-    // YAW
-    // =========================================
+    //--------------------------------------------------
+    // ORIENTAÇÃO
+    //--------------------------------------------------
 
     rotationY += yawInput * rotationSpeed * dt;
 
-    // =========================================
-    // ROLL AUTOMÁTICO
-    // =========================================
+    rotationX += pitchInput * rotationSpeed * dt;
+
+    rotationX = glm::clamp(
+        rotationX,
+        glm::radians(-75.0f),
+        glm::radians(75.0f)
+    );
 
     float targetRoll =
-        yawInput * glm::radians(45.0f);
+        -yawInput * glm::radians(45.0f);
 
     rotationZ +=
         (targetRoll - rotationZ)
-        * 4.0f
+        * 6.0f
         * dt;
 
-    // =========================================
-    // DIREÇÃO
-    // =========================================
+    //--------------------------------------------------
+    // VELOCIDADE
+    //--------------------------------------------------
+
+    speed += throttle * 12.0f * dt;
+
+    float drag = 0.18f;
+
+    speed -= speed * drag * dt;
+
+    if(rotationX > 0.0f)
+    {
+        speed -= rotationX * 4.0f * dt;
+    }
+    else
+    {
+        speed += (-rotationX) * 2.0f * dt;
+    }
+
+    speed = glm::clamp(
+        speed,
+        6.0f,
+        40.0f
+    );
+
+    //--------------------------------------------------
+    // DIREÇÕES
+    //--------------------------------------------------
 
     glm::vec3 forward = getForward();
+    glm::vec3 up = getUp();
 
-    velocity.x = forward.x * speed;
-    velocity.z = forward.z * speed;
-
-    // =========================================
-    // GRAVIDADE
-    // =========================================
-
-    velocity.y -= 14.0f * dt;
-
-    // =========================================
-    // LIFT
-    // =========================================
-
-    float lift =
-        speed * 0.55f;
-
-    velocity.y += lift * dt;
-
-    // =========================================
-    // FLAP (ESPAÇO)
-    // =========================================
+    //--------------------------------------------------
+    // FLAP
+    //--------------------------------------------------
 
     static bool flapPressedLastFrame = false;
 
@@ -336,110 +198,114 @@ void Bird::update(float dt, GLFWwindow* window) {
         glfwGetKey(window, GLFW_KEY_SPACE)
         == GLFW_PRESS;
 
-    // impulso apenas no instante do clique
     if (flapPressed && !flapPressedLastFrame)
     {
-        velocity.y += 6.5f;
-
-        // pitch instantâneo
-        rotationX += glm::radians(10.0f);
+        velocity += up * 8.0f;
+        speed += 2.0f;
     }
 
     flapPressedLastFrame = flapPressed;
 
-    // =========================================
-    // PITCH VISUAL
-    // =========================================
+    //--------------------------------------------------
+    // VELOCIDADE DESEJADA
+    //--------------------------------------------------
 
-    float targetPitch =
-        glm::clamp(
-            velocity.y * 0.05f,
-            glm::radians(-35.0f),
-            glm::radians(35.0f)
+    glm::vec3 desiredVelocity =
+        forward * speed;
+
+    velocity.x =
+        glm::mix(
+            velocity.x,
+            desiredVelocity.x,
+            4.0f * dt
         );
 
-    rotationX +=
-        (targetPitch - rotationX)
-        * 3.0f
-        * dt;
+    velocity.z =
+        glm::mix(
+            velocity.z,
+            desiredVelocity.z,
+            4.0f * dt
+        );
 
-    // =========================================
-    // DAMPING VERTICAL
-    // =========================================
+    //--------------------------------------------------
+    // SUSTENTAÇÃO
+    //--------------------------------------------------
 
-    velocity.y *= 0.995f;
+    float lift =
+        speed *
+        speed *
+        0.015f;
 
-    // =========================================
+    velocity.y += lift * dt;
+
+    //--------------------------------------------------
+    // GRAVIDADE
+    //--------------------------------------------------
+
+    velocity.y -= 12.0f * dt;
+
+    //--------------------------------------------------
+    // AMORTECIMENTO
+    //--------------------------------------------------
+
+    velocity *= 0.999f;
+
+    //--------------------------------------------------
     // MOVIMENTO
-    // =========================================
+    //--------------------------------------------------
 
-    position += velocity * dt;
+    m_position += velocity * dt;
 
-    // =========================================
-    // CHÃO
-    // =========================================
+    //--------------------------------------------------
+    // LIMITES DE ALTURA
+    //--------------------------------------------------
 
-    if (position.y < -1.0f)
+    if (m_position.y < -1.0f)
     {
-        position.y = -1.0f;
+        m_position.y = -1.0f;
 
         if (velocity.y < 0.0f)
             velocity.y = 0.0f;
     }
 
-    // teto
-    if (position.y > 120.0f)
+    if (m_position.y > 120.0f)
     {
-        position.y = 120.0f;
+        m_position.y = 120.0f;
 
         if (velocity.y > 0.0f)
             velocity.y = 0.0f;
     }
-}
 
-void Bird::setModelMatrixUniform(
-    GLuint model_uniform,
-    const glm::mat4& view,
-    const glm::mat4& projection
-) const
-{
-    glm::mat4 model = glm::mat4(1.0f);
+    //--------------------------------------------------
+    // COLLIDER
+    //--------------------------------------------------
 
-    // posição
-    model = glm::translate(model, position);
+    updateColliders();
 
-    // correção do modelo OBJ
-    model = glm::rotate(
-        model,
-        glm::radians(90.0f),
-        glm::vec3(0.0f, 1.0f, 0.0f)
-    );
+    //--------------------------------------------------
+    // GAMEOBJECT
+    //--------------------------------------------------
 
-    // yaw
-    model = glm::rotate(
-        model,
-        rotationY,
-        glm::vec3(0.0f, 1.0f, 0.0f)
-    );
+    m_rotation =
+        glm::vec3(
+            rotationX,
+            rotationY,
+            rotationZ
+        );
 
-    // pitch
-    model = glm::rotate(
-        model,
-        rotationX,
-        glm::vec3(1.0f, 0.0f, 0.0f)
-    );
+    //--------------------------------------------------
+    // COOLDOWNS
+    //--------------------------------------------------
 
-    // roll
-    model = glm::rotate(
-        model,
-        rotationZ,
-        glm::vec3(0.0f, 0.0f, 1.0f)
-    );
+    collisionCooldown =
+        glm::max(
+            0.0f,
+            collisionCooldown - dt
+        );
 
-    glUniformMatrix4fv(
-        model_uniform,
-        1,
-        GL_FALSE,
-        glm::value_ptr(model)
-    );
+    terrainCollisionCooldown =
+        glm::max(
+            0.0f,
+            terrainCollisionCooldown - dt
+        );
 }

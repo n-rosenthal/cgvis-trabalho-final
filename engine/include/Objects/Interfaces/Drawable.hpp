@@ -20,6 +20,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <memory>
 #include <vector>
@@ -87,10 +89,12 @@ struct Vertex{
  *  Contexto de renderização, pode variar a depender do shader
  */
 struct DrawContext {
-    GLint model_uniform;
-    GLint object_id_uniform;
-    int   object_id;
-    // extensível se necessário
+    GLuint shader_program;
+    GLint  model_uniform;
+    GLint  view_uniform;
+    GLint  projection_uniform;
+    GLint  object_id_uniform;
+    int    object_id;
 };
 
 
@@ -137,10 +141,25 @@ class Drawable {
             draw(ctx);   // cada subclasse implementa isso
         };
         
+        //  Getters
+        glm::vec3 getPosition() const { return m_position; }
+        glm::vec3 getRotation() const { return m_rotation; }
+        glm::vec3 getScale()    const { return m_scale; }
+
+        //  Setters
+        void setPosition(const glm::vec3& position) { m_position = position; }
+        void setRotation(const glm::vec3& rotation) { m_rotation = rotation; }
+        void setScale(const glm::vec3& scale)       { m_scale = scale; }
+
     protected:
+        glm::vec3 m_position = glm::vec3(0.0f);
+        glm::vec3 m_rotation = glm::vec3(0.0f);   // (pitch, yaw, roll) or (x,y,z)
+        glm::vec3 m_scale    = glm::vec3(1.0f);
+
         Buffers              m_buffers;
         std::vector<Vertex>  m_vertices;
         std::vector<GLuint>  m_indices;
+        DrawContext          m_ctx;
         
         virtual void draw(const DrawContext& ctx) = 0;
 };

@@ -1,12 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 project(OWL VERSION 1.0.0 LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Source files
 set(SOURCES
+  engine/src/dejavufont.cpp
   engine/src/audio/miniaudio.c
   engine/src/audio/AudioManager.cpp
 
@@ -28,6 +29,8 @@ set(SOURCES
   engine/src/Terrain/Terrain.cpp
 
   engine/src/Collision/CollisionSystem.cpp
+
+  engine/src/Objects/Drawables/TreeDrawable.cpp
 
   engine/src/Objects/ProceduralRock.cpp
   engine/src/Objects/Ring.cpp
@@ -66,7 +69,9 @@ foreach(source_file IN LISTS SOURCES)
   endif()
 endforeach()
 
-add_executable(${EXECUTABLE_NAME} ${SOURCES})
+add_executable(${EXECUTABLE_NAME} ${SOURCES}
+  engine/include/Objects/Interfaces/GameObject.hpp
+  engine/include/Objects/Drawables/TreeDrawable.hpp)
 
 # Include directories
 target_include_directories(${EXECUTABLE_NAME} BEFORE PRIVATE

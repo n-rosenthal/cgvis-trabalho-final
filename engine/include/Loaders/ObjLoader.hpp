@@ -50,3 +50,4 @@ extern std::map<std::string, SceneObject> g_VirtualScene;
 void BuildTrianglesAndAddToVirtualScene(ObjModel* model);
 void ComputeNormals(ObjModel* model);
 void PrintObjModelInfo(ObjModel*); // Função para debugging
+void DrawVirtualObject(const char* name);

@@ -1,5 +1,5 @@
-#include "InputCallbacks.hpp"
 #include "textrendering.hpp"
+#include "Window/InputCallbacks.hpp"
 #include "Window/WindowCallbacks.hpp"
 #include "Renderer/ShaderLoader.hpp"
 
@@ -12,11 +12,11 @@ float    g_AngleX;
 float    g_AngleY;
 float    g_AngleZ;
 
-double&    g_LastCursorPosX;
-double&    g_LastCursorPosY;
-bool&     g_LeftMouseButtonPressed;
-bool&     g_RightMouseButtonPressed;
-bool&     g_MiddleMouseButtonPressed;
+double    g_LastCursorPosX;
+double    g_LastCursorPosY;
+bool     g_LeftMouseButtonPressed;
+bool     g_RightMouseButtonPressed;
+bool     g_MiddleMouseButtonPressed;
 
 float g_CameraTheta;
 float g_CameraPhi;

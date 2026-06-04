@@ -4,8 +4,8 @@
 #include <stdlib.h>
 
 
-#include "Objects/Terrain.hpp"
-#include "Objects/TerrainRegion.hpp"
+#include "Terrain/Terrain.hpp"
+#include "Terrain/TerrainRegion.hpp"
 #include <cstdio>
 
 
@@ -471,6 +471,7 @@ void Terrain::generate() {
     buildMesh();
     computeNormals();
     setupBuffers();
+    printf("Terrain vertices: %zu, indices: %zu\n", m_vertices.size(), m_indices.size());
 }
 
 

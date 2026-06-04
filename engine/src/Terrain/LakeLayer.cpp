@@ -1,4 +1,4 @@
-#include "Objects/LakeLayer.hpp"
+#include "Terrain/LakeLayer.hpp"
 
 /**
  * @file    `LakeLayer.cpp`

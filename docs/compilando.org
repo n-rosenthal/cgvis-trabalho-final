@@ -7,3 +7,7 @@ cmake -B build -S .
 cmake --build build
 cmake --build build --target run
 #+end_src
+
+#+begin_src bash
+rm -rf build/ && cmake -B build -S . && cmake --build build && cmake --build build --target run
+#+eng_src

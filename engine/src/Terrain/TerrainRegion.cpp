@@ -1,7 +1,7 @@
 #include <glm/geometric.hpp>
 
-#include "Objects/TerrainRegion.hpp"
-#include "Objects/TerrainType.hpp"
+#include "Terrain/TerrainRegion.hpp"
+#include "Terrain/TerrainType.hpp"
 
 TerrainRegion::TerrainRegion(
     glm::vec2 minCorner,

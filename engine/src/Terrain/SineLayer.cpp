@@ -1,4 +1,4 @@
-#include "Objects/SineLayer.hpp"
+#include "Terrain/SineLayer.hpp"
 
 /**
  * @file    `SineLayer.cpp`

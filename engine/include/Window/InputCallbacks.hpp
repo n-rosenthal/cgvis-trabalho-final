@@ -19,11 +19,11 @@ extern float    g_AngleX;
 extern float    g_AngleY;
 extern float    g_AngleZ;
 
-extern double&    g_LastCursorPosX;
-extern double&    g_LastCursorPosY;
-extern bool&     g_LeftMouseButtonPressed;
-extern bool&     g_RightMouseButtonPressed;
-extern bool&     g_MiddleMouseButtonPressed;
+extern double    g_LastCursorPosX;
+extern double    g_LastCursorPosY;
+extern bool     g_LeftMouseButtonPressed;
+extern bool     g_RightMouseButtonPressed;
+extern bool     g_MiddleMouseButtonPressed;
 
 extern float g_CameraTheta;
 extern float g_CameraPhi;

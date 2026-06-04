@@ -1,0 +1,45 @@
+* interfaces
+** =Drawable=
+Objetos desenhados na cena virtual implementam a /interface/ =Drawable= (isto é, são /desenháveis/).
+Esta interface encapsula a lógica de renderização de um objeto.
+
+*** campos
+**** estrutura =Buffers=
+A estrutura =Buffers= armazena os /buffers/ necessários aos /shaders/ do OpenGL.
+
+**** estrutura =Vertex=
+Representa um vértice na malha de triângulos do objeto. Um =Vertex= é uma 4-upla
+
+#+begin_src cpp
+struct Vertex{
+    glm::vec3 position;
+    glm::vec3 normal;
+    glm::vec2 texcoord;
+    glm::vec3 color;
+};
+#+end_src
+
+**** estrutura =DrawContext=
+Armazena todas as informações necessárias para renderização em tela a partir dos shaders do OpenGL.
+
+#+begin_src cpp
+struct DrawContext {
+    GLuint shader_program;
+    GLint  model_uniform;
+    GLint  view_uniform;
+    GLint  projection_uniform;
+    GLint  object_id_uniform;
+    int    object_id;
+};
+#+end_src
+
+*** métodos
+
+
+
+** =Collidable=
+Objetos sobre os quais são definidos /colisores/ e que possuem colisões entre si ou com o personagem controlado pelo jogador implementam a /interface/ =Collidable=.
+
+
+** =GameObjects=
+Objetos que são /objetos do jogo= (sic) implementam =GameObject=. Esta interface encapsula a lógica de jogo de um objeto.
