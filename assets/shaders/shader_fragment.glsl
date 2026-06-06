@@ -1,22 +1,11 @@
 #version 330 core
 
-in vec4 position_world;
-in vec4 normal;
-in vec4 position_model;
-in vec2 texcoords;
-in vec3 terrain_color;
-flat in int terrain_material;
+in vec3 fragPosition;
+in vec3 fragNormal;
+in vec2 fragTexcoord;
+in vec3 fragColor;
 
-uniform mat4 model;
 uniform mat4 view;
-uniform mat4 projection;
-
-#define SPHERE  0
-#define BUNNY   1
-#define PLANE   2
-#define BIRD    3
-#define ROCK    4
-#define RING    5
 
 uniform int object_id;
 
@@ -29,131 +18,136 @@ uniform sampler2D TextureImage2;
 
 out vec4 color;
 
+#define SPHERE 0
+#define BUNNY  1
+#define PLANE  2
+#define BIRD   3
+#define ROCK   4
+#define RING   5
+
 #define M_PI   3.14159265358979323846
 #define M_PI_2 1.57079632679489661923
 
 void main()
 {
-    vec4 origin = vec4(0.0, 0.0, 0.0, 1.0);
-    vec4 camera_position = inverse(view) * origin;
+    vec3 N =
+        normalize(fragNormal);
 
-    vec4 p = position_world;
+    vec3 L =
+        normalize(vec3(
+            1.0,
+            1.0,
+            0.5
+        ));
 
-    // Normal interpolada
-    vec4 n = normalize(normal);
+    vec3 cameraPosition =
+        vec3(inverse(view)[3]);
 
-    // Direção da luz
-    vec4 l = normalize(vec4(1.0, 1.0, 0.5, 0.0));
+    vec3 V =
+        normalize(
+            cameraPosition -
+            fragPosition
+        );
 
-    // Vetor para câmera
-    vec4 v = normalize(camera_position - p);
+    // ==================================
+    // TERRENO
+    // ==================================
 
-    float U = 0.0;
-    float V = 0.0;
-
-    vec3 Kd0 = vec3(1.0);
-
-    // ===== ESFERA =====
-    if ( object_id == SPHERE )
+    if(object_id == PLANE)
     {
-        vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
-        vec4 d = position_model - bbox_center;
-
-        float rho   = length(d.xyz);
-        float theta = atan(d.x, d.z);
-        float phi   = asin(d.y / rho);
-
-        U = (theta + M_PI) / (2.0 * M_PI);
-        V = (phi + M_PI_2) / M_PI;
-
-        Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
-    }
-
-    // ===== COELHO =====
-    else if ( object_id == BUNNY )
-    {
-        float minx = bbox_min.x;
-        float maxx = bbox_max.x;
-
-        float miny = bbox_min.y;
-        float maxy = bbox_max.y;
-
-        U = (position_model.x - minx) / (maxx - minx);
-        V = (position_model.y - miny) / (maxy - miny);
-
-        Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
-    }
-
-    // ===== TERRENO =====
-    else if ( object_id == PLANE )
-    {
-        vec3 N = normalize(n.xyz);
-        vec3 L = normalize(l.xyz);
+        float ambient =
+            0.25;
 
         float diffuse =
-            max(dot(N, L), 0.15);
+            max(dot(N,L),0.0);
 
-        color.rgb =
-            terrain_color * diffuse;
+        vec3 finalColor =
+            fragColor *
+            (ambient + diffuse);
 
-        color.a = 1.0;
+        color =
+            vec4(finalColor,1.0);
 
         return;
     }
 
-    // ===== ROCHAS =====
-    else if (object_id == ROCK)
+    // ==================================
+    // ROCHA
+    // ==================================
+
+    if(object_id == ROCK)
     {
-        vec3 N = normalize(n.xyz);
-        vec3 L = normalize(l.xyz);
+        float diffuse =
+            max(dot(N,L),0.2);
 
-        float diffuse = max(dot(N, L), 0.2);
+        color =
+            vec4(
+                vec3(
+                    0.35,
+                    0.35,
+                    0.38
+                ) * diffuse,
+                1.0
+            );
 
-        vec3 rockColor =
-            vec3(0.35, 0.35, 0.38);
-
-        color.rgb = rockColor * diffuse;
-        color.a = 1.0;
         return;
     }
 
-    // ===== RING =====
-    else if (object_id == RING)
-    {
-        vec3 viewDir =
-            normalize(camera_position.xyz - p.xyz);
+    // ==================================
+    // ANEL
+    // ==================================
 
+    if(object_id == RING)
+    {
         float fresnel =
             pow(
-                1.0 - max(dot(n.xyz, viewDir), 0.0),
+                1.0 -
+                max(dot(N,V),0.0),
                 3.0
             );
 
-        vec3 baseColor =
-            vec3(1.0, 0.1, 0.1);
-
         vec3 emissive =
-            baseColor * (2.0 + fresnel * 4.0);
+            vec3(
+                1.0,
+                0.1,
+                0.1
+            ) *
+            (2.0 + 4.0*fresnel);
 
-        color.rgb = emissive;
-
-        color.a = 1.0;
+        color =
+            vec4(emissive,1.0);
 
         return;
     }
 
-    // ===== ILUMINAÇÃO LAMBERT =====
+    // ==================================
+    // OBJETOS COM TEXTURA
+    // ==================================
 
-    float lambert = max(dot(n.xyz, l.xyz), 0.0);
+    vec3 Kd0 =
+        texture(
+            TextureImage0,
+            fragTexcoord
+        ).rgb;
 
-    vec3 ambient = 0.15 * Kd0;
-    vec3 diffuse = lambert * Kd0;
+    float lambert =
+        max(dot(N,L),0.0);
 
-    vec3 final_color = ambient + diffuse;
+    vec3 ambient =
+        0.15 * Kd0;
 
-    color = vec4(final_color, 1.0);
+    vec3 diffuse =
+        lambert * Kd0;
 
-    // Gamma correction
-    color.rgb = pow(color.rgb, vec3(1.0/2.2));
+    color =
+        vec4(
+            ambient + diffuse,
+            1.0
+        );
+
+    color.rgb =
+        pow(
+            color.rgb,
+            vec3(1.0/2.2)
+        );
 }
-

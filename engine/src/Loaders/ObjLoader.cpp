@@ -542,13 +542,13 @@ void DrawVirtualObject(const char* name) {
         );
     }
 
-    printf("Drawing object: %s\n", name);
-
+    //  printf("Drawing object: %s\n", name);
+    /**
     printf(
-    "bbox uniforms = %d %d\n",
-    g_bbox_min_uniform,
-    g_bbox_max_uniform
-);  
+        "bbox uniforms = %d %d\n",
+        g_bbox_min_uniform,
+        g_bbox_max_uniform
+    );  */
 
     // Verifica se o VAO está realmente vinculado (glGetIntegerv(GL_VERTEX_ARRAY_BINDING))
     GLint current_vao;
@@ -583,6 +583,7 @@ void DrawVirtualObject(const char* name) {
         &current_ebo
     );
 
+    /**
     printf(
         "Drawing %s | VAO=%u EBO=%d first=%zu count=%zu mode=%u\n",
         name,
@@ -592,15 +593,17 @@ void DrawVirtualObject(const char* name) {
         obj.num_indices,
         obj.rendering_mode
     );
+    */
 
     while(glGetError() != GL_NO_ERROR);
 
-    printf("Error before draw = %d\n", glGetError());
+    // printf("Error before draw = %d\n", glGetError());
+
     // Desenha
     glDrawElements(obj.rendering_mode, (GLsizei)obj.num_indices, GL_UNSIGNED_INT, (void*)(obj.first_index * sizeof(GLuint)));
     CHECK_GL_ERROR(); // Após glDrawElements
 
     GLenum err = glGetError();
-    printf("Error after draw = %u\n", err);
+    // printf("Error after draw = %u\n", err);
     glBindVertexArray(0);
 }

@@ -1,51 +1,62 @@
 cmake_minimum_required(VERSION 3.10)
 project(OWL VERSION 1.0.0 LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Source files
 set(SOURCES
+  # Externos
+  external/glad.c
+  external/stb_image.cpp
+  external/tiny_obj_loader.cpp
   engine/src/dejavufont.cpp
   engine/src/audio/miniaudio.c
+  engine/src/correcao.cpp
+  engine/src/textrendering.cpp
+  engine/src/buildtriangles.cpp
+
+  # Gerenciamento de áudio via `miniaudio`
   engine/src/audio/AudioManager.cpp
 
+  # Carregadores de objetos, texturas e shaders
   engine/src/Loaders/ObjLoader.cpp
   engine/src/Loaders/TextureLoader.cpp
   engine/src/Renderer/ShaderLoader.cpp
 
+  # Callbacks de janela e entrada
   engine/src/Window/InputCallbacks.cpp
   engine/src/Window/WindowCallbacks.cpp
 
+  # Core
+  engine/src/Game/Application.cpp
   engine/src/Game/Camera.cpp
+  engine/src/Game/Renderer.cpp
+  engine/src/Game/Scene.cpp
+  engine/src/Game/SceneBuilder.cpp
+  engine/src/Game/Window.cpp
 
-  engine/src/main.cpp
-
-  engine/src/Terrain/TerrainRegion.cpp
-  engine/src/Terrain/TerrainLayer.cpp
-  engine/src/Terrain/SineLayer.cpp
-  engine/src/Terrain/MountainLayer.cpp
-  engine/src/Terrain/LakeLayer.cpp
+  # Geração de terreno e relevos
   engine/src/Terrain/Terrain.cpp
 
+  # Sistema de colisão
   engine/src/Collision/CollisionSystem.cpp
 
+  # Objetos do jogo
+  engine/src/Objects/Drawables/BirdDrawable.cpp
   engine/src/Objects/Drawables/TreeDrawable.cpp
-
-  engine/src/Objects/ProceduralRock.cpp
-  engine/src/Objects/Ring.cpp
-  engine/src/Objects/Building.cpp
-  engine/src/Objects/Tree.cpp
+  engine/src/Objects/Drawables/RingDrawable.cpp
+  engine/src/Objects/Drawables/RockDrawable.cpp
   engine/src/Game/Bird.cpp
-  
-  engine/src/correcao.cpp
-  engine/src/textrendering.cpp
+  engine/src/Objects/Tree.cpp
+  engine/src/Objects/Ring.cpp
+  engine/src/Objects/ProceduralRock.cpp
+  engine/src/Objects/Building.cpp
   engine/src/Objects.cpp
-  engine/src/buildtriangles.cpp
-  external/glad.c
-  external/stb_image.cpp
-  external/tiny_obj_loader.cpp
+
+  # Main
+  engine/src/main.cpp
 )
 
 # Output directory

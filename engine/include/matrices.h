@@ -260,18 +260,6 @@ inline glm::mat4 Matrix_Camera_View(glm::vec4 position_c, glm::vec4 view_vector,
 // Matriz de projeção paralela ortográfica
 inline glm::mat4 Matrix_Orthographic(float l, float r, float b, float t, float n, float f)
 {
-    printf("\n");
-    printf("l = %f\n", l);
-    printf("r = %f\n", r);
-    printf("b = %f\n", b);
-    printf("t = %f\n", t);
-    printf("n = %f\n", n);
-    printf("f = %f\n", f);
-
-    printf("r-l = %f\n", r-l);
-    printf("t-b = %f\n", t-b);
-    printf("f-n = %f\n", f-n);
-
     glm::mat4 M = Matrix(
         2.0f/(r-l) , 0.0f       , 0.0f       , -(r+l)/(r-l),
         0.0f       , 2.0f/(t-b) , 0.0f       , -(t+b)/(t-b),
@@ -344,16 +332,7 @@ inline glm::mat4 Matrix_Perspective(float field_of_view, float aspect, float n, 
     // precisamos utilizar a matriz -M*P para projeção perspectiva, de forma que
     // w seja positivo.
     //
-    
-
-    printf("aspect = %f\n", aspect);
-    printf("fov = %f\n", field_of_view);
-
-    printf("t = %f\n", t);
-    printf("b = %f\n", b);
-    printf("r = %f\n", r);
-    printf("l = %f\n", l);
-    
+        
     return -M*P;
 }
 

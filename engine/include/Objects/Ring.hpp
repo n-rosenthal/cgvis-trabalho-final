@@ -1,30 +1,31 @@
+/**
+ * @file    Ring.hpp
+ * @brief   Anel de objetivo como GameObject.
+ *          Lógica de coleta/animação aqui;
+ *          geometria e draw no RingDrawable.
+ */
 #pragma once
 
-#include <glad/glad.h>
-#include <glm/glm.hpp>
+#include "Objects/Interfaces/GameObject.hpp"
+#include "Objects/Drawables/RingDrawable.hpp"
 
-class Ring {
+class Ring : public GameObject {
 public:
-    Ring(glm::vec3 pos, float radius);
+    explicit Ring(glm::vec3 position, float radius = 2.5f);
 
     void update(float dt);
-    void draw(GLuint model_uniform, const glm::mat4& view);
     bool checkCollision(glm::vec3 birdPos);
     bool isDead() const;
 
+    // Render override: injeta view e estado de animação antes de delegar
+    void render(const DrawContext& ctx, const glm::mat4& view);
+
 private:
-    void setupMesh();
+    float m_radius;
+    float m_pulseTime   = 0.0f;
+    float m_animScale   = 1.0f;
+    float m_destroyTimer = 0.0f;
+    bool  m_collected   = false;
 
-    GLuint VAO;
-    GLuint VBO;
-    GLuint EBO;
-
-    glm::vec3 position;
-
-    float radius;
-    float pulseTime;
-    bool collected;
-    float destroyTimer;
-    float scale;
-    int indexCount;
+    RingDrawable* m_ringDrawable = nullptr;   // alias sem ownership (dono é m_drawable)
 };
