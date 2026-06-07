@@ -32,6 +32,7 @@ void Scene::build() {
     m_trees = m_builder.buildTrees(*m_terrain);
     m_rocks = m_builder.buildRocks(*m_terrain);
     m_rings = m_builder.buildRings(*m_terrain);
+    m_letter = m_builder.buildLetter();
 }
 
 /**

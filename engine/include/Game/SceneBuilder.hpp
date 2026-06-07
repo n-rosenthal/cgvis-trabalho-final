@@ -13,6 +13,7 @@
 #include "Objects/Tree.hpp"
 #include "Objects/ProceduralRock.hpp"
 #include "Objects/Ring.hpp"
+#include "Objects/Letter.hpp"
 
 class SceneBuilder {
 public:
@@ -20,4 +21,5 @@ public:
     std::vector<std::shared_ptr<Tree>>              buildTrees(Terrain& terrain);
     std::vector<std::shared_ptr<ProceduralRock>>    buildRocks(Terrain& terrain);
     std::vector<std::shared_ptr<Ring>>              buildRings(Terrain& terrain);
+    std::shared_ptr<Letter>                         buildLetter();
 };

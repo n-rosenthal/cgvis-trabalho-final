@@ -110,3 +110,10 @@ std::vector<std::shared_ptr<Ring>> SceneBuilder::buildRings(Terrain& terrain) {
 
     return rings;
 }
+
+/**
+ *  @brief  construtor para a letter
+ */
+std::shared_ptr<Letter> SceneBuilder::buildLetter() {
+    return std::make_shared<Letter>(glm::vec3(0.0f, 20.0f, 0.0f));
+}

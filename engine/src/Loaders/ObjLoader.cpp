@@ -38,15 +38,23 @@ ObjModel::ObjModel(const char* filename, const char* basepath, bool triangulate)
         }
     }
 
+    printf("Base path: \"%s\"\n", basepath);
+    printf("Triangulate: %s\n", triangulate ? "true" : "false");
+    printf("Carregando...\n");
+
     std::string warn;
     std::string err;
     bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename, basepath, triangulate);
 
     if (!err.empty())
         fprintf(stderr, "\n%s\n", err.c_str());
+    else { printf("Nenhum erro encontrado.\n"); }
 
     if (!ret)
         throw std::runtime_error("Erro ao carregar modelo.");
+
+    if (!warn.empty())
+        fprintf(stderr, "\n%s\n", warn.c_str());
 
     for (size_t shape = 0; shape < shapes.size(); ++shape) {
         if (shapes[shape].name.empty()) {
@@ -58,9 +66,10 @@ ObjModel::ObjModel(const char* filename, const char* basepath, bool triangulate)
                 filename);
             throw std::runtime_error("Objeto sem nome.");
         }
-        printf("- Objeto '%s'\n", shapes[shape].name.c_str());
+        printf("Objeto '%s' carregado com sucesso.\n", shapes[shape].name.c_str());
     }
 
+    printf("Carregados %d objetos.\n", shapes.size());
     printf("OK.\n");
 }
 

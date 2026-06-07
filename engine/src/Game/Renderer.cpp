@@ -14,6 +14,7 @@
 #include "Objects/ProceduralRock.hpp"
 #include "Objects/Ring.hpp"
 #include "Objects/Tree.hpp"
+#include "Objects/Letter.hpp"
 #include "Renderer/ShaderLoader.hpp"
 #include "Loaders/TextureLoader.hpp"
 #include "Loaders/ObjLoader.hpp"
@@ -73,12 +74,18 @@ void Renderer::loadModels() const {
     //  Plano
     load(asset_path("models/plane.obj"));
 
-    //  Pássaro
+    //  Pássaro ("bird")
     load(asset_path("models/bird/0V3HJRW3DQ5QPF3J2O5PR4Z1M.obj"));
 
-    //  Árvores (1, 2)
-    load(asset_path("models/trees/tree1/GenTree-103_AE3D_03122023-F1.obj"));
-    load(asset_path("models/trees/tree2/GenTree_105_AE3D_03122023-F2.obj"));
+    //  Pássaro ("bird_standing")
+    load(asset_path("models/bird_standing/G1FXKUZIFSQHX0QERXO6AAO63.obj"));
+
+    //  Árvores
+    //      "Birch_Summer"
+    load(asset_path("models/tree/Birch_Summer_1.obj"));
+
+    //      "GenTree_105_AE3D_03122023-F2"
+    load(asset_path("models/trees/GenTree-103_AE3D_03122023-F1.obj"));
 }
 
 void Renderer::shutdown() {}
@@ -177,6 +184,10 @@ void Renderer::drawRings(std::vector<std::shared_ptr<Ring>>& rings) {
     for (const auto& ring : rings)
         ring->render(ctx, m_view);   // Ring::render injeta view no RingDrawable
     glEnable(GL_CULL_FACE);
+}
+
+void Renderer::drawLetter(Letter& letter) {
+    letter.render(makeContext(OBJ_LETTER));
 }
 
 void Renderer::setWireframe(bool enabled) {

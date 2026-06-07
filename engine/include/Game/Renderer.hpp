@@ -20,6 +20,7 @@ class ProceduralRock;
 class Ring;
 class Tree;
 class Camera;
+class Letter;
 
 class Renderer {
 public:
@@ -37,18 +38,30 @@ public:
     void drawRocks  (std::vector<std::shared_ptr<ProceduralRock>>& rocks);
     void drawTrees  (std::vector<std::shared_ptr<Tree>>& trees);
     void drawRings  (std::vector<std::shared_ptr<Ring>>& rings);
+    void drawLetter (Letter& letter);
+
 
     // ── Utilitários ───────────────────────────────────────────────────────────
     void setWireframe(bool enabled);
 
     // IDs de objeto — espelham os #define do código original
     enum ObjectId : int {
-        OBJ_PLANE    = 2,
-        OBJ_BIRD     = 3,
-        OBJ_ROCK     = 4,
-        OBJ_RING     = 5,
-        OBJ_BUILDING = 6,
-        OBJ_TREE     = 7,
+        OBJ_SPHERE      = 0,
+        OBJ_BUNNY       = 1,
+        OBJ_PLANE       = 2,
+
+        OBJ_TREE        = 3,
+
+        OBJ_BIRD        = 4,
+        OBJ_BIRD2       = 5,
+        OBJ_TARGET      = 6,
+
+        OBJ_ROCK        = 7,
+
+        OBJ_RING        = 8,
+        OBJ_BUILDING    = 9,
+
+        OBJ_LETTER      = 10,
     };
 
 private:

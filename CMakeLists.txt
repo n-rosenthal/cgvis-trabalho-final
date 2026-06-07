@@ -43,17 +43,20 @@ set(SOURCES
   # Sistema de colisão
   engine/src/Collision/CollisionSystem.cpp
 
-  # Objetos do jogo
+  # Drawables: parte renderizável dos objetos
   engine/src/Objects/Drawables/BirdDrawable.cpp
   engine/src/Objects/Drawables/TreeDrawable.cpp
   engine/src/Objects/Drawables/RingDrawable.cpp
   engine/src/Objects/Drawables/RockDrawable.cpp
+  engine/src/Objects/Drawables/LetterDrawable.cpp
+
+  # GameObjects: parte lógica, física dos objetos
   engine/src/Game/Bird.cpp
   engine/src/Objects/Tree.cpp
   engine/src/Objects/Ring.cpp
   engine/src/Objects/ProceduralRock.cpp
   engine/src/Objects/Building.cpp
-  engine/src/Objects.cpp
+  engine/src/Objects/Letter.cpp
 
   # Main
   engine/src/main.cpp

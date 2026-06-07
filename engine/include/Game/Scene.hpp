@@ -20,6 +20,7 @@
 #include "Objects/Ring.hpp"
 #include "Objects/ProceduralRock.hpp"
 #include "Objects/Tree.hpp"
+#include "Objects/Letter.hpp"
 
 class Renderer;  // forward
 
@@ -44,6 +45,7 @@ private:
     std::vector<std::shared_ptr<Ring>>           m_rings;
     std::vector<std::shared_ptr<ProceduralRock>> m_rocks;
     std::vector<std::shared_ptr<Tree>>           m_trees;
+    std::shared_ptr<Letter>                      m_letter;
 
     SceneBuilder m_builder;
 };
