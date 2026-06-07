@@ -42,7 +42,6 @@ void Application::init(const char* title, int w, int h) {
     m_window.init(title, w, h);
     m_renderer.init(m_window.get());    // carrega shaders, texturas, modelos OBJ
     m_scene.build();                    // constrói terreno, objetos, etc.
-
 }
 
 /**

@@ -25,14 +25,12 @@ static float distancePointSegment(glm::vec3 p, glm::vec3 a, glm::vec3 b) {
  * @brief   Cria os objetos do jogo
  */
 void Scene::build() {
-    m_terrain = m_builder.buildTerrain();
-
     m_bird.emplace();
-
-    m_trees = m_builder.buildTrees(*m_terrain);
-    m_rocks = m_builder.buildRocks(*m_terrain);
-    m_rings = m_builder.buildRings(*m_terrain);
-    m_letter = m_builder.buildLetter();
+    buildTerrain();
+    buildTrees();
+    buildRocks();
+    buildRings();
+    buildLetter();
 }
 
 /**
@@ -113,10 +111,104 @@ void Scene::resolveCollisions() {
  *  
  */
 void Scene::draw(Renderer& r) {
-    r.drawBird(*m_bird);
+
+    if (m_bird->getStanding()) {
+        r.drawBird(*m_bird, true);  // Passa true para usar modelo standing
+    }   else {
+        r.drawBird(*m_bird, false); // Passa false para usar modelo voando
+    }
+
     r.drawTerrain(*m_terrain);
     r.drawRocks(m_rocks);
     r.drawTrees(m_trees);
     r.drawRings(m_rings);
     if (m_letter) r.drawLetter(*m_letter);
+}
+
+
+//  ======================================================================
+//  Métodos `build*()` para construção dos objetos da cena virtual
+//  ======================================================================
+/**
+ * @brief   Constrói o terreno do jogo
+ */
+void Scene::buildTerrain() {
+    m_terrain = std::make_unique<Terrain>(
+        128,
+        128,
+        5.0f
+    );
+
+    assert(m_terrain);
+    m_terrain->generate();
+}
+
+/**
+ * @brief   Constrói as rochas do jogo
+ */
+void Scene::buildRocks() {
+    //  semente de aleatoriedade para disposição das rochas
+    srand((unsigned int)time(nullptr));
+
+    //  quantidade de rochas e região de distribuição
+    const int   numRocks   = 40;
+    const float regionSize = 256.0f;
+
+    for (int i = 0; i < numRocks; ++i) {
+        float x     = ((float)rand() / RAND_MAX - 0.5f) * regionSize;
+        float z     = ((float)rand() / RAND_MAX - 0.5f) * regionSize;
+        float scale = 0.8f + ((float)rand() / RAND_MAX) * 3.5f;
+        float y     = m_terrain->getHeight(x, z);
+
+        m_rocks.push_back(std::make_shared<ProceduralRock>(glm::vec3(x, y, z), scale, 2));
+    };
+};
+
+void Scene::buildTrees() {
+    glm::vec3 center(384.0f, 0.0f, 128.0f);
+    glm::vec3 scale(1.0f);
+    const int   numTrees = 20;
+    const float dx = 12.0f, dz = 8.0f;
+
+    for (int i = 0; i < numTrees; ++i) {
+        float x = center.x - i * dx;
+        float z = center.z - i * dz;
+
+        glm::vec3 normal = m_terrain->getNormal(x, z);
+        float     height = m_terrain->getHeight(x, z);
+
+        glm::vec3 rotation(atan2(normal.z, normal.y), 0.0f, -atan2(normal.x, normal.y));
+        glm::vec3 position(x, height, z);
+
+        m_trees.push_back(std::make_shared<Tree>(position, rotation, scale, 0));
+    };
+};
+
+
+/**
+ * @brief   Constrói os anéis de objetivo do jogo
+ */
+void Scene::buildRings() {
+    // Posições (x, offset_y, z) — offset_y é somado à altura do terreno
+    const std::vector<glm::vec3> positions = {
+        { 20.0f, 20.0f,  20.0f },
+        { 40.0f, 30.0f,  25.0f },
+        { 60.0f, 40.0f,  30.0f },
+        { 80.0f, 50.0f,  25.0f },
+        {100.0f, 60.0f,  20.0f },
+    };
+
+    //  construção dos anéis
+    for (const auto& p : positions) {
+        float groundY = m_terrain->getHeight(p.x, p.z);
+        m_rings.push_back(std::make_shared<Ring>(glm::vec3(p.x, groundY + p.y, p.z)));
+    };
+};
+
+
+/**
+ *  @brief  construtor para a letter
+ */
+void Scene::buildLetter() {
+    m_letter = std::make_shared<Letter>(glm::vec3(0.0f, 20.0f, 0.0f));
 }

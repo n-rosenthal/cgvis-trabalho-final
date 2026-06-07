@@ -159,8 +159,12 @@ void Renderer::endFrame(GLFWwindow* window) {
 
 // ── Draw calls ────────────────────────────────────────────────────────────────
 
-void Renderer::drawBird(Bird& bird) {
-    bird.render(makeContext(OBJ_BIRD));
+void Renderer::drawBird(Bird& bird, bool standing) {
+    if (standing) {
+        bird.render(makeContext(OBJ_BIRD2));
+    } else {
+        bird.render(makeContext(OBJ_BIRD));
+    }
 }
 
 void Renderer::drawTerrain(

@@ -20,6 +20,22 @@ public:
     const CapsuleCollider& getCollider() const;
     std::vector<std::shared_ptr<Collider>> getColliders() override;
 
+
+    //  Retorna se o pássaro está em modo standing (parado)
+    bool getStanding() const { return standing; }
+
+    //  Define se o pássaro está em modo standing (parado)
+    void setStanding(bool standing) { this->standing = standing; }
+
+
+    glm::vec3 getSize() const { return size; }
+    void setSize(const glm::vec3& s) { size = s; }
+
+
+    // Constantes externas para tamanho
+    static constexpr float DEFAULT_SIZE = 1.2f;
+    static constexpr float STANDING_SCALE_FACTOR = 0.3f;
+
 private:
     // Orientação (em radianos)
     float m_yaw   = 0.0f;   // rotação horizontal (Y)
@@ -42,6 +58,10 @@ private:
     // Helpers
     glm::mat4 rotationMatrix() const;
     void      clampPosition();
+
+
+    glm::vec3 size;          // Tamanho do pássaro (escala)
+    bool standing;  // Flag para indicar se usa modelo standing (bird2) ou voando (bird)
 };
 
 #endif

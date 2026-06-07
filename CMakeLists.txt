@@ -34,7 +34,6 @@ set(SOURCES
   engine/src/Game/Camera.cpp
   engine/src/Game/Renderer.cpp
   engine/src/Game/Scene.cpp
-  engine/src/Game/SceneBuilder.cpp
   engine/src/Game/Window.cpp
 
   # Geração de terreno e relevos

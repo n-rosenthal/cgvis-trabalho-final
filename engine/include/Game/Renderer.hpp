@@ -33,7 +33,7 @@ public:
     void endFrame(GLFWwindow* window);
 
     // ── Draw calls ────────────────────────────────────────────────────────────
-    void drawBird   (Bird& bird);
+    void drawBird   (Bird& bird, bool standing);
     void drawTerrain(Terrain& terrain);
     void drawRocks  (std::vector<std::shared_ptr<ProceduralRock>>& rocks);
     void drawTrees  (std::vector<std::shared_ptr<Tree>>& trees);
