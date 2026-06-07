@@ -46,6 +46,9 @@ void Renderer::init(GLFWwindow* window) {
 
     LoadTextureImage(asset_path("textures/red_brick_diff_1k.jpg").c_str());
     LoadTextureImage(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str());
+    LoadTextureImage(asset_path("textures/tree1_textures/Leaf_Oak_Gum_AE3D_10302022-A.png").c_str()); // TextureImage2 (Trees)
+    LoadTextureImage(asset_path("models/bird/falcon2.jpg").c_str()); // TextureImage3 (Bird Body)
+    LoadTextureImage(asset_path("models/bird/default-grey.jpg").c_str()); // TextureImage4 (Bird Grey)
 
     loadModels();
     TextRendering_Init(window);
@@ -86,6 +89,9 @@ void Renderer::loadModels() const {
 
     //      "GenTree_105_AE3D_03122023-F2"
     load(asset_path("models/trees/GenTree-103_AE3D_03122023-F1.obj"));
+
+    //  Carta
+    load(asset_path("models/the_letter.obj"));
 }
 
 void Renderer::shutdown() {}
@@ -119,7 +125,7 @@ DrawContext Renderer::makeContext(ObjectId id) {
 
         glUniform1i(
             loc,
-            OBJ_PLANE
+            (int)id
         );
     
 

@@ -79,6 +79,8 @@ public:
     // Getters / Setters para transformações
     glm::vec3 getPosition() const { return m_position; }
     void setPosition(const glm::vec3& pos) { m_position = pos; }
+    
+    glm::vec3 getRotation() const { return m_rotation; }
 
     // ... outros métodos (colisão, etc.)
 

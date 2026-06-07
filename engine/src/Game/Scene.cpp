@@ -49,6 +49,10 @@ void Scene::update(float dt, GLFWwindow* w) {
                     m_bird->getForward(),
                     m_bird->getUp(), dt);
 
+    if (m_letter) {
+        m_letter->update(dt, m_bird->getPosition(), m_bird->getRotation(), m_letter->isCaptured());
+    }
+
     for (auto& ring : m_rings)
         ring->update(dt);
 }
@@ -80,6 +84,15 @@ void Scene::resolveCollisions() {
         }
     }
 
+    // Carta
+    if (m_letter && !m_letter->isCaptured()) {
+        float d = glm::length(m_letter->getPosition() - birdPos);
+        if (d < radius + 2.0f) { // Capture radius
+            m_letter->setCaptured(true);
+            g_Sound.play("assets/audio/cartoon-boing-bouncy-big_F_major.wav");
+        }
+    }
+
     // Anéis — coleta e remove os mortos
     for (auto& ring : m_rings)
         ring->checkCollision(birdPos);
@@ -105,4 +118,5 @@ void Scene::draw(Renderer& r) {
     r.drawRocks(m_rocks);
     r.drawTrees(m_trees);
     r.drawRings(m_rings);
+    if (m_letter) r.drawLetter(*m_letter);
 }

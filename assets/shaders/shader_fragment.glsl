@@ -100,11 +100,11 @@ void main()
 
     else if(object_id == TREE)
     {
-        Kd0 =
-            texture(
-                TextureImage2,
-                vec2(U,V)
-            ).rgb;
+        vec4 texColor = texture(TextureImage2, vec2(U,V));
+        if (texColor.a < 0.3) {
+            discard;
+        }
+        Kd0 = texColor.rgb;
     }
 
     // ==================================
@@ -237,6 +237,20 @@ void main()
                 1.0,
                 1.0,
                 1.0
+            );
+    }
+
+    // ==================================
+    // CARTA
+    // ==================================
+
+    else if(object_id == LETTER)
+    {
+        Kd0 =
+            vec3(
+                0.9,
+                0.85,
+                0.75
             );
     }
 
