@@ -123,6 +123,8 @@ void Scene::draw(Renderer& r) {
     r.drawTrees(m_trees);
     r.drawRings(m_rings);
     if (m_letter) r.drawLetter(*m_letter);
+
+    r.drawHouses(m_houses);
 }
 
 
@@ -211,4 +213,33 @@ void Scene::buildRings() {
  */
 void Scene::buildLetter() {
     m_letter = std::make_shared<Letter>(glm::vec3(0.0f, 20.0f, 0.0f));
+}
+
+void Scene::buildHouses() {
+    float x = 40.0f;
+    float z = 50.0f;
+
+    float y =
+        m_terrain->getHeight(x,z);
+
+    m_houses.push_back(
+        std::make_shared<House>(
+            glm::vec3(x,y,z),
+            glm::vec3(0.0f),
+            glm::vec3(8.0f)
+        )
+    );
+
+    x = 80.0f;
+    z = 110.0f;
+    y =
+        m_terrain->getHeight(x,z);
+
+    m_houses.push_back(
+        std::make_shared<House>(
+            glm::vec3(x,y,z),
+            glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f),
+            glm::vec3(8.0f)
+        )
+    );
 }

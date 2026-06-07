@@ -9,12 +9,15 @@
 #include "Window/WindowCallbacks.hpp"
 #include "Game/Renderer.hpp"
 #include "Game/Camera.hpp"
+
 #include "Game/Bird.hpp"
 #include "Terrain/Terrain.hpp"
 #include "Objects/ProceduralRock.hpp"
 #include "Objects/Ring.hpp"
 #include "Objects/Tree.hpp"
 #include "Objects/Letter.hpp"
+#include "Objects/House.hpp"
+
 #include "Renderer/ShaderLoader.hpp"
 #include "Loaders/TextureLoader.hpp"
 #include "Loaders/ObjLoader.hpp"
@@ -92,6 +95,9 @@ void Renderer::loadModels() const {
 
     //  Carta
     load(asset_path("models/the_letter.obj"));
+
+    //  Casa
+    load(asset_path("models/house.obj"));
 }
 
 void Renderer::shutdown() {}
@@ -198,6 +204,14 @@ void Renderer::drawRings(std::vector<std::shared_ptr<Ring>>& rings) {
 
 void Renderer::drawLetter(Letter& letter) {
     letter.render(makeContext(OBJ_LETTER));
+}
+
+void Renderer::drawHouses(
+    const std::vector<std::shared_ptr<House>>& houses
+)
+{
+    for(auto& house : houses)
+        house->render(makeContext(OBJ_HOUSE));
 }
 
 void Renderer::setWireframe(bool enabled) {

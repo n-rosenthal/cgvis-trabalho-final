@@ -25,6 +25,7 @@
 #include "Objects/Ring.hpp"
 #include "Objects/ProceduralRock.hpp"
 #include "Objects/Tree.hpp"
+#include "Objects/House.hpp"
 
 class Renderer;  // forward
 
@@ -43,6 +44,7 @@ public:
     void buildRocks();
     void buildRings();
     void buildLetter();
+    void buildHouses();
     
 
 
@@ -69,4 +71,5 @@ private:
     std::vector<std::shared_ptr<ProceduralRock>> m_rocks;
     std::vector<std::shared_ptr<Tree>>           m_trees;
     std::shared_ptr<Letter>                      m_letter;
+    std::vector<std::shared_ptr<House>>          m_houses;
 };

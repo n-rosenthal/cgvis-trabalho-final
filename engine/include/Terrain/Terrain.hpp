@@ -7,62 +7,52 @@
 class Terrain : public Drawable
 {
 public:
-    // width/depth = number of quads along each axis (128 recommended)
-    // spacing     = world-space distance between grid points (e.g. 2.0f)
     Terrain(int width, int depth, float spacing);
 
-    // ---------- Public queries used by scene objects ----------
+    float     getHeight     (float x, float z) const;
+    glm::vec3 getNormal     (float x, float z) const;
+    glm::vec3 getIslandCenter(int index)        const;
 
-    // Height at any world (x, z) position
-    float     getHeight(float x, float z) const;
-
-    // Approximate surface normal at (x, z)
-    glm::vec3 getNormal(float x, float z) const;
-
-    // Returns the world-space centre of island[index] (y = terrain height there).
-    // index 0..1 are the two "house" islands; others are decorative.
-    glm::vec3 getIslandCenter(int index) const;
-
-    // Water level – anything below this is lake / sea
     static constexpr float WATER_LEVEL = -10.2f;
 
+    // Island descriptor (world-space units after scaling)
+    struct IslandDef {
+        float angle, radius, height, size;
+        bool  house;
+    };
+
 protected:
-    void buildMesh()     override;
-    void computeNormals()override;
-    void setupBuffers()  override;
+    void buildMesh()      override;
+    void computeNormals() override;
+    void setupBuffers()   override;
     void draw(const DrawContext& ctx) override;
 
 private:
-    int   m_width;
-    int   m_depth;
+    int   m_width, m_depth;
     float m_spacing;
+    float m_halfW, m_halfD;   // world-space half-extents (precomputed)
 
-    std::vector<Vertex>  m_vertices;
-    std::vector<GLuint>  m_indices;
-    struct { GLuint VAO, VBO, EBO; } m_buffers = {0, 0, 0};
+    std::vector<Vertex>    m_vertices;
+    std::vector<GLuint>    m_indices;
+    struct { GLuint VAO, VBO, EBO; } m_buffers = {0,0,0};
 
-    // ---------- Height / colour helpers ----------
-    float     sampleHeight    (float x, float z) const;
-    float     borderMountains (float x, float z) const;
-    float     lakeBasin       (float x, float z) const; // returns lake-floor height
-    float     addIslands      (float x, float z) const;
-    float     perlinNoise     (float x, float z) const;
-    float     fbm             (float x, float z, int octaves) const; // fractal noise
+    // Island table lazily built in world units from fraction constants
+    mutable std::vector<IslandDef> m_islandCache;
+    const std::vector<IslandDef>& islandTable() const;
 
-    glm::vec3 sampleColor     (float y, float x, float z) const;
+    // Height layers
+    float sampleHeight    (float x, float z) const;
+    float borderMountains (float x, float z) const;
+    float lakeBasin       (float x, float z) const;
+    float addIslands      (float x, float z) const;
 
-    // ---------- Noise helpers ----------
-    static float fade(float t);
+    // Colour
+    glm::vec3 sampleColor (float y, float x, float z) const;
+
+    // Noise
+    float perlinNoise (float x, float y) const;
+    float fbm         (float x, float z, int octaves) const;
+    static float fade (float t);
     static float lerp (float a, float b, float t);
     static float grad (int hash, float x, float y);
-
-    // ---------- Island table (shared between height & query) ----------
-    struct IslandDef {
-        float angle;   // polar angle from lake centre
-        float radius;  // distance from lake centre
-        float height;  // peak height above lake floor
-        float size;    // island footprint radius
-        bool  house;   // true = place a house here
-    };
-    static const std::vector<IslandDef>& islandTable();
 };

@@ -21,6 +21,7 @@ class Ring;
 class Tree;
 class Camera;
 class Letter;
+class House;
 
 class Renderer {
 public:
@@ -39,6 +40,7 @@ public:
     void drawTrees  (std::vector<std::shared_ptr<Tree>>& trees);
     void drawRings  (std::vector<std::shared_ptr<Ring>>& rings);
     void drawLetter (Letter& letter);
+    void drawHouses (const std::vector<std::shared_ptr<House>>& houses);
 
 
     // ── Utilitários ───────────────────────────────────────────────────────────
@@ -62,6 +64,8 @@ public:
         OBJ_BUILDING    = 9,
 
         OBJ_LETTER      = 10,
+
+        OBJ_HOUSE       = 11
     };
 
 private:
