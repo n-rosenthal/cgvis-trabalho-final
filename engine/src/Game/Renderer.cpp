@@ -14,10 +14,10 @@
 #include "Terrain/Terrain.hpp"
 #include "Objects/ProceduralRock.hpp"
 #include "Objects/Ring.hpp"
-#include "Objects/Tree.hpp"
 #include "Objects/Letter.hpp"
 #include "Objects/House.hpp"
 
+#include "Renderer/Textures.hpp"
 #include "Renderer/ShaderLoader.hpp"
 #include "Loaders/TextureLoader.hpp"
 #include "Loaders/ObjLoader.hpp"
@@ -46,6 +46,9 @@ void Renderer::init(GLFWwindow* window) {
     m_objectIdUniform = g_object_id_uniform;
 
     if (m_program == 0) { fprintf(stderr, "ERRO: shader inválido!\n"); exit(1); }
+
+    //  Carregamento de texturas
+    Textures::LoadAll();
 
     LoadTextureImage(asset_path("textures/red_brick_diff_1k.jpg").c_str());
     LoadTextureImage(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str());
@@ -165,6 +168,11 @@ void Renderer::endFrame(GLFWwindow* window) {
 
 // ── Draw calls ────────────────────────────────────────────────────────────────
 
+void Renderer::drawObjects(std::vector<std::shared_ptr<StaticObject>>& objects) {
+    for(auto& object : objects)
+        object->render(makeContext(OBJ_TREE));
+}
+
 void Renderer::drawBird(Bird& bird, bool standing) {
     if (standing) {
         bird.render(makeContext(OBJ_BIRD2));
@@ -188,11 +196,6 @@ void Renderer::drawRocks(std::vector<std::shared_ptr<ProceduralRock>>& rocks) {
         rock->render(ctx);   // GameObject::render -> RockDrawable::draw
 }
 
-void Renderer::drawTrees(std::vector<std::shared_ptr<Tree>>& trees) {
-    auto ctx = makeContext(OBJ_TREE);
-    for (const auto& tree : trees)
-        tree->render(ctx);
-}
 
 void Renderer::drawRings(std::vector<std::shared_ptr<Ring>>& rings) {
     auto ctx = makeContext(OBJ_RING);

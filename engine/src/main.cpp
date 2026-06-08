@@ -77,7 +77,7 @@ Camera g_Camera;
 #include "Game/Bird.hpp"
 
 // Classe `Tree`: árvores geradas aleatoriamente
-#include "Objects/Tree.hpp"
+//                -> StaticObject
 
 // Classe `ProceduralTerrain`: terreno gerado proceduralmente
 #include "Terrain/Terrain.hpp"

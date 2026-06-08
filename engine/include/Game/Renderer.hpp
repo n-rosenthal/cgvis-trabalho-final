@@ -5,6 +5,8 @@
 #pragma once
 
 #include "Objects/Interfaces/Drawable.hpp"   // DrawContext
+#include "Objects/StaticObject.hpp"
+#include "Objects/ObjDrawable.hpp"
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -18,7 +20,6 @@ class Bird;
 class Terrain;
 class ProceduralRock;
 class Ring;
-class Tree;
 class Camera;
 class Letter;
 class House;
@@ -37,11 +38,11 @@ public:
     void drawBird   (Bird& bird, bool standing);
     void drawTerrain(Terrain& terrain);
     void drawRocks  (std::vector<std::shared_ptr<ProceduralRock>>& rocks);
-    void drawTrees  (std::vector<std::shared_ptr<Tree>>& trees);
     void drawRings  (std::vector<std::shared_ptr<Ring>>& rings);
     void drawLetter (Letter& letter);
     void drawHouses (const std::vector<std::shared_ptr<House>>& houses);
 
+    void drawObjects(std::vector<std::shared_ptr<StaticObject>>& objects);
 
     // ── Utilitários ───────────────────────────────────────────────────────────
     void setWireframe(bool enabled);

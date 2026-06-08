@@ -13,7 +13,7 @@ GLuint g_NumLoadedTextures = 0;
  * @param filename (const char*)
  *          caminho para o arquivo da imagem
  */
-void LoadTextureImage(const char* filename) {
+GLuint LoadTextureImage(const char* filename) {
     printf("Carregando imagem \"%s\"... ", filename);
 
     // Primeiro fazemos a leitura da imagem do disco
@@ -61,4 +61,6 @@ void LoadTextureImage(const char* filename) {
     stbi_image_free(data);
 
     g_NumLoadedTextures += 1;
+
+    return texture_id;
 };

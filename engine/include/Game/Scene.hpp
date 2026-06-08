@@ -17,6 +17,9 @@
 #include <memory>
 #include <optional>
 
+//  Objetos estáticos da cena virtual
+#include "Objects/StaticObject.hpp"
+
 #include "Game/Camera.hpp"
 #include "Game/Bird.hpp"
 #include "Objects/Letter.hpp"
@@ -24,7 +27,6 @@
 #include "Terrain/Terrain.hpp"
 #include "Objects/Ring.hpp"
 #include "Objects/ProceduralRock.hpp"
-#include "Objects/Tree.hpp"
 #include "Objects/House.hpp"
 
 class Renderer;  // forward
@@ -53,7 +55,6 @@ public:
     const std::unique_ptr<Terrain>& getTerrain() const { return m_terrain; }
     const std::vector<std::shared_ptr<Ring>>& getRings() const { return m_rings; }
     const std::vector<std::shared_ptr<ProceduralRock>>& getRocks() const { return m_rocks; }
-    const std::vector<std::shared_ptr<Tree>>& getTrees() const { return m_trees; }
     const std::shared_ptr<Letter>& getLetter() const { return m_letter; }
 
     //  Acessador para a câmera
@@ -66,10 +67,11 @@ private:
     std::unique_ptr<Terrain>                    m_terrain;
     Camera                                      m_camera;
 
+    //  Vetor de objetos estáticos
+    std::vector<std::shared_ptr<StaticObject>>  m_staticObjects;
 
     std::vector<std::shared_ptr<Ring>>           m_rings;
     std::vector<std::shared_ptr<ProceduralRock>> m_rocks;
-    std::vector<std::shared_ptr<Tree>>           m_trees;
     std::shared_ptr<Letter>                      m_letter;
     std::vector<std::shared_ptr<House>>          m_houses;
 };

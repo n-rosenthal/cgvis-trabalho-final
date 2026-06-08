@@ -6,8 +6,19 @@
 #include <glad/glad.h>
 #include "Game/Scene.hpp"
 #include "Game/Renderer.hpp"
+#include "Renderer/Textures.hpp"
 #include "audio/AudioManager.hpp"
 #include "Collision/CollisionSystem.hpp"
+
+namespace Models
+{
+    const std::vector<std::string> TREE_1 =
+    {
+        "GenTree_-_Twigs_Leaf_Bearing_Material.Twigs",
+        "leaves_Material-Leaves",
+        "GenTree-Main_Trunk_Material.Trunk_and_Primary_Limbs"
+    };
+}
 
 
 extern SoundManager g_Sound;
@@ -120,9 +131,10 @@ void Scene::draw(Renderer& r) {
 
     r.drawTerrain(*m_terrain);
     r.drawRocks(m_rocks);
-    r.drawTrees(m_trees);
     r.drawRings(m_rings);
     if (m_letter) r.drawLetter(*m_letter);
+
+    r.drawObjects(m_staticObjects);
 
     r.drawHouses(m_houses);
 }
@@ -166,25 +178,57 @@ void Scene::buildRocks() {
     };
 };
 
-void Scene::buildTrees() {
-    glm::vec3 center(384.0f, 0.0f, 128.0f);
-    glm::vec3 scale(1.0f);
-    const int   numTrees = 20;
-    const float dx = 12.0f, dz = 8.0f;
+void Scene::buildTrees()
+{
+    glm::vec3 lake_center(0.0f);
+    const float lake_radius = 120.0f;
 
-    for (int i = 0; i < numTrees; ++i) {
-        float x = center.x - i * dx;
-        float z = center.z - i * dz;
+    const int numTrees = 20;
+    const float borderDistance = 10.0f;
 
-        glm::vec3 normal = m_terrain->getNormal(x, z);
-        float     height = m_terrain->getHeight(x, z);
+    srand((unsigned int)time(nullptr));
 
-        glm::vec3 rotation(atan2(normal.z, normal.y), 0.0f, -atan2(normal.x, normal.y));
-        glm::vec3 position(x, height, z);
+    for (int i = 0; i < numTrees; ++i)
+    {
+        float angle =
+            ((float)rand() / RAND_MAX) *
+            2.0f * M_PI;
 
-        m_trees.push_back(std::make_shared<Tree>(position, rotation, scale, 0));
-    };
-};
+        float radius =
+            lake_radius + borderDistance;
+
+        float x =
+            lake_center.x +
+            radius * cos(angle);
+
+        float z =
+            lake_center.z +
+            radius * sin(angle);
+
+        float height =
+            m_terrain->getHeight(x, z);
+
+        float yaw =
+            ((float)rand() / RAND_MAX) *
+            2.0f * M_PI;
+
+        float scale =
+            0.8f +
+            ((float)rand() / RAND_MAX) * 3.5f;
+
+        m_staticObjects.push_back(
+            std::make_shared<StaticObject>(
+                std::make_unique<ObjDrawable>(
+                    Models::TREE_1,
+                    TextureSet::TREE
+                ),
+                glm::vec3(x, height, z),
+                glm::vec3(0.0f, yaw, 0.0f),
+                glm::vec3(scale)
+            )
+        );
+    }
+}
 
 
 /**

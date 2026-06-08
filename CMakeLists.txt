@@ -23,6 +23,7 @@ set(SOURCES
   # Carregadores de objetos, texturas e shaders
   engine/src/Loaders/ObjLoader.cpp
   engine/src/Loaders/TextureLoader.cpp
+  engine/src/Renderer/Textures.cpp
   engine/src/Renderer/ShaderLoader.cpp
 
   # Callbacks de janela e entrada
@@ -43,8 +44,10 @@ set(SOURCES
   engine/src/Collision/CollisionSystem.cpp
 
   # Drawables: parte renderizável dos objetos
+  engine/src/Objects/ObjDrawable.cpp
+  engine/src/Objects/StaticObject.cpp
+
   engine/src/Objects/Drawables/BirdDrawable.cpp
-  engine/src/Objects/Drawables/TreeDrawable.cpp
   engine/src/Objects/Drawables/RingDrawable.cpp
   engine/src/Objects/Drawables/RockDrawable.cpp
   engine/src/Objects/Drawables/LetterDrawable.cpp
@@ -52,7 +55,6 @@ set(SOURCES
 
   # GameObjects: parte lógica, física dos objetos
   engine/src/Game/Bird.cpp
-  engine/src/Objects/Tree.cpp
   engine/src/Objects/Ring.cpp
   engine/src/Objects/ProceduralRock.cpp
   engine/src/Objects/Building.cpp
@@ -86,8 +88,7 @@ foreach(source_file IN LISTS SOURCES)
 endforeach()
 
 add_executable(${EXECUTABLE_NAME} ${SOURCES}
-  engine/include/Objects/Interfaces/GameObject.hpp
-  engine/include/Objects/Drawables/TreeDrawable.hpp)
+  engine/include/Objects/Interfaces/GameObject.hpp)
 
 # Include directories
 target_include_directories(${EXECUTABLE_NAME} BEFORE PRIVATE

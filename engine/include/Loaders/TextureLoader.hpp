@@ -10,4 +10,4 @@
 extern GLuint g_NumLoadedTextures;
 
 // Função que carrega uma imagem para ser utilizada como textura
-void LoadTextureImage(const char* filename);
+GLuint LoadTextureImage(const char* filename);
