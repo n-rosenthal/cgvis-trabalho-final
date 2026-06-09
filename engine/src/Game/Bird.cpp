@@ -205,24 +205,6 @@ void Bird::update(
     m_flapHeld =
         flapPressed;
 
-    static bool gHeld = false;
-
-    bool gPressed =
-        glfwGetKey(
-            window,
-            GLFW_KEY_G
-        ) == GLFW_PRESS;
-
-    if(
-        gPressed &&
-        !gHeld
-    )
-    {
-        dropLetter();
-    }
-
-    gHeld = gPressed;
-
     float yawInput =
         (glfwGetKey(
             window,
@@ -328,25 +310,6 @@ void Bird::update(
         );
 
     updateColliders();
-
-    if(m_carriedLetter)
-    {
-        glm::vec3 offset =
-            getForward()*2.0f
-            -
-            getUp()*0.5f;
-
-        m_carriedLetter
-            ->setPosition(
-                m_position +
-                offset
-            );
-
-        m_carriedLetter
-            ->setRotation(
-                m_rotation
-            );
-    }
 }
 
 void Bird::updateColliders()
@@ -376,36 +339,4 @@ void Bird::clampPosition()
         m_position.y =
             kHeightMax;
     }
-}
-
-bool Bird::carryingLetter() const
-{
-    return
-        m_carriedLetter
-        != nullptr;
-}
-
-void Bird::pickLetter(std::shared_ptr<Letter> letter)
-{
-    m_carriedLetter = letter;
-
-    if(letter)
-        letter->pickUp();
-}
-
-void Bird::dropLetter()
-{
-    if(!m_carriedLetter)
-        return;
-
-    glm::vec3 dropPos =
-        m_position -
-        getForward() * 2.0f;
-
-    m_carriedLetter->setPosition(dropPos);
-
-    m_carriedLetter->setCaptured(false);
-    m_carriedLetter->drop();
-
-    m_carriedLetter.reset();
 }

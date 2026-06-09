@@ -40,40 +40,16 @@ public:
         std::shared_ptr<Collider>
     > getColliders() override;
 
-    bool getStanding() const
-    {
-        return standing;
-    }
+    bool getStanding() const {return standing; }
 
-    glm::vec3 getSize() const
-    {
-        return size;
-    }
+    glm::vec3 getSize() const{return size; }
 
-    void setSize(const glm::vec3& s)
-    {
-        size = s;
-    }
+    void setSize(const glm::vec3& s) {size = s;}
 
     static constexpr float DEFAULT_SIZE = 1.2f;
     static constexpr float STANDING_SCALE_FACTOR = 0.3f;
 
     void updateDrawable();
-
-    bool carryingLetter() const;
-
-    void pickLetter(
-        std::shared_ptr<Letter> letter
-    );
-
-    void dropLetter();
-
-    std::shared_ptr<Letter>
-    getCarriedLetter() const
-    {
-        return m_carriedLetter;
-    }
-
 private:
 
     glm::mat4 rotationMatrix() const;
@@ -97,9 +73,6 @@ private:
 
     const ModelDefinition*
         m_currentModel;
-
-    std::shared_ptr<Letter>
-        m_carriedLetter;
 
     glm::vec3 size =
         glm::vec3(DEFAULT_SIZE);

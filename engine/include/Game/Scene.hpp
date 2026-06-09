@@ -31,12 +31,33 @@
 
 class Renderer;  // forward
 
+/**
+ * @brief   `LetterState` representa o estado da `Letter`
+ * @details  correspondem aos estados possíveis da carta
+ *              - `OnGround`: carta no chão, passível de ser pega pelo pássaro
+ *              - `Carried`: carta sendo carregada pelo pássaro
+ *              - `Falling`: carta caindo
+ */
+enum class LetterState {
+    OnGround,
+    Carried,
+    Falling
+};
+
 class Scene {
 public:
+    //  Aceleração da gravidade
+    static constexpr float GRAVITY = 9.81f;
+
     //  `build` invoca todos os métodos de construção dos objetos
     void build();
 
+    //  Atualização geral
     void update(float dt, GLFWwindow* w);
+
+    //  Atualização do estado da carta
+    void updateLetter(float dt, GLFWwindow* w);
+
     void resolveCollisions();
     void draw(Renderer& r);
 
@@ -47,7 +68,6 @@ public:
     void buildRings();
     void buildLetter();
     void buildHouses();
-    
 
 
     //  Acessadores para os objetos da cena
@@ -74,4 +94,10 @@ private:
     std::vector<std::shared_ptr<ProceduralRock>> m_rocks;
     std::shared_ptr<Letter>                      m_letter;
     std::vector<std::shared_ptr<House>>          m_houses;
+
+    //  Estado atual da carta
+    LetterState m_letterState   = LetterState::OnGround;
+
+    //  Velocidade da carta
+    glm::vec3 m_letterVelocity  = glm::vec3(0.0f);
 };

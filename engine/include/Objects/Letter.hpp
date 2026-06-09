@@ -13,12 +13,6 @@
 #include <memory>
 #include <iostream>
 
-enum class LetterState
-{
-    WORLD,
-    CARRIED
-};
-
 class Letter : public GameObject {
 public:
     /**
@@ -42,26 +36,6 @@ public:
         Assets::LETTER
     ), position, rotation, scale) {};
 
-    /**
-     * @brief   Atualizador dinâmico para `Letter`
-     * @param   dt  (float)
-     *          passagem do tempo
-     * 
-     * @param   bird_position (glm::vec3)
-     *          posição atual do pássaro
-     * 
-     * @param   bird_rotation (glm::vec3)
-     *          rotação atual do pássaro
-     * 
-     * @param   bird_captured (bool)
-     *          verdadeiro, se o pássaro capturou a carta;
-     *          falso, caso contrário
-     */
-    void update(float dt,
-                const glm::vec3& bird_position,
-                const glm::vec3& bird_rotation,
-                bool bird_captured);
-
     //  Getters
 
     /**
@@ -72,15 +46,6 @@ public:
     glm::vec3 getPosition() const { return m_position; }
 
     /**
-     * @brief   Acessador à flag indicativa de captura de `Letter`
-     * @return  (bool)
-     *          verdadeiro, se a carta foi capturada pelo pássaro;
-     *          falso, caso contrário
-     */
-    bool isCaptured() const { return m_captured; }
-
-
-    /**
      * @brief   Retorna o tamanho da carta
      * @return  (float)
      *          tamanho da carta
@@ -88,15 +53,6 @@ public:
     float getSize() const { return m_size; }
 
     //  Setters
-
-    /**
-     * @brief   Define flag indicativa de captura de `Letter`
-     * @param   captured (bool)
-     *          verdadeiro, se a carta foi capturada pelo pássaro;
-     *          falso, caso contrário
-     */
-    void setCaptured(bool captured) { m_captured = captured; }
-
     /**
      * @brief   Define posição de `Letter`
      * @param   position (glm::vec3)
@@ -114,37 +70,11 @@ public:
     void setSize(float size) { m_size = size; }
 
 
-    bool isCarried() const {
-        return m_state == LetterState::CARRIED;
-    }
-
-    void pickUp() {
-        m_state = LetterState::CARRIED;
-    }
-
-    void drop() {
-        m_state = LetterState::WORLD;
-    }
-
 private:
-    //  Velocidade vetorial
-    glm::vec3 m_velocity;
-
     //  Tamanho da carta
     float m_size;
-
-    //  Flag indicativa de captura da carta
-    bool m_captured;
-
-    LetterState m_state =
-        LetterState::WORLD;
 
     //  Ponteiro para uma instância de classe
     //  que implementa a interface `Drawable`
     std::unique_ptr<ObjDrawable> m_drawable;
-
-    //  Física da carta
-    const float gravity = -9.81f;
-    const float ground_y = -1.0f;   // altura do terreno
-    const float claw_distance = 0.5f; // distância máxima para capturar a carta
 };

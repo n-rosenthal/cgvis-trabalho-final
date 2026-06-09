@@ -43,16 +43,105 @@ void Scene::build() {
  */
 void Scene::update(float dt, GLFWwindow* w) {
     m_bird->update(dt, w);
-    m_camera.update(m_bird->getPosition(),
-                    m_bird->getForward(),
-                    m_bird->getUp(), dt);
 
-    if (m_letter) {
-        m_letter->update(dt, m_bird->getPosition(), m_bird->getRotation(), m_letter->isCaptured());
+    // --------------------------------------------------
+    // Soltar carta (tecla G)
+    // --------------------------------------------------
+
+    static bool gHeld = false;
+
+    bool gPressed =
+        glfwGetKey(
+            w,
+            GLFW_KEY_G
+        ) == GLFW_PRESS;
+
+    if(gPressed && !gHeld) {
+        if(m_letterState == LetterState::Carried) {
+            m_letterState =
+                LetterState::Falling;
+
+            glm::vec3 dropPos =
+                m_bird->getPosition()
+                -
+                m_bird->getForward() * 2.0f;
+
+            m_letter->setPosition(dropPos);
+
+            m_letterVelocity =
+                m_bird->getForward() * 5.0f;
+        }
     }
 
-    for (auto& ring : m_rings)
+    gHeld = gPressed;
+
+    // --------------------------------------------------
+
+    updateLetter(dt, w);
+
+    m_camera.update(
+        m_bird->getPosition(),
+        m_bird->getForward(),
+        m_bird->getUp(),
+        dt
+    );
+
+    for(auto& ring : m_rings) {
         ring->update(dt);
+    }
+}
+
+void Scene::updateLetter(
+    float dt,
+    GLFWwindow* window
+)
+{
+    if(!m_letter)
+        return;
+
+    switch(m_letterState)
+    {
+        case LetterState::Carried:
+        {
+            glm::vec3 offset =
+                m_bird->getForward() * 2.0f
+                -
+                m_bird->getUp() * 0.5f;
+
+            m_letter->setPosition(
+                m_bird->getPosition()
+                +
+                offset
+            );
+
+            m_letter->setRotation(
+                m_bird->getRotation()
+            );
+
+            break;
+        }
+
+        case LetterState::Falling:
+        {
+            m_letterVelocity.y -=
+                9.8f * dt;
+
+            glm::vec3 p =
+                m_letter->getPosition();
+
+            p +=
+                m_letterVelocity * dt;
+
+            m_letter->setPosition(p);
+
+            break;
+        }
+
+        case LetterState::OnGround:
+        {
+            break;
+        }
+    }
 }
 
 
@@ -82,20 +171,68 @@ void Scene::resolveCollisions() {
         }
     }
 
-    // Carta
-    if(m_letter &&
-    !m_letter->isCaptured() &&
-    !m_bird->carryingLetter())
+    // --------------------------------------------------
+    // Carta no chão → pode ser capturada
+    // --------------------------------------------------
+
+    if(
+        m_letter &&
+        m_letterState == LetterState::OnGround
+    )
     {
         float d =
             glm::length(
-                m_letter->getPosition() -
+                m_letter->getPosition()
+                -
                 birdPos
             );
 
         if(d < radius + 2.0f)
         {
-            m_bird->pickLetter(m_letter);
+            m_letterState =
+                LetterState::Carried;
+
+            m_letterVelocity =
+                glm::vec3(0.0f);
+
+            g_Sound.play(
+                "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
+            );
+        }
+    }
+
+    if(
+    m_letter &&
+    m_letterState == LetterState::Falling
+    )
+    {
+        glm::vec3 p =
+            m_letter->getPosition();
+
+        float terrainHeight =
+            m_terrain->getHeight(
+                p.x,
+                p.z
+            );
+
+        float letterRadius =
+            m_letter->getSize();
+
+        if(
+            p.y <= terrainHeight + letterRadius
+        )
+        {
+            p.y =
+                terrainHeight +
+                letterRadius;
+
+            m_letter->setPosition(p);
+
+            m_letterVelocity =
+                glm::vec3(0.0f);
+
+            m_letterState =
+                LetterState::OnGround;
 
             g_Sound.play(
                 "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
@@ -253,8 +390,22 @@ void Scene::buildRings() {
 /**
  *  @brief  construtor para a letter
  */
-void Scene::buildLetter() {
-    m_letter = std::make_shared<Letter>(glm::vec3(0.0f, 20.0f, 0.0f));
+void Scene::buildLetter()
+{
+    m_letter =
+        std::make_shared<Letter>(
+            glm::vec3(
+                0.0f,
+                20.0f,
+                0.0f
+            )
+        );
+
+    m_letterState =
+        LetterState::OnGround;
+
+    m_letterVelocity =
+        glm::vec3(0.0f);
 }
 
 void Scene::buildHouses() {
