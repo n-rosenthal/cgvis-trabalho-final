@@ -10,6 +10,8 @@
 #include "Game/Renderer.hpp"
 #include "Game/Camera.hpp"
 
+#include "Objects/Assets.hpp"
+
 #include "Game/Bird.hpp"
 #include "Terrain/Terrain.hpp"
 #include "Objects/ProceduralRock.hpp"
@@ -17,7 +19,6 @@
 #include "Objects/Letter.hpp"
 #include "Objects/House.hpp"
 
-#include "Renderer/Textures.hpp"
 #include "Renderer/ShaderLoader.hpp"
 #include "Loaders/TextureLoader.hpp"
 #include "Loaders/ObjLoader.hpp"
@@ -36,8 +37,8 @@ namespace {
 
 // ── Ciclo de vida ─────────────────────────────────────────────────────────────
 
-void Renderer::init(GLFWwindow* window) {
-    LoadShadersFromFiles();
+void Renderer::init(GLFWwindow* window){
+  LoadShadersFromFiles();
 
     m_program         = g_GpuProgramID;
     m_modelUniform    = g_model_uniform;
@@ -45,18 +46,16 @@ void Renderer::init(GLFWwindow* window) {
     m_projUniform     = g_projection_uniform;
     m_objectIdUniform = g_object_id_uniform;
 
-    if (m_program == 0) { fprintf(stderr, "ERRO: shader inválido!\n"); exit(1); }
+    if (m_program == 0)
+    {
+        fprintf(stderr, "ERRO: shader inválido!\n");
+        exit(1);
+    }
 
-    //  Carregamento de texturas
-    Textures::LoadAll();
-
-    LoadTextureImage(asset_path("textures/red_brick_diff_1k.jpg").c_str());
-    LoadTextureImage(asset_path("textures/rocky_terrain_02_diff_1k.jpg").c_str());
-    LoadTextureImage(asset_path("textures/tree1_textures/Leaf_Oak_Gum_AE3D_10302022-A.png").c_str()); // TextureImage2 (Trees)
-    LoadTextureImage(asset_path("models/bird/falcon2.jpg").c_str()); // TextureImage3 (Bird Body)
-    LoadTextureImage(asset_path("models/bird/default-grey.jpg").c_str()); // TextureImage4 (Bird Grey)
+    Assets::LoadAll();
 
     loadModels();
+
     TextRendering_Init(window);
 
     glEnable(GL_DEPTH_TEST);
@@ -64,43 +63,29 @@ void Renderer::init(GLFWwindow* window) {
     glFrontFace(GL_CCW);
 }
 
-void Renderer::loadModels() const {
-    printf("Carregando modelos de %s\n. . .", asset_path("models/") + "\n");
-    auto load = [](const std::string& path) {
-        ObjModel model(path.c_str());
-        ComputeNormals(&model);
-        BuildTrianglesAndAddToVirtualScene(&model);
+void Renderer::loadModels() const
+{
+    auto load = [](const ModelDefinition& model) {
+        ObjModel obj(model.objFile.c_str());
 
-        printf("Loaded %s\n", path.c_str());
+        ComputeNormals(&obj);
+        BuildTrianglesAndAddToVirtualScene(&obj);
+
+        printf(
+            "Loaded %s\n",
+            model.objFile.c_str()
+        );
     };
 
-    //   Esfera
-    load(asset_path("models/sphere.obj"));
+    load(Assets::TREE_1);
+    load(Assets::BIRD_MODEL);
+    load(Assets::BIRD_STANDING_MODEL);
+    load(Assets::LETTER);
 
-    //  Coelho
-    load(asset_path("models/bunny.obj"));
-
-    //  Plano
-    load(asset_path("models/plane.obj"));
-
-    //  Pássaro ("bird")
-    load(asset_path("models/bird/0V3HJRW3DQ5QPF3J2O5PR4Z1M.obj"));
-
-    //  Pássaro ("bird_standing")
-    load(asset_path("models/bird_standing/G1FXKUZIFSQHX0QERXO6AAO63.obj"));
-
-    //  Árvores
-    //      "Birch_Summer"
-    load(asset_path("models/tree/Birch_Summer_1.obj"));
-
-    //      "GenTree_105_AE3D_03122023-F2"
-    load(asset_path("models/trees/GenTree-103_AE3D_03122023-F1.obj"));
-
-    //  Carta
-    load(asset_path("models/the_letter.obj"));
-
-    //  Casa
-    load(asset_path("models/house.obj"));
+    for(const auto& [name, obj] : g_VirtualScene)
+    {
+        printf("Mesh: %s\n", name.c_str());
+    }
 }
 
 void Renderer::shutdown() {}
@@ -118,35 +103,16 @@ void Renderer::setModel(const glm::mat4& model) const {
 }
 
 DrawContext Renderer::makeContext(ObjectId id) {
-        glUseProgram(m_program);
-
-        GLint loc =
-            glGetUniformLocation(
-                m_program,
-                "object_id"
-            );
-
-        printf(
-            "objectId = %d, object_id location = %d\n",
-            (int)id,
-            loc
-        );
-
-        glUniform1i(
-            loc,
-            (int)id
-        );
-    
-
     return {
-        .shader_program     = m_program,
-        .model_uniform      = m_modelUniform,
-        .view_uniform       = m_viewUniform,
-        .projection_uniform = m_projUniform,
-        .object_id_uniform  = m_objectIdUniform,
-        .object_id          = (int)id,
+        .shader_program             = m_program,
+        .model_uniform              = m_modelUniform,
+        .view_uniform               = m_viewUniform,
+        .projection_uniform         = m_projUniform,
+        .object_id_uniform          = m_objectIdUniform,
+        .diffuse_texture_uniform    = g_diffuse_texture_uniform,
+        .object_id                  = (int)id
     };
-};
+}
 
 // ── Frame ─────────────────────────────────────────────────────────────────────
 

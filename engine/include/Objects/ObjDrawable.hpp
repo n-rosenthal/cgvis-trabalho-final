@@ -8,39 +8,24 @@
 #include <string>
 #include <vector>
 
+#include "Objects/Assets.hpp"
 #include "Objects/Interfaces/Drawable.hpp"
 #include "Loaders/ObjLoader.hpp"
+#include "Renderer/ShaderLoader.hpp"
 
-enum class TextureSet
-{
-    NONE,
-
-    TREE,
-    HOUSE,
-    ROCK,
-    BRICK,
-    METAL,
-
-    BIRD,
-    LETTER
-};
-
-class ObjDrawable : public Drawable
-{
+class ObjDrawable : public Drawable {
 public:
-    ObjDrawable(
-        std::vector<std::string> objects,
-        TextureSet texture = TextureSet::NONE
+    explicit ObjDrawable(
+        const ModelDefinition& model
     );
 
-    void buildMesh() override {}
-    void computeNormals() override {}
-    void setupBuffers() override {}
+    void buildMesh() override {};
+    void computeNormals() override {};
+    void setupBuffers() override {};
 
 protected:
     void draw(const DrawContext&) override;
 
 private:
-    std::vector<std::string> m_objects;
-    TextureSet m_texture;
+    const ModelDefinition* m_model;
 };

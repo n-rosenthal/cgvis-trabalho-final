@@ -1,52 +1,59 @@
 #include "Objects/ObjDrawable.hpp"
-#include "Renderer/Textures.hpp"
 #include <glad/glad.h>
 
 ObjDrawable::ObjDrawable(
-    std::vector<std::string> objects,
-    TextureSet texture
+    const ModelDefinition& model
 )
 :
-    m_objects(std::move(objects)),
-    m_texture(texture)
+m_model(&model)
 {
 }
 
-static void bindTextureSet(TextureSet texture)
-{
-    switch(texture)
+void ObjDrawable::draw(const DrawContext& ctx){
+    // qual textura?
+    GLint useTextureLoc =
+        glGetUniformLocation(
+            ctx.shader_program,
+            "useTexture"
+        );
+    
+    glUniform1i(
+        useTextureLoc,
+        m_model->useTexture ? 1 : 0
+    );
+    
+    // qual textura?
+    GLint texLoc =
+        glGetUniformLocation(
+            ctx.shader_program,
+            "diffuseTexture"
+        );
+
+    for(size_t i = 0; i < m_model->meshes.size(); ++i)
     {
-        case TextureSet::TREE:
-            glBindTexture(GL_TEXTURE_2D, Textures::TREE);
-            break;
+        bool hasTexture =
+            i < m_model->textures.size() &&
+            m_model->textures[i] != nullptr;
 
-        case TextureSet::HOUSE:
-            glBindTexture(GL_TEXTURE_2D, Textures::HOUSE);
-            break;
+        glUniform1i(
+            useTextureLoc,
+            hasTexture ? 1 : 0
+        );
 
-        case TextureSet::ROCK:
-            glBindTexture(GL_TEXTURE_2D, Textures::ROCK);
-            break;
+        if(hasTexture)
+        {
+            glActiveTexture(GL_TEXTURE0);
 
-        case TextureSet::LETTER:
-            glBindTexture(GL_TEXTURE_2D, Textures::LETTER);
-            break;
+            glBindTexture(
+                GL_TEXTURE_2D,
+                m_model->textures[i]->id
+            );
 
-        case TextureSet::BIRD:
-            glBindTexture(GL_TEXTURE_2D, Textures::BIRD);
-            break;
+            glUniform1i(texLoc, 0);
+        }
 
-        default:
-            break;
-    }
-}
-
-void ObjDrawable::draw(const DrawContext&)
-{
-    bindTextureSet(m_texture);
-
-    for(const auto& object : m_objects)
-    {
-        DrawVirtualObject(object.c_str());
+        DrawVirtualObject(
+            m_model->meshes[i].c_str()
+        );
     }
 }

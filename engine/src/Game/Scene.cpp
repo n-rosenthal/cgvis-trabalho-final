@@ -6,20 +6,8 @@
 #include <glad/glad.h>
 #include "Game/Scene.hpp"
 #include "Game/Renderer.hpp"
-#include "Renderer/Textures.hpp"
 #include "audio/AudioManager.hpp"
 #include "Collision/CollisionSystem.hpp"
-
-namespace Models
-{
-    const std::vector<std::string> TREE_1 =
-    {
-        "GenTree_-_Twigs_Leaf_Bearing_Material.Twigs",
-        "leaves_Material-Leaves",
-        "GenTree-Main_Trunk_Material.Trunk_and_Primary_Limbs"
-    };
-}
-
 
 extern SoundManager g_Sound;
 
@@ -36,12 +24,13 @@ static float distancePointSegment(glm::vec3 p, glm::vec3 a, glm::vec3 b) {
  * @brief   Cria os objetos do jogo
  */
 void Scene::build() {
-    m_bird.emplace();
     buildTerrain();
+    m_bird.emplace();
     buildTrees();
     buildRocks();
     buildRings();
     buildLetter();
+    buildHouses();
 }
 
 /**
@@ -94,11 +83,23 @@ void Scene::resolveCollisions() {
     }
 
     // Carta
-    if (m_letter && !m_letter->isCaptured()) {
-        float d = glm::length(m_letter->getPosition() - birdPos);
-        if (d < radius + 2.0f) { // Capture radius
-            m_letter->setCaptured(true);
-            g_Sound.play("assets/audio/cartoon-boing-bouncy-big_F_major.wav");
+    if(m_letter &&
+    !m_letter->isCaptured() &&
+    !m_bird->carryingLetter())
+    {
+        float d =
+            glm::length(
+                m_letter->getPosition() -
+                birdPos
+            );
+
+        if(d < radius + 2.0f)
+        {
+            m_bird->pickLetter(m_letter);
+
+            g_Sound.play(
+                "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
+            );
         }
     }
 
@@ -218,10 +219,7 @@ void Scene::buildTrees()
 
         m_staticObjects.push_back(
             std::make_shared<StaticObject>(
-                std::make_unique<ObjDrawable>(
-                    Models::TREE_1,
-                    TextureSet::TREE
-                ),
+                Assets::TREE_1,
                 glm::vec3(x, height, z),
                 glm::vec3(0.0f, yaw, 0.0f),
                 glm::vec3(scale)

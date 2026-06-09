@@ -89,11 +89,12 @@ struct Vertex{
  */
 struct DrawContext {
     GLuint shader_program;
-    GLint  model_uniform;
-    GLint  view_uniform;
-    GLint  projection_uniform;
-    GLint  object_id_uniform;
-    int    object_id;
+    GLint model_uniform;
+    GLint view_uniform;
+    GLint projection_uniform;
+    GLint object_id_uniform;
+    GLint diffuse_texture_uniform;
+    int object_id;
 };
 
 

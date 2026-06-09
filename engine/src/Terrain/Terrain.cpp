@@ -102,76 +102,87 @@ float Terrain::sampleHeight(float x, float z) const
 // ============================================================================
 //  Border mountains
 //
-//  distToCenter ∈ [0, 1]:
-//    0 → vertex is at the nearest wall
-//    1 → vertex is at the terrain centre
+//  edgeDist ∈ [0, 1]:
+//    0 → vertex is at the terrain centre
+//    1 → vertex is at the nearest wall
 //
-//  borderFactor is 1 at the wall and drops to 0 well before the lake edge.
-//  With mult=1.65 and exp=1.5, bf reaches 0 when distToCenter ≈ 0.61,
-//  which corresponds to ~195 u from centre on a 320-unit half-terrain –
-//  safely outside the lake radius (121 u).
+//  Uses Chebyshev distance (max of nx, nz) so ALL four edges rise uniformly
+//  into mountains, including corners.  Mountains start rising at edgeDist >
+//  0.55 and peak at 1.0, leaving the inner 55% of the terrain flat/lake.
 // ============================================================================
 float Terrain::borderMountains(float x, float z) const
 {
-    float nx = 1.0f - std::abs(x) / m_halfW;  // 0 at east/west walls
-    float nz = 1.0f - std::abs(z) / m_halfD;  // 0 at north/south walls
-    float distToCenter = std::min(nx, nz);     // 0 at nearest wall, 1 at centre
+    // 0 at centre, 1 at nearest wall
+    float nx = std::abs(x) / m_halfW;
+    float nz = std::abs(z) / m_halfD;
+    float edgeDist = std::max(nx, nz);  // Chebyshev – all four edges rise
 
-    float borderFactor = glm::clamp(1.0f - distToCenter * 1.65f, 0.0f, 1.0f);
-    borderFactor = std::pow(borderFactor, 1.5f); // sharpens the mountain band
+    // Mountains start rising at edgeDist > 0.45 (more terrain is hilly),
+    // reaching full height at the wall (1.0).
+    float borderFactor = glm::clamp((edgeDist - 0.45f) / 0.55f, 0.0f, 1.0f);
+    borderFactor = std::pow(borderFactor, 1.4f); // moderate falloff
 
     if (borderFactor < 0.001f) return 0.0f;
 
-    // FBM frequency: ~3 noise periods across the half-terrain
-    float fx = x * (3.0f / m_halfW);
-    float fz = z * (3.0f / m_halfD);
-    float n = fbm(fx, fz, 5);    // rich fractal detail, range [0, 1]
+    // FBM – absolute coords keep peaks deterministic
+    float fx = x * (3.5f / m_halfW);
+    float fz = z * (3.5f / m_halfD);
+    float n = fbm(fx, fz, 6);    // rich fractal detail, range [0, 1]
 
-    // Asymmetry: north/south walls slightly taller
+    // Slight asymmetry: north/south walls marginally taller
     float angle  = std::atan2(z, x);
-    float aspect = 0.80f + 0.20f * std::cos(angle * 2.0f);
+    float aspect = 0.82f + 0.18f * std::cos(angle * 2.0f);
 
-    // Max mountain peak ≈ 25 world units above 0
-    return borderFactor * aspect * (20.0f * n + 5.0f);
+    // Max peak ≈ 50u; guaranteed minimum at wall ≈ 14u
+    return borderFactor * aspect * (36.0f * n + 14.0f);
 }
 
 // ============================================================================
-//  Lake basin
+//  Lake basin  –  ELLIPTICAL shape
 //
-//  Proportions (all relative to m_halfW):
-//    lakeRadius = 0.38 × halfW   → lake occupies 38% of half-terrain
-//    shoreWidth = 0.10 × halfW   → smooth shore band
-//  These numbers are chosen so the lake is clearly visible from any direction
-//  and the border mountains do NOT reach into the lake area.
+//  The lake is now an ellipse: semi-axis along X = lakeRX, along Z = lakeRZ.
+//  Elliptic distance d_e = sqrt((x/rX)^2 + (z/rZ)^2):
+//    d_e <= 1  →  inside lake
+//    d_e <= 1 + shoreRel  →  shore ramp
+//
+//  Proportions (relative to m_halfW / m_halfD):
+//    lakeRX = 0.42 × halfW   (wider east-west)
+//    lakeRZ = 0.28 × halfD   (narrower north-south)
+//    shoreWidth ≈ 0.10 × halfW in world units
 // ============================================================================
 float Terrain::lakeBasin(float x, float z) const
 {
-    const float lakeRadius = 0.38f * m_halfW;
-    const float shoreWidth = 0.10f * m_halfW;
-    const float lakeFloor  = WATER_LEVEL - 2.0f;   // flat lake bed
+    const float lakeRX    = 0.42f * m_halfW;   // semi-axis X
+    const float lakeRZ    = 0.28f * m_halfD;   // semi-axis Z  (elongated E-W)
+    const float shoreW    = 0.10f * m_halfW;   // shore ramp width in world units
+    const float lakeFloor = WATER_LEVEL - 2.0f;
 
-    float dist = std::sqrt(x * x + z * z);
+    // Elliptic normalised distance (1 = on the ellipse boundary)
+    float ex = x / lakeRX;
+    float ez = z / lakeRZ;
+    float de = std::sqrt(ex * ex + ez * ez);   // 0 at centre, 1 at ellipse edge
 
-    if (dist >= lakeRadius + shoreWidth)
+    // Convert shore width to normalised units (approx via lakeRX)
+    float shoreRel = shoreW / lakeRX;
+
+    if (de >= 1.0f + shoreRel)
         return 1e6f;   // outside lake zone – very high, never wins
 
-    if (dist <= lakeRadius) {
-        // Flat lake bed with micro ripple for visual texture
+    if (de <= 1.0f) {
+        // Flat lake bed with micro ripple
         float ripple = perlinNoise(x * (1.5f / m_halfW) * 60.f,
                                    z * (1.5f / m_halfD) * 60.f) * 0.2f;
         return lakeFloor + ripple;
     }
 
     // Shore ramp: smoothly rises from lakeFloor to ground level
-    float t = (dist - lakeRadius) / shoreWidth;  // [0, 1]
+    float t = (de - 1.0f) / shoreRel;  // [0, 1]
     t = fade(t);
     return lakeFloor + t * (8.0f - lakeFloor);   // rises to ~8 u (grass level)
 }
 
 // ============================================================================
 //  Islands
-//  Returns the extra height added on top of the lake basin floor.
-//  The dome height is in world units (metres), independent of spacing.
 // ============================================================================
 float Terrain::addIslands(float x, float z) const
 {
@@ -186,7 +197,6 @@ float Terrain::addIslands(float x, float z) const
         float t = 1.0f - dist / isl.size;
         float dome = isl.height * t * t * (3.0f - 2.0f * t);  // smoothstep
 
-        // Fine roughness on the island surface
         float fx = x * (8.0f / m_halfW) * 40.f;
         float fz = z * (8.0f / m_halfD) * 40.f;
         dome += perlinNoise(fx, fz) * 0.4f * t;
@@ -212,10 +222,13 @@ glm::vec3 Terrain::getIslandCenter(int index) const
 // ============================================================================
 //  Colour mapping
 //
-//  The colour ramp is calibrated against the actual height range:
-//    < WATER_LEVEL      → lake (blue)
-//    WATER_LEVEL..+1.5  → beach (sand)
-//    above              → grass → brown → rock → snow  (peak ~25u)
+//  Logic:
+//    Below WATER_LEVEL            → lake (blue)
+//    Near lake shore (de < 1.12)  → sand, regardless of exact height
+//    Otherwise                    → grass → brown → rock → snow
+//
+//  The shore colour is keyed on elliptic distance to the lake so the beach
+//  band follows the lake shape rather than a fixed height threshold.
 // ============================================================================
 glm::vec3 Terrain::sampleColor(float y, float x, float z) const
 {
@@ -223,28 +236,39 @@ glm::vec3 Terrain::sampleColor(float y, float x, float z) const
         return glm::vec3(0.07f, 0.13f, 0.42f);  // deep lake
     if (y < WATER_LEVEL)
         return glm::vec3(0.14f, 0.42f, 0.72f);  // shallow lake
-    if (y < WATER_LEVEL + 1.5f)
+
+    // Elliptic distance to lake centre (reuse same axes as lakeBasin)
+    const float lakeRX  = 0.42f * m_halfW;
+    const float lakeRZ  = 0.28f * m_halfD;
+    float ex = x / lakeRX;
+    float ez = z / lakeRZ;
+    float de = std::sqrt(ex * ex + ez * ez);
+
+    // Sand band just outside the ellipse (de in [1.0, 1.18])
+    if (de < 1.18f)
         return glm::vec3(0.76f, 0.66f, 0.46f);  // sandy beach
 
-    // Normalise into [0,1] over the mountain height range
-    // Mountains peak at ~25u; WATER_LEVEL + 1.5 is the beach top.
-    const float landBase = WATER_LEVEL + 1.5f;
-    const float mtnPeak  = 25.0f;
-    float t = glm::clamp((y - landBase) / (mtnPeak - landBase), 0.0f, 1.0f);
+    // ---- Land colours above the beach ----
+    // Low flat terrain (y up to ~10u) should be vivid green field.
+    // Brown/rock/snow only appear on mountain slopes (y > ~14u).
+    const float fieldTop = 10.0f;   // below this: pure grass field
+    const float mtnPeak  = 50.0f;   // calibrated to new mountain max
 
-    // Add a small noise patch so solid bands don't appear
+    float t = glm::clamp((y - fieldTop) / (mtnPeak - fieldTop), 0.0f, 1.0f);
+
+    // Subtle noise to break banding – smaller amplitude so low terrain stays green
     float n = fbm(x * (2.0f / m_halfW) * 40.f,
                   z * (2.0f / m_halfD) * 40.f, 3);
-    t = glm::clamp(t + (n - 0.5f) * 0.12f, 0.0f, 1.0f);
+    t = glm::clamp(t + (n - 0.5f) * 0.08f, 0.0f, 1.0f);
 
-    const glm::vec3 grass(0.27f, 0.56f, 0.17f);
-    const glm::vec3 brown(0.54f, 0.37f, 0.19f);
+    const glm::vec3 grass(0.22f, 0.55f, 0.14f);  // vivid green field
+    const glm::vec3 brown(0.52f, 0.36f, 0.18f);
     const glm::vec3 grey (0.50f, 0.48f, 0.46f);
     const glm::vec3 snow (0.93f, 0.93f, 0.96f);
 
-    if (t < 0.28f) return glm::mix(grass, brown, t / 0.28f);
-    if (t < 0.62f) return glm::mix(brown, grey,  (t - 0.28f) / 0.34f);
-    return          glm::mix(grey,  snow,  (t - 0.62f) / 0.38f);
+    if (t < 0.25f) return glm::mix(grass, brown, t / 0.25f);
+    if (t < 0.60f) return glm::mix(brown, grey,  (t - 0.25f) / 0.35f);
+    return          glm::mix(grey,  snow,  (t - 0.60f) / 0.40f);
 }
 
 // ============================================================================

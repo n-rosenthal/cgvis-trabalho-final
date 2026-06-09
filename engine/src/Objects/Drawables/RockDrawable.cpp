@@ -131,10 +131,19 @@ void RockDrawable::setupBuffers() {
 }
 
 // draw 
-void RockDrawable::draw(const DrawContext& /*ctx*/) {
+void RockDrawable::draw(const DrawContext& ctx) {
     glBindVertexArray(m_buffers.VAO);
     glDrawElements(GL_TRIANGLES,
                    static_cast<GLsizei>(m_rockIdx.size()),
                    GL_UNSIGNED_INT, nullptr);
+
+    glUniform1i(
+        glGetUniformLocation(
+            ctx.shader_program,
+            "useTexture"
+        ),
+        GL_FALSE
+    );
+    
     glBindVertexArray(0);
 }

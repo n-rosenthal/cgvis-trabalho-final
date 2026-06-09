@@ -6,10 +6,18 @@
 #pragma once
 
 #include "Objects/Interfaces/GameObject.hpp"
-#include "Objects/Drawables/LetterDrawable.hpp"
+
+#include "Objects/Assets.hpp"
+#include "Objects/ObjDrawable.hpp"
 
 #include <memory>
 #include <iostream>
+
+enum class LetterState
+{
+    WORLD,
+    CARRIED
+};
 
 class Letter : public GameObject {
 public:
@@ -29,7 +37,10 @@ public:
         const glm::vec3& rotation
                 = glm::vec3(0.0f),
         const glm::vec3& scale
-                = glm::vec3(1.0f));
+                = glm::vec3(1.0f)
+    ) : GameObject(std::make_unique<ObjDrawable>(
+        Assets::LETTER
+    ), position, rotation, scale) {};
 
     /**
      * @brief   Atualizador dinâmico para `Letter`
@@ -93,12 +104,27 @@ public:
      */
     void setPosition(const glm::vec3& position) { m_position = position; }
 
+    void setRotation(const glm::vec3& rotation) { m_rotation = rotation; }
+
     /**
      * @brief   Define o tamanho de `Letter`
      * @param   size (float)
      *          tamanho a ser definido para `Letter`
      */
     void setSize(float size) { m_size = size; }
+
+
+    bool isCarried() const {
+        return m_state == LetterState::CARRIED;
+    }
+
+    void pickUp() {
+        m_state = LetterState::CARRIED;
+    }
+
+    void drop() {
+        m_state = LetterState::WORLD;
+    }
 
 private:
     //  Velocidade vetorial
@@ -110,9 +136,12 @@ private:
     //  Flag indicativa de captura da carta
     bool m_captured;
 
+    LetterState m_state =
+        LetterState::WORLD;
+
     //  Ponteiro para uma instância de classe
     //  que implementa a interface `Drawable`
-    std::unique_ptr<Drawable> m_drawable;
+    std::unique_ptr<ObjDrawable> m_drawable;
 
     //  Física da carta
     const float gravity = -9.81f;

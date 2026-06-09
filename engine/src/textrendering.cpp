@@ -88,7 +88,6 @@ void TextRendering_Init(GLFWwindow* window)
     glGenVertexArrays(1, &textVAO);
     glGenTextures(1, &texttexture_id);
     glGenSamplers(1, &sampler);
-    printf("sampler = %u\n", sampler);
     glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

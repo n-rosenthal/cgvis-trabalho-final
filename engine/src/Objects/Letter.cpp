@@ -4,28 +4,12 @@
  */
 
 #include "Objects/Letter.hpp"
-#include "Objects/Drawables/LetterDrawable.hpp"
+#include "Objects/ObjDrawable.hpp"
 #include "glad/glad.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-extern void DrawVirtualObject(const char* object_name);
-
-/**
- * @brief   Construtor padrão para `Letter`
- * 
- * @param   position (glm::vec3)
- *          posição inicial
- * @param   rotation (glm::vec3)
- *          rotação inicial
- * @param   scale (glm::vec3)
- *          escala inicial
- */
-Letter::Letter(const glm::vec3& position,
-               const glm::vec3& rotation,
-               const glm::vec3& scale)
-    : GameObject(std::make_unique<LetterDrawable>(), position, rotation, scale) {};
 
 /**
  * @brief   Atualizador dinâmico para `Letter`

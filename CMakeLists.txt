@@ -23,7 +23,6 @@ set(SOURCES
   # Carregadores de objetos, texturas e shaders
   engine/src/Loaders/ObjLoader.cpp
   engine/src/Loaders/TextureLoader.cpp
-  engine/src/Renderer/Textures.cpp
   engine/src/Renderer/ShaderLoader.cpp
 
   # Callbacks de janela e entrada
@@ -36,6 +35,7 @@ set(SOURCES
   engine/src/Game/Renderer.cpp
   engine/src/Game/Scene.cpp
   engine/src/Game/Window.cpp
+  engine/src/Objects/Assets.cpp
 
   # Geração de terreno e relevos
   engine/src/Terrain/Terrain.cpp
@@ -47,10 +47,8 @@ set(SOURCES
   engine/src/Objects/ObjDrawable.cpp
   engine/src/Objects/StaticObject.cpp
 
-  engine/src/Objects/Drawables/BirdDrawable.cpp
   engine/src/Objects/Drawables/RingDrawable.cpp
   engine/src/Objects/Drawables/RockDrawable.cpp
-  engine/src/Objects/Drawables/LetterDrawable.cpp
   engine/src/Objects/Drawables/HouseDrawable.cpp
 
   # GameObjects: parte lógica, física dos objetos

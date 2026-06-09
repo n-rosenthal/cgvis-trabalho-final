@@ -48,13 +48,6 @@ void Camera::update(
     m_target =
         targetPos
         + targetForward * 4.0f;
-
-
-        printf(
-            "distance=%.2f height=%.2f\n",
-            m_distance,
-            m_height
-        );
     };
 
 /**

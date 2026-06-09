@@ -16,12 +16,13 @@ std::string vert_path = "assets/shaders/shader_vertex.glsl";
 std::string frag_path = "assets/shaders/shader_fragment.glsl";
 
 GLuint g_GpuProgramID       = 0;
-GLint  g_model_uniform;
-GLint  g_view_uniform;
-GLint  g_projection_uniform;
-GLint  g_object_id_uniform;
-GLint  g_bbox_min_uniform;
-GLint  g_bbox_max_uniform;
+GLint  g_model_uniform      = 0;
+GLint  g_view_uniform       = 0;
+GLint  g_projection_uniform = 0;
+GLint  g_object_id_uniform  = 0;
+GLint  g_bbox_min_uniform   = 0;
+GLint  g_bbox_max_uniform   = 0;
+GLint  g_diffuse_texture_uniform = 0;
 
 /**
  * @brief Carrega os shaders de vértices e de fragmentos
