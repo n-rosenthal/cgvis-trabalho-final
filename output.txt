@@ -56,4 +56,7 @@ Mesh: leaves_Material-Leaves
 Mesh: the_bird
 Mesh: the_bird2
 Mesh: the_letter
+Alturas no centro (0,0): -12.525000
+Altura na borda (60,0): -12.497342
+Altura dentro do lago (10,10): -12.504456
 [100%] Built target run

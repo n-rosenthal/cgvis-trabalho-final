@@ -1,0 +1,239 @@
+#+TITLE: Documentação: Aplicação Principal
+#+DATE: \date
+
+A aplicação principal é encontrada no diretório =src/engine/Game= e compreende os arquivos
+- =Application.{hpp, cpp}=
+- =Bird.{hpp, cpp}=
+- =Camera.{hpp, cpp}=
+- =Renderer.{hpp, cpp}=
+- =Scene.{hpp, cpp}=
+- =Window.{hpp, cpp}=
+
+* 1. =Application.cpp=
+Gerencia o ciclo de vida de alto nível do jogo: inicialização da janela, renderizador, cena e o loop principal (=run()=). Também controla o ciclo dia/noite com base no horário do sistema.
+
+** 1.1. Principais Métodos
+
+| Método                                      | Descrição |
+|---------------------------------------------|-----------|
+| =init(const char*, int, int)=               | Inicializa =Window=, =Renderer= e constrói a =Scene=. |
+| =run()=                                     | Loop principal: calcula =dt=, chama =processFrame()=, troca buffers e processa eventos. |
+| =processFrame(float dt)=                    | Limpa a tela, atualiza =Skybox=, chama =Scene::update=, =Scene::resolveCollisions=, =Renderer::beginFrame=, =Scene::draw= e =Renderer::endFrame=. |
+| =updateDayNight()=                          | Altera a cor de fundo (glClearColor) conforme a hora local ou o modo manual (=g_ManualDayNight=). |
+
+** 1.2. Dependências
+
+- =Window= (gerencia GLFW)
+- =Renderer= (desenho)
+- =Scene= (lógica e objetos)
+- =Skybox= (desenhada diretamente no método)
+
+** 1.3. Observação
+O tempo entre quadros (=dt=) é calculado usando =glfwGetTime()= e armazenado em =m_lastTime=.
+
+* 2. =Renderer.cpp=
+Centraliza todas as chamadas de desenho OpenGL. Mantém o programa de shader, os uniforms de matrizes (=model=, =view=, =projection=) e fornece métodos para desenhar cada tipo de objeto (pássaro, terreno, rochas, anéis, carta, casas, etc.).
+
+** 2.1. Inicialização (=init=)
+
+- Carrega shaders com =LoadShadersFromFiles()=.
+- Armazena =g_GpuProgramID= e os uniforms em membros da classe.
+- Carrega modelos OBJ (árvores, pássaro, carta) via =loadModels()=.
+- Inicializa o sistema de renderização de texto (=TextRendering_Init=).
+- Configura =GL_DEPTH_TEST=, =GL_CULL_FACE= e =GL_FRONT_FACE=.
+
+** 2.2. Métodos Principais
+
+| Método                                           | Descrição |
+|--------------------------------------------------|-----------|
+| =beginFrame(const Camera&)=                      | Calcula =view= e =projection=, bind do shader, envia matrizes. |
+| =endFrame(GLFWwindow*)=                          | Desenha informações de debug (FPS, ângulos, etc.) via =TextRendering_*=. |
+| =makeContext(ObjectId)=                          | Retorna um =DrawContext= contendo programa, uniforms e ID do objeto. |
+| =drawBird(Bird&, bool)=                          | Desenha o pássaro usando modelo voando ou em pé. |
+| =drawTerrain(Terrain&)=                          | Desenha o terreno. |
+| =drawRocks(vector<shared_ptr<ProceduralRock>>&)= | Desenha todas as rochas. |
+| =drawRings(vector<shared_ptr<Ring>>&)=           | Desenha anéis (desabilita =GL_CULL_FACE= temporariamente). |
+| =drawLetter(Letter&)=                            | Desenha a carta. |
+| =drawHouses(vector<shared_ptr<House>>&)=         | Desenha todas as casas. |
+| =drawObjects(vector<shared_ptr<StaticObject>>&)= | Desenha objetos estáticos (árvores). |
+| =setWireframe(bool)=                             | Alterna entre modo wireframe e sólido. |
+
+** 2.3. Constantes de Projeção
+
+- =kFov = pi/2=
+- =kNear = -0.1=
+- =kFar = -512.0= (valores negativos devido ao sistema de coordenadas usado).
+
+* 3. Scene.cpp
+Gerencia os objetos do mundo, a lógica de jogo (movimento do pássaro, queda da carta, captura) e as colisões. Constrói o terreno, as rochas, as árvores, os anéis, a carta e as casas.
+
+** 3.1. Principais Métodos
+
+| Método                                     | Descrição |
+|--------------------------------------------|-----------|
+| =build()=                                  | Cria todos os elementos da cena (terreno, pássaro, árvores, rochas, anéis, carta, casas). |
+| =update(float dt, GLFWwindow*)=            | Atualiza pássaro, estado da carta, câmera e anéis. Verifica tecla =G= para soltar a carta. |
+| =updateLetter(float dt, GLFWwindow*)=      | Gerencia os estados da carta: =Carried= (segura pelo pássaro), =Falling= (com gravidade), =OnGround=. |
+| =resolveCollisions()=                      | Detecta colisões do pássaro com terreno, rochas, carta no chão e anéis. Reproduz sons via =SoundManager=. |
+| =draw(Renderer&)=                          | Invoca os métodos de desenho do =Renderer= para cada tipo de objeto. |
+
+** 3.2. Construção dos Objetos
+
+- =buildTerrain()=: cria um =Terrain= de tamanho 200×200 (altura 256, espaçamento 2.0).
+- =buildRocks()=: gera 40 rochas aleatórias dentro de uma região.
+- =buildTrees()=: posiciona 20 árvores em círculo ao redor do lago (centro na origem, raio 140 + 10).
+- =buildRings()=: cria 5 anéis em posições pré‑definidas com altura acrescida do terreno.
+- =buildLetter()=: cria a carta no chão (estado =OnGround=).
+- =buildHouses()=: cria duas casas em posições opostas (-128, 128) e (128, -128), ajustadas à altura do terreno.
+
+** 3.3. Estados da Carta (enum =LetterState=)
+
+- =Carried=: a carta acompanha o pássaro.
+- =Falling=: a carta cai com aceleração gravitacional.
+- =OnGround=: a carta está no chão e pode ser capturada.
+
+* 4. =Window.cpp=
+Encapsula a criação e o gerenciamento da janela GLFW. Configura callbacks de teclado, mouse, redimensionamento e o contexto OpenGL.
+
+** 4.1. Métodos Principais
+
+| Método                             | Descrição |
+|------------------------------------|-----------|
+| =init(const char*, int, int)=      | Inicializa GLFW, cria a janela, configura callbacks, carrega GLAD e exibe informações da GPU. |
+| =shouldClose()=                    | Retorna =true= se a janela deve ser fechada. |
+| =swapAndPoll()=                    | Troca os buffers da janela e processa eventos pendentes. |
+| =~Window()=                        | Destrói a janela e finaliza GLFW. |
+
+** 4.2. Callbacks Configurados
+
+- =KeyCallback= (teclado)
+- =MouseButtonCallback= (botões do mouse)
+- =CursorPosCallback= (movimento do mouse)
+- =ScrollCallback= (roda do mouse)
+- =FramebufferSizeCallback= (redimensionamento da janela, atualiza =g_ScreenRatio=)
+
+** 4.3. Observações
+
+- A janela é criada com perfil OpenGL 3.3 core.
+- No macOS, a flag =GLFW_OPENGL_FORWARD_COMPAT= é ativada.
+- A variável global =g_ScreenRatio= é atualizada pelo callback de framebuffer.
+
+
+* 5. Bird.cpp
+Implementa a lógica de movimento, física simplificada (voo, gravidade, arrasto, sustentação) e controle do pássaro pelo usuário. O pássaro pode voar, planar e pousar no chão. Também gerencia a animação da asa (alternância entre modelo voando e em pé) e o colisor do tipo cápsula.
+
+** 5.1. Constantes Utilizadas (namespace anônimo)
+
+| Constante        | Valor | Descrição |
+|------------------|-------|-----------|
+| =kYawSpeed=      | 1.6 rad/s | Velocidade de rotação no eixo Y (guinada) |
+| =kPitchSpeed=    | 1.4 rad/s | Velocidade de rotação no eixo X (arfagem) |
+| =kPitchMax=      | 70° (rad) | Ângulo máximo de arfagem |
+| =kRollTarget=    | 40° (rad) | Ângulo máximo de rolamento ao curvar |
+| =kRollSmooth=    | 5.0        | Fator de suavização do rolamento |
+| =kThrottle=      | 10.0       | Aceleração (não usada diretamente) |
+| =kDrag=          | 0.20       | Coeficiente de arrasto (não usado) |
+| =kLiftCoeff=     | 0.012      | Coeficiente de sustentação (proporcional à velocidade²) |
+| =kGravity=       | 12.0 m/s²  | Aceleração da gravidade |
+| =kFlapImpulse=   | 9.0 m/s    | Impulso ao bater asas (tecla espaço) |
+| =kVelBlendXZ=    | 5.0        | Suavização da velocidade lateral |
+| =kVelBlendY=     | 2.5        | Suavização da velocidade vertical |
+| =kSpeedMin=      | 5.0 m/s    | Velocidade mínima (não usado) |
+| =kSpeedMax=      | 42.0 m/s   | Velocidade máxima (não usado) |
+| =kHeightMin=     | -1.0 m     | Altura mínima (abaixo do chão) |
+| =kHeightMax=     | 120.0 m    | Altura máxima |
+
+** 5.2. Estrutura da Classe =Bird=
+
+- Herda de =GameObject= e usa =ObjDrawable= para os modelos 3D.
+- Possui um =CapsuleCollider= (dois pontos e raio) para detecção de colisão.
+- Mantém estado de =standing= (em pé no chão) para alternar o modelo visual.
+
+** 5.3. Principais Métodos
+
+| Método                                           | Descrição |
+|--------------------------------------------------|-----------|
+| =Bird()=                                         | Construtor: posição inicial (0,5,0), escala padrão, cria colisor. |
+| =rotationMatrix()= const                         | Retorna a matriz de rotação combinando yaw, pitch, roll. |
+| =getForward()=, =getUp()=                       | Calcula os vetores direção e vertical local a partir da rotação. |
+| =update(float dt, GLFWwindow*)=                 | Lê entrada (A/D para yaw, W/S para pitch, Espaço para bater asas), atualiza ângulos, velocidade, posição, colisor e alterna o modelo. Aplica gravidade, sustentação e impulso das asas. |
+| =onTerrainCollision(float, glm::vec3)=          | Colisão com o terreno: ajusta =standing = true= e reposiciona o pássaro ligeiramente acima do chão. |
+| =onCollision(glm::vec3)=                        | Atualmente vazio – preparado para reações a colisões com obstáculos. |
+| =updateDrawable()=                              | Troca entre o modelo de voo (=BIRD_MODEL=) e o modelo em pé (=BIRD_STANDING_MODEL=) conforme =standing=. |
+| =clampPosition()=                               | Limita a altura do pássaro entre =kHeightMin= e =kHeightMax=. |
+
+** 5.4. Lógica de Movimento
+
+- **Controle angular**: A/D ajustam =m_yaw=, W/S ajustam =m_pitch= (limitado por =kPitchMax=). O rolamento (=m_roll=) segue suavemente o sinal da guinada.
+- **Velocidade desejada**: =desired = forward * m_speed= (onde =m_speed= é constante? No código =m_speed= não é modificado, parece definido em outro lugar; a velocidade horizontal é controlada indiretamente pela mistura com =desired=). A velocidade real é interpolada para a desejada com coeficientes =kVelBlendXZ= e =kVelBlendY=.
+- **Física vertical**: =m_velocity.y= recebe acréscimo de sustentação (=+ m_speed² * kLiftCoeff * dt=) e redução gravitacional (=- kGravity * dt=). O bater de asas adiciona =+ kFlapImpulse= instantâneo.
+- **Colisor**: A cápsula é posicionada ao longo do eixo forward, desde =m_position - forward*1.5f= até =m_position + forward*1.5f=.
+
+** 5.5. Integração com o Motor
+
+- O método =update= é chamado a cada frame por =Scene::update()=.
+- =onTerrainCollision= é invocado por =Scene::resolveCollisions()= quando o pássaro toca o chão.
+- O =Drawable= é recriado sempre que o modelo muda (voando ↔ em pé), o que pode ser otimizado, mas funciona.
+
+* 6. =Camera.cpp=
+Implementa uma câmera em terceira pessoa que segue o pássaro. A câmera mantém uma posição relativa atrás e acima do alvo, mirando ligeiramente à frente.
+
+** 6.1. Classe =Camera=
+
+- Membros: =m_position= (posição da câmera) e =m_target= (ponto para onde a câmera olha).
+- Construtor padrão inicializa ambos como vetores nulos.
+
+** 6.2. Método =update=
+
+#+begin_src cpp
+void Camera::update(
+    const glm::vec3& targetPos,
+    const glm::vec3& targetForward,
+    const glm::vec3& targetUp,
+    float dt);
+#+end_src
+
+**Comportamento**:
+
+    - Calcula a posição da câmera como:
+    =m_position = targetPos - targetForward * 8.0f + worldUp * 3.0f=.
+
+    - Define o alvo como:
+    =m_target = targetPos + targetForward * 4.0f=.
+
+    - O parâmetro targetUp não é utilizado (usa =worldUp= fixo).
+
+    - O parâmetro =dt= não é utilizado (a câmera é instantânea, sem interpolação).
+
+** 6.3. Método =getViewMatrix=
+Constrói a matriz de visualização chamando =Matrix_Camera_View= (função auxiliar de =matrices.h=), passando =pos=, =look-pos= (direção) e =up = (0,1,0,0)=.
+
+Verifica se o vetor direção é degenerado (norma muito pequena) e corrige para =(1,0,0)=.
+
+** 6.4. Observações
+A câmera é posicionada 8 unidades atrás e 3 unidades acima do pássaro, olhando 4 unidades à frente.
+Não há suavização ou inércia. A câmera se move rigidamente com o pássaro, o que pode causar movimentos bruscos em manobras rápidas. O =targetUp= é ignorado atualmente; a câmera sempre usa o vetor =(0,1,0)= como referência vertical, o que pode ser adequado para um jogo com horizonte fixo.
+
+** 6.5. Integração com o Motor
+1.Camera é membro da classe Scene.
+
+2. =Scene::update= chama =m_camera.update()= após atualizar a posição do pássaro, passando =m_bird->getPosition()=, =m_bird->getForward()=, =m_bird->getUp()= e =dt=.
+3. =Renderer::beginFrame= obtém a matriz de /view/ via =camera.getViewMatrix()=.
+
+Os módulos, =Camera= e = Bird=, fornecem a base para o controle do personagem principal e da perspectiva visual.
+
+* 7. Integração Geral
+
+O fluxo típico do programa é:
+
+1. =main()= → =Application::init()= → =Window::init()= → =Renderer::init()= → =Scene::build()=
+2. =Application::run()=:
+    - Calcula =dt=
+    - =processFrame(dt)=:
+        - Limpa a tela e desenha a skybox
+        - =Scene::update()= (atualiza posições, estado da carta, colisões leves)
+        - =Scene::resolveCollisions()= (colisões definitivas com resposta física e sons)
+        - =Renderer::beginFrame()= (configura view/projection)
+        - =Scene::draw()= (chama =Renderer::draw*=)
+        - =Renderer::endFrame()= (mostra debug text)
+    - =Window::swapAndPoll()=

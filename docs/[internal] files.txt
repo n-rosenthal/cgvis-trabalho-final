@@ -1,0 +1,180 @@
+├── assets
+│   ├── audio
+│   │   ├── cartoon-boing-bouncy-big_F_major.wav
+│   │   ├── cartoonish-stone-sfx-slow.wav
+│   │   ├── crushing-leafs-cinematic-fx_E_minor.wav
+│   │   └── drum-roll-and-bell_112bpm.wav
+│   ├── models
+│   │   ├── bird
+│   │   │   ├── 0V3HJRW3DQ5QPF3J2O5PR4Z1M.mtl
+│   │   │   ├── 0V3HJRW3DQ5QPF3J2O5PR4Z1M.obj
+│   │   │   ├── bird.jpg
+│   │   │   ├── Convert.exe
+│   │   │   ├── default-grey.jpg
+│   │   │   ├── falcon2.jpg
+│   │   │   └── License.txt
+│   │   ├── bird_standing
+│   │   │   ├── bird1l.jpg
+│   │   │   ├── bird1r.jpg
+│   │   │   ├── color_0.031360-0.009440-0.009440.jpg
+│   │   │   ├── Convert.exe
+│   │   │   ├── default-grey.jpg
+│   │   │   ├── G1FXKUZIFSQHX0QERXO6AAO63.mtl
+│   │   │   ├── G1FXKUZIFSQHX0QERXO6AAO63.obj
+│   │   │   └── License.txt
+│   │   ├── bunny.obj
+│   │   ├── house.obj
+│   │   ├── plane.obj
+│   │   ├── sphere.obj
+│   │   ├── the_letter.obj
+│   │   └── trees
+│   │       ├── GenTree-103_AE3D_03122023-F1.mtl
+│   │       └── GenTree-103_AE3D_03122023-F1.obj
+│   ├── shaders
+│   │   ├── shader_fragment.glsl
+│   │   └── shader_vertex.glsl
+│   └── textures
+│       ├── red_brick_diff_1k.jpg
+│       ├── rocky_terrain_02_diff_1k.jpg
+│       └── tree1_textures
+│           ├── Thumbs.db
+│           ├── Tree_1_Leaf.png
+│           ├── Tree_1_Trunk_Limbs-DIFFUSE_DISP.png
+│           ├── Tree_1_Trunk_Limbs-DIFFUSE.png
+│           ├── Tree_1_Trunk_Limbs-DIFFUSE_SPEC.png
+│           ├── Tree_1_Trunk_Limbs-HEIGHT.png
+│           ├── Tree_1_Trunk_Limbs-SMOOTH.png
+│           └── Tree_1_Twigs-DIFFUSE.jpg
+├── CMakeLists.txt
+├── CMakePresets.json
+├── COMPILACAO.md
+├── docs
+│   ├── antigas
+│   │   ├── adicionando-modelos-a-cena-virtual.org
+│   │   ├── divindingo-main-em-varios-modulos.org
+│   │   ├── estrutura-de-diretorios.org
+│   │   ├── gerenciadores-de-recursos-e-de-objetos.org
+│   │   ├── implementando-colisões.org
+│   │   ├── implementando-objetos.org
+│   │   └── interfaces.org
+│   ├── compilando.org
+│   ├── [docs] aplicação principal.org
+│   ├── [docs] assets, texturas, modelos e objetos.org
+│   ├── [docs] callbacks para window e input.org
+│   ├── [docs] carregadores.org
+│   ├── [docs] main.org
+│   ├── [docs] terreno, relevo e céu.org
+│   ├── estudos
+│   │   ├── modelos.txt
+│   │   ├── opengl-guide-command-sufixes-and-argument-data-types.png
+│   │   └── opengl-guide-example-1.png
+│   └── imagens
+│       ├── drone-delivery-simulator-image-1.png
+│       ├── harry-potter-owl-racing-image-1.png
+│       ├── harry-potter-owl-racing-image-2.png
+│       ├── harry-potter-owl-racing-image-3.png
+│       ├── harry-potter-owl-racing-image-4.png
+│       └── harry-potter-owl-racing-image-5.png
+├── engine
+│   ├── include
+│   │   ├── audio
+│   │   │   ├── AudioManager.hpp
+│   │   │   └── miniaudio.h
+│   │   ├── Collision
+│   │   │   ├── AABBCollider.hpp
+│   │   │   ├── CapsuleCollider.hpp
+│   │   │   ├── Collider.hpp
+│   │   │   ├── CollisionSystem.hpp
+│   │   │   ├── CylindricalCollider.hpp
+│   │   │   ├── README.org
+│   │   │   └── SphereCollider.hpp
+│   │   ├── dejavufont.h
+│   │   ├── Game
+│   │   │   ├── Application.hpp
+│   │   │   ├── Bird.hpp
+│   │   │   ├── Camera.hpp
+│   │   │   ├── Renderer.hpp
+│   │   │   ├── Scene.hpp
+│   │   │   └── Window.hpp
+│   │   ├── glad
+│   │   ├── GLFW
+│   │   ├── glm
+│   │   ├── Loaders
+│   │   │   ├── ObjLoader.hpp
+│   │   │   └── TextureLoader.hpp
+│   │   ├── matrices.h
+│   │   ├── Objects
+│   │   │   ├── Assets.hpp
+│   │   │   ├── Building.hpp
+│   │   │   ├── Drawables
+│   │   │   │   ├── HouseDrawable.hpp
+│   │   │   │   ├── LetterDrawable.hpp
+│   │   │   │   ├── RingDrawable.hpp
+│   │   │   │   └── RockDrawable.hpp
+│   │   │   ├── House.hpp
+│   │   │   ├── Interfaces
+│   │   │   │   ├── Collidable.hpp
+│   │   │   │   ├── Drawable.hpp
+│   │   │   │   └── GameObject.hpp
+│   │   │   ├── Letter.hpp
+│   │   │   ├── ObjDrawable.hpp
+│   │   │   ├── ProceduralRock.hpp
+│   │   │   ├── Ring.hpp
+│   │   │   └── StaticObject.hpp
+│   │   ├── Renderer
+│   │   │   └── ShaderLoader.hpp
+│   │   ├── stb_image.h
+│   │   ├── Terrain
+│   │   │   ├── Skybox.hpp
+│   │   │   └── Terrain.hpp
+│   │   ├── textrendering.hpp
+│   │   ├── tiny_obj_loader.h
+│   │   ├── utils.h
+│   │   └── Window
+│   │       ├── InputCallbacks.hpp
+│   │       └── WindowCallbacks.hpp
+│   └── src
+│       ├── audio
+│       │   ├── AudioManager.cpp
+│       │   └── miniaudio.c
+│       ├── buildtriangles.cpp
+│       ├── Collision
+│       │   └── CollisionSystem.cpp
+│       ├── correcao.cpp
+│       ├── dejavufont.cpp
+│       ├── Game
+│       │   ├── Application.cpp
+│       │   ├── Bird.cpp
+│       │   ├── Camera.cpp
+│       │   ├── Renderer.cpp
+│       │   ├── Scene.cpp
+│       │   └── Window.cpp
+│       ├── Loaders
+│       │   ├── ObjLoader.cpp
+│       │   └── TextureLoader.cpp
+│       ├── main.cpp
+│       ├── Objects
+│       │   ├── Assets.cpp
+│       │   ├── Building.cpp
+│       │   ├── Drawables
+│       │   │   ├── HouseDrawable.cpp
+│       │   │   ├── RingDrawable.cpp
+│       │   │   └── RockDrawable.cpp
+│       │   ├── Letter.cpp
+│       │   ├── ObjDrawable.cpp
+│       │   ├── ProceduralRock.cpp
+│       │   ├── Ring.cpp
+│       │   └── StaticObject.cpp
+│       ├── Renderer
+│       │   └── ShaderLoader.cpp
+│       ├── Terrain
+│       │   ├── Skybox.cpp
+│       │   └── Terrain.cpp
+│       ├── textrendering.cpp
+│       └── Window
+│           ├── InputCallbacks.cpp
+│           └── WindowCallbacks.cpp
+├── external
+    ├── glad.c
+    ├── stb_image.cpp
+    └── tiny_obj_loader.cpp

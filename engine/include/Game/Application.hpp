@@ -14,6 +14,7 @@
 #include "Game/Window.hpp"
 #include "Game/Renderer.hpp"
 #include "Game/Scene.hpp"
+#include "Terrain/Skybox.hpp"
 
 // Globais de controle de dia/noite (definidas em WindowCallbacks.cpp)
 extern bool g_ManualDayNight;
@@ -32,4 +33,6 @@ private:
     Renderer m_renderer;
     Scene    m_scene;
     float    m_lastTime = 0.0f;
+
+    Skybox      m_skybox;
 };

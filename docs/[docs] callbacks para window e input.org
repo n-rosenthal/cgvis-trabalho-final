@@ -1,0 +1,78 @@
+#+TITLE: Documentação: /Callbacks/ de Entrada e Janela
+#+DATE: \date
+
+*Atualmente, a leitura do teclado para /inputs/ está espalhada por diversos módulos*. Os módulos antigos, herdados do projeto original, mantém-se nos arquivos *descritos abaixo*. Para *controlar o pássaro*, os controles encontram-se atualmente em =engine/src/Game/Bird.cpp=. Para *controlar a carta*, entretanto, encontramos o controle em =engine/src/Game/Scene.cpp=. O único controle para a carta é a tecla =G=, responsável por /soltar a carta/. /Capturar/ a carta, entretanto, ocorre espontaneamente quando o pássaro aproxima-se o suficiente da carta.
+
+Este documento descreve os módulos responsáveis pelo tratamento de eventos de entrada (teclado, mouse, scroll) e de gerenciamento da janela (redimensionamento, erros). Os arquivos analisados são:
+
+- =engine/src/Window/InputCallbacks.cpp=
+- =engine/src/Window/WindowCallbacks.cpp=
+
+Eles definem funções callback que são registradas na janela GLFW e respondem a interações do usuário, além de fornecerem funções auxiliares para exibição de informações de depuração na tela.
+
+Os dois módulos fornecem a infraestrutura necessária para a interação do usuário e o gerenciamento da janela. =InputCallbacks.cpp= concentra a lógica de entrada e depuração visual, enquanto =WindowCallbacks.cpp= cuida dos aspectos de janela e redimensionamento. Juntos, eles permitem um controle flexível da câmera, alternância de modos de visualização e recarregamento de shaders em tempo real, facilitando o desenvolvimento e a depuração do jogo.
+
+* 1. =InputCallbacks.cpp=
+Centraliza os callbacks de teclado, mouse e scroll, além de funções de renderização de texto para debug (ângulos de Euler, tipo de projeção, FPS, painel de informações). As variáveis globais controlam o estado da câmera, a exibição de textos e a alternância manual do ciclo dia/noite.
+
+** 1.1. Variáveis Globais
+
+| Variável                        | Tipo      | Descrição |
+|---------------------------------|-----------|-----------|
+| =g_ShowInfoText=                | =bool=    | Exibe informações de transformações (tecla H) |
+| =g_ShowDebugPanel=              | =bool=    | Exibe painel de depuração (tecla M) |
+| =g_UsePerspectiveProjection=    | =bool=    | Se =true=, usa projeção perspectiva (P); senão, ortográfica (O) |
+| =g_ManualDayNight=              | =bool=    | Se =true=, alterna dia/noite manualmente (tecla L) |
+| =g_DayTime=                     | =bool=    | Estado atual do ciclo dia/noite (manual) |
+| =g_AngleX=, =g_AngleY=, =g_AngleZ= | =float= | Ângulos de Euler (controle via X, Y, Z) |
+| =g_LastCursorPosX=, =g_LastCursorPosY= | =double= | Última posição do cursor (para cálculo de deslocamento) |
+| =g_LeftMouseButtonPressed=      | =bool=    | Botão esquerdo pressionado |
+| =g_RightMouseButtonPressed=     | =bool=    | Botão direito pressionado |
+| =g_MiddleMouseButtonPressed=    | =bool=    | Botão do meio pressionado |
+| =g_CameraTheta=, =g_CameraPhi=, =g_CameraDistance= | =float= | Coordenadas esféricas da câmera (controle pelo mouse) |
+
+** 1.2. Callbacks
+
+| Callback                         | Descrição |
+|----------------------------------|-----------|
+| =KeyCallback()=                  | Trata teclas: ESC fecha a janela; X/Y/Z rotacionam objeto; Espaço zera ângulos; P/O alternam projeção; H alterna texto informativo; M alterna painel de debug; L alterna dia/noite manual; R recarrega shaders. |
+| =MouseButtonCallback()=          | Registra pressionamento/soltura dos botões do mouse e armazena a posição atual do cursor. |
+| =CursorPosCallback()=            | Quando botão esquerdo está pressionado, atualiza =g_CameraTheta= e =g_CameraPhi= (controle de câmera). Botões direito e médio têm efeito reservado (não alteram o pássaro). |
+| =ScrollCallback()=               | Ajusta =g_CameraDistance= (zoom) com base no movimento da roda do mouse. |
+
+** 1.3. Funções de Renderização de Texto
+
+| Função                                               | Descrição |
+|------------------------------------------------------|-----------|
+| =TextRendering_ShowModelViewProjection()=            | Exibe a transformação de um vértice pelos sistemas model, view, projection e viewport. Útil para depuração. |
+| =TextRendering_ShowEulerAngles()=                    | Mostra os ângulos de Euler atuais (Z, Y, X). |
+| =TextRendering_ShowProjection()=                     | Indica se a projeção atual é perspectiva ou ortográfica. |
+| =TextRendering_ShowFramesPerSecond()=                | Calcula e exibe os FPS a cada segundo. |
+| =TextRendering_ShowDebugPanel()=                     | Exibe um painel com data/hora e outras informações de depuração (quando ativado pela tecla M). |
+
+** 1.4. Integração com o Motor
+
+- As variáveis =g_UsePerspectiveProjection=, =g_CameraTheta=, =g_CameraPhi= e =g_CameraDistance= são usadas pela classe =Camera= (ou pelo loop principal) para construir as matrizes de projeção e view.
+- O recarregamento de shaders (=LoadShadersFromFiles()=) permite alterações em tempo real nos arquivos GLSL.
+- O controle de voo do pássaro **não** é feito por estes callbacks; ele é tratado diretamente em =Bird::update()= (teclas WASD e Espaço).
+
+* 2. WindowCallbacks.cpp
+Define callbacks relacionados à janela GLFW: redimensionamento do framebuffer e tratamento de erros.
+
+** 2.1. Variáveis Globais
+
+| Variável        | Tipo    | Descrição |
+|-----------------|---------|-----------|
+| =g_ScreenRatio= | =float= | Razão largura/altura da janela, atualizada a cada redimensionamento. Utilizada nas matrizes de projeção. |
+
+** 2.2. Callbacks
+
+| Callback                         | Descrição |
+|----------------------------------|-----------|
+| =ErrorCallback()=                | Imprime mensagens de erro da GLFW no terminal. |
+| =FramebufferSizeCallback()=      | Atualiza o viewport (=glViewport=) e recalcula =g_ScreenRatio= toda vez que a janela é redimensionada. |
+
+** 2.3. Observações
+
+- O callback =FramebufferSizeCallback= é essencial para evitar distorções na imagem quando a janela é esticada, pois mantém a proporção correta da projeção.
+- O =ErrorCallback= deve ser registrado no início do programa (via =glfwSetErrorCallback=) para capturar problemas de inicialização da GLFW.

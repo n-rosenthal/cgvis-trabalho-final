@@ -286,13 +286,18 @@ void Scene::draw(Renderer& r) {
  */
 void Scene::buildTerrain() {
     m_terrain = std::make_unique<Terrain>(
-        128,
-        128,
-        5.0f
+        200,
+        256,
+        2.0f
     );
 
     assert(m_terrain);
     m_terrain->generate();
+
+        // Debug: imprime algumas alturas
+    printf("Alturas no centro (0,0): %f\n", m_terrain->getHeight(0,0));
+    printf("Altura na borda (60,0): %f\n", m_terrain->getHeight(60,0));
+    printf("Altura dentro do lago (10,10): %f\n", m_terrain->getHeight(10,10));
 }
 
 /**
@@ -307,8 +312,8 @@ void Scene::buildRocks() {
     const float regionSize = 256.0f;
 
     for (int i = 0; i < numRocks; ++i) {
-        float x     = ((float)rand() / RAND_MAX - 0.5f) * regionSize;
-        float z     = ((float)rand() / RAND_MAX - 0.5f) * regionSize;
+        float x     = 140 + (256 - ((float)rand() / RAND_MAX - 0.5f) * regionSize);
+        float z     = 140 + (256 - ((float)rand() / RAND_MAX - 0.5f) * regionSize);
         float scale = 0.8f + ((float)rand() / RAND_MAX) * 3.5f;
         float y     = m_terrain->getHeight(x, z);
 
@@ -319,7 +324,7 @@ void Scene::buildRocks() {
 void Scene::buildTrees()
 {
     glm::vec3 lake_center(0.0f);
-    const float lake_radius = 120.0f;
+    const float lake_radius = 140.0f;
 
     const int numTrees = 20;
     const float borderDistance = 10.0f;
@@ -409,30 +414,22 @@ void Scene::buildLetter()
 }
 
 void Scene::buildHouses() {
-    float x = 40.0f;
-    float z = 50.0f;
-
-    float y =
-        m_terrain->getHeight(x,z);
-
-    m_houses.push_back(
-        std::make_shared<House>(
-            glm::vec3(x,y,z),
-            glm::vec3(0.0f),
-            glm::vec3(8.0f)
+    auto casa1 = std::make_shared<House>(
+        glm::vec3(
+            -128.0f,
+            m_terrain->getHeight(-128.0f, 128.0f) - 5.0f,
+            128.0f
         )
     );
 
-    x = 80.0f;
-    z = 110.0f;
-    y =
-        m_terrain->getHeight(x,z);
-
-    m_houses.push_back(
-        std::make_shared<House>(
-            glm::vec3(x,y,z),
-            glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f),
-            glm::vec3(8.0f)
+    auto casa2 = std::make_shared<House>(
+        glm::vec3(
+            128.0f,
+            m_terrain->getHeight(128.0f, -128.0f) - 5.0f,
+            -128.0f
         )
     );
-}
+    
+    m_houses.push_back(casa1);
+    m_houses.push_back(casa2);
+};

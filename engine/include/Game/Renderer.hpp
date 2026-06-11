@@ -3,14 +3,14 @@
  * @brief   Gerencia shaders, uniforms e draw calls.
  */
 #pragma once
+#include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <GLFW/glfw3.h>
 
 #include "Objects/Interfaces/Drawable.hpp"   // DrawContext
 #include "Objects/StaticObject.hpp"
 #include "Objects/ObjDrawable.hpp"
-
-#include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <GLFW/glfw3.h>
+#include "Terrain/Skybox.hpp"
 
 #include <vector>
 #include <memory>
@@ -68,6 +68,10 @@ public:
 
         OBJ_HOUSE       = 11
     };
+
+    //  Acessadores para matrizes de view e projeção
+    glm::mat4 getViewMatrix() const { return m_view; }
+    glm::mat4 getProjectionMatrix() const { return m_projection; }
 
 private:
     GLuint    m_program           = 0;

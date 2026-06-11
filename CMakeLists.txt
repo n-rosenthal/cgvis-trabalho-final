@@ -39,6 +39,7 @@ set(SOURCES
 
   # Geração de terreno e relevos
   engine/src/Terrain/Terrain.cpp
+  engine/src/Terrain/Skybox.cpp
 
   # Sistema de colisão
   engine/src/Collision/CollisionSystem.cpp
@@ -57,7 +58,6 @@ set(SOURCES
   engine/src/Objects/ProceduralRock.cpp
   engine/src/Objects/Building.cpp
   engine/src/Objects/Letter.cpp
-  engine/src/Objects/House.cpp
 
   # Main
   engine/src/main.cpp

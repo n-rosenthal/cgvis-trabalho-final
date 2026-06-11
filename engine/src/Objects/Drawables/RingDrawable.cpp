@@ -29,15 +29,15 @@ void RingDrawable::buildMesh() {
         float c = cos(theta), s = sin(theta);
 
         Vertex outer, inner;
-        outer.position = glm::vec3(c * outerRadius, s * outerRadius, 0.0f);
-        outer.normal   = glm::vec3(0.0f, 0.0f, 1.0f);
+        outer.position = glm::vec4(c * outerRadius, s * outerRadius, 0.0f, 1.0f);
+        outer.normal   = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
         outer.texcoord = glm::vec2(1.0f, 0.0f);
-        outer.color    = glm::vec3(1.0f);
+        outer.color    = glm::vec4(1.0f);
 
-        inner.position = glm::vec3(c * innerRadius, s * innerRadius, 0.0f);
-        inner.normal   = glm::vec3(0.0f, 0.0f, 1.0f);
+        inner.position = glm::vec4(c * innerRadius, s * innerRadius, 0.0f, 1.0f);
+        inner.normal   = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
         inner.texcoord = glm::vec2(0.0f, 1.0f);
-        inner.color    = glm::vec3(1.0f);
+        inner.color    = glm::vec4(1.0f);
 
         m_vertices.push_back(outer);
         m_vertices.push_back(inner);

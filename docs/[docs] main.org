@@ -1,0 +1,63 @@
+#+TITLE: Documentação: =main.cpp=
+#+DATE: \date
+
+O arquivo =main.cpp= é o ponto de entrada do programa. Ele orquestra a inicialização da aplicação gráfica, carrega os recursos essenciais (OpenGL, GLFW, áudio) e delega o controle de alto nível para a classe =Application=. Este módulo é minimalista e serve como "colagem" dos diversos subsistemas do motor.
+
+* Estrutura do Arquivo
+
+** 1. Inclusões (Headers)
+
+O arquivo inclui:
+
+- Bibliotecas padrão C++ (=cmath=, =cstdio=, =vector=, =map=, =fstream=, etc.)
+- Headers do OpenGL (=glad.h=, =GLFW/glfw3.h=, =GL/gl.h=)
+- GLM (matrizes e vetores)
+- tinyobjloader e stb_image (carregamento de modelos e texturas)
+- Headers locais do projeto:
+  - =utils.h=, =matrices.h=
+  - =Renderer/ShaderLoader.hpp=
+  - =Window/WindowCallbacks.hpp=, =Window/InputCallbacks.hpp=
+  - =textrendering.hpp=
+  - =audio/AudioManager.hpp=
+  - =Game/Window.hpp=
+  - =Loaders/ObjLoader.hpp=, =Loaders/TextureLoader.hpp=
+  - =Game/Camera.hpp=
+  - =Game/Bird.hpp=
+  - =Terrain/Terrain.hpp=
+  - =Objects/ProceduralRock.hpp=, =Objects/Ring.hpp=, =Objects/Building.hpp=
+  - =Collision/CollisionSystem.hpp=
+  - =Game/Application.hpp=
+
+** 2. Variáveis Globais
+
+- =SoundManager g_Sound= – Gerenciador de áudio global, responsável por tocar efeitos sonoros.
+- =Camera g_Camera= – Câmera global (embora a =Scene= também possua uma câmera, esta variável parece ser remanescente de versões anteriores).
+
+** 3. Função =main=
+
+#+begin_src cpp
+int main(int argc, char* argv[]) {
+    Application app;
+    app.init("Bird Carrier - Joana & Nicolas", 800, 600);
+    app.run();
+    return 0;
+}
+#+end_src
+
+*Fluxo*:
+1. Cria uma instância de =Application= na pilha.
+2. Inicializa a aplicação com título "Bird Carrier - Joana & Nicolas" e resolução 800x600.
+    1. =init()= chama =Window::init()=, =Renderer::init()= e =Scene::build()=.
+    2. Executa o /loop/ principal (=app.run()=), que processa frames até que a janela seja fechada.
+    3. Retorna 0 (sucesso).
+
+*** Observações e Correções Futuras
+- O arquivo não contém lógica de jogo; apenas delega para =Application=.
+- A câmera global =g_Camera= não é utilizada (a =Scene= usa sua própria câmera). Pode ser considerada um resíduo de código.
+- O gerenciador de áudio =g_Sound= é global e acessível de qualquer parte (por exemplo, em =Scene::resolveCollisions=).
+- O modelo de inclusão é bastante abrangente e poderia ser simplificado movendo includes desnecessários para os arquivos de implementação, mas funciona para um projeto de porte médio.
+
+**** Dependências Principais
+1. =Application= (definida em =Game/Application.hpp=)
+2. /SoundManager/ (definida em =audio/AudioManager.hpp=)
+3. As bibliotecas GLFW, GLAD, GLM, tinyobjloader e stb_image devem estar corretamente vinculadas.

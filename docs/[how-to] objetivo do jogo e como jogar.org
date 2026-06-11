@@ -1,0 +1,36 @@
+#+title: Objetivo do Jogo e Controles
+#+date: \date
+
+* Objetivo principal
+O jogador controla um pássaro que carrega uma carta. O objetivo é voar através de todos os anéis vermelhos espalhados pelo cenário e, por fim, depositar a carta em um alvo. A cada anel coletado, um som é reproduzido e o anel desaparece após um segundo. Quando a carta é deixada sobre o alvo, o jogador completa a entrega.
+
+** Estados da carta
+
+A carta pode estar em três estados, visíveis pelo comportamento:
+
+1. Carregada (=Carried=): segue o pássaro, posicionada à sua frente e um pouco abaixo.
+2. Caindo (=Falling=): após ser solta, sofre aceleração da gravidade e pode quicar no chão.
+3. No chão (=OnGround=): repousa sobre o terreno. O pássaro pode recolhê‑la passando por cima.
+
+** Dicas para jogar**
+1. Para coletar anéis, voe através do centro deles – a detecção é horizontal (raio de 2.5 unidades) e vertical (diferença de =altura < 2.0=).
+2. Use /o bater de asas/ (=Espaço=) para ganhar altitude rapidamente; plane com =W= para frente para manter velocidade.
+3. A carta é deixada no chão ao pressionar =G=; para pegá‑la novamente, basta sobrevoar o local onde ela caiu.
+
+* Controles (teclado)
+|Tecla      |	Ação |
+|=W / S=    |	Controlam o arfagem (pitch) do pássaro – inclinar para cima/baixo |
+|=A / D=    |	Controlam a guinada (yaw) – virar à esquerda/direita |
+|=Espaço=   |	Bate asas – dá um impulso vertical instantâneo |
+|=G=        |	Solta a carta (quando carregada) ou recolhe do chão |
+|=ESC=      |	Fecha o jogo |
+
+** 2.4. Controles de depuração e visualização
+| Tecla     |	Ação |
+| =H=       |	Liga/desliga texto informativo (transformações, matrizes) |
+| =M=       |	Liga/desliga painel de depuração (data, hora) |
+| =P=       |	Alterna para projeção perspectiva |
+| =O=       |	Alterna para projeção ortográfica |
+| =L=       |	Alterna manual dia/noite (força o estado) |
+| =R=       |	Recarrega os shaders dos arquivos .glsl (útil para testes) |
+

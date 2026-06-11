@@ -25,6 +25,8 @@
 #include "Objects/Letter.hpp"
 
 #include "Terrain/Terrain.hpp"
+#include "Terrain/Skybox.hpp"
+
 #include "Objects/Ring.hpp"
 #include "Objects/ProceduralRock.hpp"
 #include "Objects/House.hpp"

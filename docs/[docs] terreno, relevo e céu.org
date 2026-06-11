@@ -1,0 +1,99 @@
+#+TITLE: Documentação: Terreno, Relevo e Skybox (céu)
+#+DATE: \date
+
+Este documento descreve a implementação de dois componentes visuais fundamentais do jogo: o **céu procedural** (=Skybox=) e o **terreno gerado proceduralmente** (=Terrain=).
+
+* 1. =Skybox.cpp=
+Implementa uma caixa de céu (/skybox/) procedural, *sem texturas atualmente*. Um cubo unitário é desenhado sempre centrado na câmera (remoção da translação da matriz de visão), e um /fragment shader/ calcula a cor do céu com base na direção do olhar, na posição do sol e na hora do dia (parâmetro =uTOD=). O efeito inclui gradiente dia/noite, disco solar com /halo/, crepúsculo com tons alaranjados e estrelas simples durante a noite.
+
+** 1.1. /Shaders/ Embutidos
+
+- **Vertex shader**: recebe a posição do vértice do cubo (=aPos=) e a matriz =uVP= (projeção * visão sem translação). Define =gl_Position = pos.xyww= para forçar a profundidade no plano distante, garantindo que o céu seja desenhado atrás de todos os objetos.
+- **Fragment shader**: implementa modelo atmosférico simplificado:
+  - =uSunDir= – vetor normalizado apontando para o sol.
+  - =uTOD= – fator [0,1] (0.5 = meio‑dia, 0.25 = nascer do sol, 0.75 = pôr do sol).
+  - Calcula:
+    - Intensidade diurna (=daylight=) com transição suave ao amanhecer/anoitecer.
+    - Disco solar + halos (via =cosS=).
+    - Gradiente do céu: zênite (azul escuro) → horizonte (azul claro/branco).
+    - Tons de pôr‑do‑sol (laranja/rosa) quando o sol está baixo.
+    - Céu noturno azul‑marinho e estrelas (hash simples).
+  - Compõe a cor final e aplica névoa no horizonte.
+
+** 1.2. Principais Métodos
+
+| Método                                          | Descrição |
+|-------------------------------------------------|-----------|
+| =init()=                                        | Compila os shaders e constrói o VBO/VAO do cubo unitário. |
+| =draw(proj, view, sunDir, timeOfDay)=           | Remove a translação da =view=, envia =uVP=, =uSunDir=, =uTOD= e desenha o cubo com =glDrawArrays=. Configura =glDepthFunc(GL_LEQUAL)= e desativa a escrita no depth buffer para que o céu não interfira com objetos opacos. |
+| Destrutor                                       | Libera VAO, VBO e programa de shader. |
+
+** 1.3. Observações
+
+- O cubo é desenhado com orientação **interna** (as faces viradas para dentro). A ordem dos vértices no =buildCube= está propositalmente invertida para que o /back‑face culling/ não elimine as faces internas.
+- A cor do céu não depende de texturas externas; tudo é calculado no /fragment shader/.
+- O parâmetro =timeOfDay= é passado pela cena (provavelmente derivado da hora do sistema ou controlado manualmente).
+
+* 2. =Terrain.cpp=
+Gerencia um terreno extenso, plano e com elevações, composto por:
+- Montanhas nas bordas (com distorção de domínio para formas orgânicas).
+- Bacia de lago elíptica no centro, com rampa suave e leito profundo.
+- Campo suavemente ondulado entre o lago e as montanhas.
+- Ilhas pré‑definidas (posições angulares fixas) que se elevam acima da água. *Atualmente as ilhas não funcionam*.
+- Mapeamento de cores baseado em altura, inclinação e ruído.
+- Superfície de água semi‑transparente, separada, que se ajusta ao terreno fora do lago para desaparecer.
+
+O terreno é gerado como uma malha retangular (=m_width= × =m_depth= vértices, espaçamento =m_spacing=). Toda a lógica de altura é determinística (semente fixa 42).
+
+** 2.1. Estruturas e Constantes Importantes
+
+- =RAW_ISLANDS=: tabela com ângulo, raio (fração da metade da largura), altura, tamanho (fração) e flag =house= (indica se uma casa deve ser colocada na ilha). Há 10 ilhas.
+- =WATER_LEVEL=: nível da água (constante definida em =Terrain.hpp=, não mostrada – no código está como =12.0f=).
+- =m_lakeRX=, =m_lakeRZ=: raios do lago na direção X e Z (elipse).
+- =m_halfW=, =m_halfD=: metade das dimensões totais do terreno.
+
+** 2.2. Funções de Geração de Altura
+
+| Função                                              | Descrição |
+|-----------------------------------------------------|-----------|
+| =sampleHeightFull(x, z)=                            | Função mestra que combina montanhas, bacia, campo interno e ilhas. |
+| =borderMountains(x, z)=                             | Montanhas nas bordas: usa FBM com *domain warping* para formas não‑simétricas. O fator =borderFactor= começa a crescer a partir de 30% da distância da borda, alcançando até ~80 unidades de altura. |
+| =lakeBasin(x, z)=                                   | Bacia elíptica: dentro do lago, altura retorna =WATER_LEVEL - 2.5= (leito profundo) mais um pequeno ripple de ruído. Na rampa da praia, interpola suavemente até ~7 unidades acima do nível da água. Fora da elipse, retorna um número muito alto (=1e6f=) para ser descartado. |
+| =innerField(x, z)=                                  | Pequenas colinas suaves (até ~4 unidades) aplicadas somente na zona plana entre o lago e as montanhas, atenuadas perto da orla. |
+| =addIslands(x, z)=                                  | Calcula o acréscimo de altura devido às ilhas (dome cúbico + ruído). Retorna o máximo entre todas as ilhas que cobrem o ponto. |
+
+** 2.3. Ruído Procedural
+
+- =perlinNoise(x, y)=: implementação clássica de ruído de Perlin 2D com tabela de permutação determinística (semente 42).
+- =fbm(x, z, octaves)=: soma fractal (=fractal Brownian motion=) normalizada, usada para montanhas e detalhes.
+
+** 2.4. Mapeamento de Cores (=sampleColor=)
+
+- Abaixo da água: tons de azul (leito).
+- Zona da praia (dentro da elipse + pequena margem): areia.
+- Para terrenos acima da água:
+  - Estima a inclinação (=slope=) via diferenças finitas.
+  - Combina =t= (altura normalizada) com a declividade para escurecer encostas íngremes.
+  - Aplica ruído para quebrar faixas de cor.
+  - Paleta: grama → marrom → cinza rochoso → neve.
+
+** 2.5. Malha da Superfície da Água
+
+- =buildWater()=: constrói uma malha retangular independente (grid 96×96) que cobre uma elipse estendida (=overshoot = 1.5= vezes o raio do lago).
+  - **Dentro da elipse**: vértices em =WATER_LEVEL=.
+  - **Fora da elipse**: vértices seguem o terreno (afundando abaixo da superfície), garantindo que a borda da água não seja visível.
+  - Cores: azul profundo no centro → azul‑esverdeado na borda → totalmente transparente fora da elipse.
+- =drawWater()=: desenha a água com transparência (=GL_BLEND=, =GL_SRC_ALPHA=, =GL_ONE_MINUS_SRC_ALPHA=). Altera o uniform =object_id= para 11 (código de água) se o shader ativo suportar.
+
+** 2.6. Métodos OpenGL
+
+- =setupBuffers()=: configura VAO/VBO/EBO do terreno (vertices, normais, texcoords, cores).
+- =setupWaterBuffers()=: análogo para a água.
+- =draw()=: desenha o terreno (opaco) e, em seguida, a água (translúcida).
+- =getHeight(x, z)=, =getNormal(x, z)=: consultas usadas pelo sistema de colisão e posicionamento de objetos.
+
+** 2.7. Integração com a Cena
+
+- O terreno é construído em =Scene::buildTerrain()= com dimensões =200×200=, espaçamento =2.0=, resultando em um mundo de aproximadamente 400×400 unidades.
+- As ilhas têm flag =house=; as duas primeiras ilhas (ângulos 0 e π) recebem casas (posicionadas por =Scene::buildHouses()= via =getIslandCenter()=).
+- O método =getNormal()= é usado para orientar corretamente o pássaro quando ele toca o chão, assim como, juntamente com =getHeight()=, são utilizados para centrar e orientar estruturas sobre o chão.

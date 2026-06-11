@@ -78,6 +78,10 @@ void Application::processFrame(float dt) {
     updateDayNight();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glm::vec3 sun = glm::normalize(glm::vec3(0.6f, 0.8f, 0.3f));
+    m_skybox.draw(m_renderer.getProjectionMatrix(), m_renderer.getViewMatrix(), sun, 0.5f);  // 0.5 = meio-dia
+
+
     //  lógica do jogo
     m_scene.update(dt, m_window.get());
 

@@ -1,0 +1,111 @@
+#+title: Como adicionar assets (modelos, texturas) à cena virtual
+#+date: \date
+
+Este guia descreve o fluxo completo para adicionar um novo modelo 3D (.obj) e suas texturas ao jogo, desde a colocação dos arquivos no sistema até a exibição na cena.
+
+** 1.1. Organização dos arquivos no projeto
+
+Todos os assets devem ser colocados dentro do diretório =assets/=:
+- Modelos OBJ e seus materiais (.mtl): assets/models/<categoria>/
+- Texturas (.jpg, .png, etc.): assets/textures/<categoria>/
+
+Exemplo para um novo modelo meu_modelo.obj com uma textura minha_textura.jpg:
+
+#+BEGIN_SRC text
+assets/
+├── models/
+│ └── meu_modelo/
+│ ├─── meu_modelo.obj
+│ └─── meu_modelo.mtl (opcional, se houver materiais)
+└── textures/
+└─── minha_textura.jpg
+#+END_SRC
+
+** 1.2. Definir a textura em código (=Assets.hpp= / =Assets.cpp=)
+
+Abra o arquivo [[file:engine/include/Objects/Assets.hpp][Assets.hpp]] e acrescente a declaração da textura:
+
+#+BEGIN_SRC cpp
+namespace Assets {
+// ... outras texturas
+
+extern TextureDefinition MINHA_TEXTURA;
+
+}
+#+END_SRC
+
+No arquivo [[file:engine/src/Objects/Assets.cpp][Assets.cpp]], adicione a definição e o carregamento dentro de LoadTextures():
+
+#+BEGIN_SRC cpp
+// Declaração
+TextureDefinition MINHA_TEXTURA;
+
+void Assets::LoadTextures() {
+// ...
+
+MINHA_TEXTURA.file = asset_path("textures/minha_textura.jpg");
+MINHA_TEXTURA.id = LoadTextureImage(MINHA_TEXTURA.file.c_str());
+
+}
+#+END_SRC
+
+** 1.3. Definir o modelo OBJ
+
+Em [[file:engine/include/Objects/Assets.hpp][Assets.hpp]], adicione a declaração do modelo:
+
+#+BEGIN_SRC cpp
+extern ModelDefinition MEU_MODELO;
+#+END_SRC
+
+Em [[file:engine/src/Objects/Assets.cpp][Assets.cpp]], dentro de BuildModels(), preencha a estrutura:
+
+#+BEGIN_SRC cpp
+MEU_MODELO.objFile = asset_path("models/meu_modelo/meu_modelo.obj");
+MEU_MODELO.meshes = { "nome_da_mesh_no_obj" }; // nome exato dentro do arquivo .obj
+MEU_MODELO.textures = { &MINHA_TEXTURA }; // vetor de ponteiros para texturas
+MEU_MODELO.alphaCutout = false; // true se usar transparência (folhas)
+#+END_SRC
+
+- *Importante*: O nome da /mesh/ deve ser exatamente igual ao nome do objeto dentro do arquivo =.obj= (campo =o nome= ou =g nome=). Para descobrir, use a função =PrintObjModelInfo()= ou observe a saída do programa ao carregar. Ou, ainda, abra os arquivos =.mtl= ou =.obj= e inspecione visualmente.
+
+** 1.4. Carregar o modelo na inicialização
+
+Em [[file:engine/src/Game/Renderer.cpp][Renderer.cpp]], dentro do método =loadModels()=, adicione uma chamada para carregar o modelo:
+
+#+BEGIN_SRC cpp
+void Renderer::loadModels() const {
+// ... outros loads
+
+load(Assets::MEU_MODELO);
+
+}
+#+END_SRC
+
+O lambda load já chama =ObjModel=, =ComputeNormals= e =BuildTrianglesAndAddToVirtualScene=. Após isso, o modelo estará disponível em =g_VirtualScene= com o nome da mesh.
+
+** 1.5. Criar um GameObject que use o modelo
+
+Você pode usar diretamente a classe [[file:engine/include/Objects/StaticObject.hpp][StaticObject]] para posicionar o modelo na cena:
+
+#+BEGIN_SRC cpp
+auto meuObjeto = std::make_shared<StaticObject>(
+Assets::MEU_MODELO, // definido acima
+glm::vec3(x, y, z), // posição
+glm::vec3(0.0f, anguloY, 0.0f), // rotação (Euler)
+glm::vec3(escala) // escala
+);
+m_staticObjects.push_back(meuObjeto);
+#+END_SRC
+
+Se o objeto tiver comportamento específico, crie uma nova classe derivada de =GameObject= usando [[file:engine/include/Objects/ObjDrawable.hpp][ObjDrawable]] internamente.
+
+** 1.6. Renderizar o objeto
+
+O [[file:engine/src/Game/Renderer.cpp][Renderer]] já possui o método =drawObjects()= que desenha todos os =StaticObject=. Basta adicionar seu objeto ao vetor =m_staticObjects= na cena (em [[file:engine/src/Game/Scene.cpp][Scene.cpp]], método =build()=).
+
+** 1.7. Verificação
+
+Compile e execute. O objeto deve aparecer na posição indicada. Se não aparecer, verifique:
+1. O caminho do arquivo =.obj= (/case sensitive/).
+2. O nome da /mesh/ (use PrintObjModelInfo para listar).
+3. Se as texturas foram carregadas corretamente (olhe a saída do terminal).

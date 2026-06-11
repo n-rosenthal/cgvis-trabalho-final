@@ -14,7 +14,6 @@
 *   8.  método `model()`: modelagem, idêntica a todos os objetos
 *   9.  método `draw()`: único a cada objeto
 */
-
 #pragma once
 
 #include <glad/glad.h>
@@ -25,10 +24,14 @@
 #include <memory>
 #include <vector>
 
-/**
-*   Estrutura de buffers que devem ser passados aos shaders
-*   do OpenGL para renderização em tela.
-*/
+// ============================================================================
+//  Buffers  –  RAII wrapper for VAO/VBO/EBO
+//
+//  IMPORTANT: the constructor calls glGen*, so this struct (and any class
+//  that contains it as a member) must only be constructed AFTER a valid
+//  OpenGL context exists.  Never declare a Drawable subclass as a global or
+//  as a class member that is default-constructed before gladLoadGL().
+// ============================================================================
 struct Buffers {
     GLuint VAO = 0;
     GLuint VBO = 0;
@@ -46,120 +49,99 @@ struct Buffers {
         glDeleteBuffers(1, &EBO);
     }
 
-    //  Cópia proibida: dois objetos não podem ownar o mesmo handle
     Buffers(const Buffers&)            = delete;
     Buffers& operator=(const Buffers&) = delete;
 
-    //  Move permitido: transfere ownership, invalida a origem
     Buffers(Buffers&& other) noexcept
         : VAO(other.VAO), VBO(other.VBO), EBO(other.EBO)
-    {
-        other.VAO = other.VBO = other.EBO = 0;
-    }
+    { other.VAO = other.VBO = other.EBO = 0; }
 
     Buffers& operator=(Buffers&& other) noexcept {
         if (this != &other) {
             glDeleteVertexArrays(1, &VAO);
             glDeleteBuffers(1, &VBO);
             glDeleteBuffers(1, &EBO);
-
-            VAO = other.VAO;
-            VBO = other.VBO;
-            EBO = other.EBO;
-
+            VAO = other.VAO; VBO = other.VBO; EBO = other.EBO;
             other.VAO = other.VBO = other.EBO = 0;
         }
         return *this;
     }
 };
 
-/**
-*   Estrutura que representa um vértice da malha de triângulos
-*   do objeto a ser desenhado
-*/
-struct Vertex{
+// ============================================================================
+//  Vertex
+//
+//  color is vec4: rgb + alpha.  Alpha is 1.0 for all opaque objects and is
+//  used only by the water mesh for transparency.  The vertex shader passes it
+//  through as fragColor (vec4); opaque object branches in the fragment shader
+//  simply ignore the alpha channel.
+// ============================================================================
+struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec2 texcoord;
-    glm::vec3 color;
+    glm::vec4 color;     // was vec3 – alpha channel added for water transparency
 };
 
-/**
- *  Contexto de renderização, pode variar a depender do shader
- */
+// ============================================================================
+//  DrawContext
+// ============================================================================
 struct DrawContext {
     GLuint shader_program;
-    GLint model_uniform;
-    GLint view_uniform;
-    GLint projection_uniform;
-    GLint object_id_uniform;
-    GLint diffuse_texture_uniform;
-    int object_id;
+    GLint  model_uniform;
+    GLint  view_uniform;
+    GLint  projection_uniform;
+    GLint  object_id_uniform;
+    GLint  diffuse_texture_uniform;
+    int    object_id;
 };
 
-
-/**
-*   Interface Drawable
-*/
+// ============================================================================
+//  Drawable interface
+// ============================================================================
 class Drawable {
-    public:
-        virtual ~Drawable() = default;
+public:
+    virtual ~Drawable() = default;
 
-        virtual void buildMesh()       = 0;
-        virtual void computeNormals()  = 0;
-        virtual void setupBuffers()    = 0;
-        
-        
-        /**
-         *  @brief  Gera a malha de triângulos do objeto (ou lê de arquivo,
-         *          conforme implementação), calcula os vetores normais,
-         *          set & send os buffers aos shaders OpenGL
-         */
-        void generate() {
-            buildMesh();
-            computeNormals();
-            setupBuffers();
-        };
+    virtual void buildMesh()      = 0;
+    virtual void computeNormals() = 0;
+    virtual void setupBuffers()   = 0;
 
-        /**
-         *  @brief  Função de modelagem para o objeto. Cria uma matriz 4x4
-         *          para o modelo, aplica translação até sua posição no terreno,
-         *          aplica rotações e escala conforme parametrização.
-         */
-        void model(const DrawContext& ctx) {
-            glm::mat4 model(1.0f);
+    void generate() {
+        buildMesh();
+        computeNormals();
+        setupBuffers();
+    }
 
-            model = glm::translate(model, m_position);
-            model = glm::rotate(model, m_rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-            model = glm::rotate(model, m_rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-            model = glm::rotate(model, m_rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-            model = glm::scale(model, m_scale);
-            
-            glUniformMatrix4fv(ctx.model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-            glUniform1i(ctx.object_id_uniform, ctx.object_id);
-            
-            draw(ctx);   // cada subclasse implementa isso
-        };
-        
-        //  Getters
-        glm::vec3 getPosition() const { return m_position; }
-        glm::vec3 getRotation() const { return m_rotation; }
-        glm::vec3 getScale()    const { return m_scale; }
+    void model(const DrawContext& ctx) {
+        glm::mat4 m(1.0f);
+        m = glm::translate(m, m_position);
+        m = glm::rotate(m, m_rotation.y, glm::vec3(0,1,0));
+        m = glm::rotate(m, m_rotation.x, glm::vec3(1,0,0));
+        m = glm::rotate(m, m_rotation.z, glm::vec3(0,0,1));
+        m = glm::scale(m, m_scale);
+        glUniformMatrix4fv(ctx.model_uniform,    1, GL_FALSE, glm::value_ptr(m));
+        glUniform1i       (ctx.object_id_uniform, ctx.object_id);
+        draw(ctx);
+    }
 
-        //  Setters
-        void setPosition(const glm::vec3& position) { m_position = position; }
-        void setRotation(const glm::vec3& rotation) { m_rotation = rotation; }
-        void setScale(const glm::vec3& scale)       { m_scale = scale; }
+    glm::vec3 getPosition() const { return m_position; }
+    glm::vec3 getRotation() const { return m_rotation; }
+    glm::vec3 getScale()    const { return m_scale; }
 
-    protected:
-        glm::vec3 m_position = glm::vec3(0.0f);
-        glm::vec3 m_rotation = glm::vec3(0.0f);   // (pitch, yaw, roll) or (x,y,z)
-        glm::vec3 m_scale    = glm::vec3(1.0f);
+    void setPosition(const glm::vec3& p) { m_position = p; }
+    void setRotation(const glm::vec3& r) { m_rotation = r; }
+    void setScale   (const glm::vec3& s) { m_scale    = s; }
 
-        Buffers              m_buffers;
-        std::vector<Vertex>  m_vertices;
-        std::vector<GLuint>  m_indices;
-        DrawContext          m_ctx;
-        
-        virtual void draw(const DrawContext& ctx) = 0;
+protected:
+    glm::vec3 m_position = glm::vec3(0.0f);
+    glm::vec3 m_rotation = glm::vec3(0.0f);
+    glm::vec3 m_scale    = glm::vec3(1.0f);
+
+    Buffers             m_buffers;   // GL context must exist when constructed
+    std::vector<Vertex> m_vertices;
+    std::vector<GLuint> m_indices;
+    DrawContext         m_ctx;
+
+    virtual void draw(const DrawContext& ctx) = 0;
 };

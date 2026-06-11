@@ -38,7 +38,7 @@ namespace {
 // ── Ciclo de vida ─────────────────────────────────────────────────────────────
 
 void Renderer::init(GLFWwindow* window){
-  LoadShadersFromFiles();
+    LoadShadersFromFiles();
 
     m_program         = g_GpuProgramID;
     m_modelUniform    = g_model_uniform;
@@ -119,6 +119,7 @@ DrawContext Renderer::makeContext(ObjectId id) {
 void Renderer::beginFrame(const Camera& camera) {
     m_view       = camera.getViewMatrix();
     m_projection = Matrix_Perspective(kFov, g_ScreenRatio, kNear, kFar);
+
 
     bindProgram();
     glUniformMatrix4fv(m_viewUniform, 1, GL_FALSE, glm::value_ptr(m_view));

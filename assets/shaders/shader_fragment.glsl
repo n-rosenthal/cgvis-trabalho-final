@@ -3,14 +3,12 @@
 in vec3 fragPosition;
 in vec3 fragNormal;
 in vec2 fragTexcoord;
-in vec3 fragColor;
+in vec4 fragColor;             // agora vec4
 
 uniform mat4 view;
-uniform int object_id;
-
+uniform int  object_id;
 uniform vec4 bbox_min;
 uniform vec4 bbox_max;
-
 uniform sampler2D diffuseTexture;
 uniform bool useTexture;
 
@@ -27,128 +25,81 @@ out vec4 color;
 #define RINGS       8
 #define BUILDING    9
 #define LETTER      10
+#define WATER       11         // novo
 
 void main()
 {
-    // =====================================================
-    // Iluminação básica
-    // =====================================================
-
-    vec3 N =
-        normalize(fragNormal);
-
-    vec3 L =
-        normalize(
-            vec3(
-                1.0,
-                1.0,
-                0.5
-            )
-        );
-
-    float lambert =
-        max(
-            dot(N, L),
-            0.0
-        );
-
+    vec3  N       = normalize(fragNormal);
+    vec3  L       = normalize(vec3(1.0, 1.0, 0.5));
+    float lambert = max(dot(N, L), 0.0);
     float ambient = 0.10;
+    vec3  Kd0;
 
-    vec3 Kd0;
-
-    // =====================================================
+    // =========================================================
     // Terreno
-    // =====================================================
-
-    if(object_id == PLANE)
+    // =========================================================
+    if (object_id == PLANE)
     {
-        Kd0 = fragColor;
-
-        color =
-            vec4(
-                Kd0 * (ambient + lambert),
-                1.0
-            );
-
-        color.rgb =
-            pow(
-                color.rgb,
-                vec3(1.0 / 2.2)
-            );
-
+        Kd0   = fragColor.rgb;
+        color = vec4(Kd0 * (ambient + lambert), 1.0);
+        color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
         return;
     }
 
-    // =====================================================
-    // Objetos procedurais
-    // (rochas e anéis)
-    // =====================================================
-
-    if(object_id == ROCK) {
-        Kd0 = fragColor;
-
-        color =
-            vec4(
-                Kd0 * (ambient + lambert),
-                1.0
-            );
-
-        color.rgb =
-            pow(
-                color.rgb,
-                vec3(1.0 / 2.2)
-            );
-
-        return;
-    }
-
-    if(object_id == RINGS) {
-        float diffuse = max(dot(N,L), 0.2);
-
-        color =
-            vec4(
-                vec3(1.0, 0.15, 0.15) * diffuse,
-                1.0
-            );
-
-        return;
-    }
-
-    // =====================================================
-    // Objetos texturizados
-    // =====================================================
-
-    if(useTexture)
+    // =========================================================
+    // Água  –  translúcida, iluminação suave, sem gamma agressivo
+    // =========================================================
+    if (object_id == WATER)
     {
-        vec4 texColor =
-            texture(
-                diffuseTexture,
-                fragTexcoord
-            );
+        // Iluminação mais suave: lambert com mínimo alto para não escurecer
+        float diff    = max(dot(N, L), 0.3);
+        // Specular simples (Blinn-Phong) para brilho da superfície
+        vec3  V       = normalize(-fragPosition);   // view space approx
+        vec3  H       = normalize(L + V);
+        float spec    = pow(max(dot(N, H), 0.0), 64.0) * 0.5;
 
-        if(texColor.a < 0.3)
-            discard;
+        vec3 waterCol = fragColor.rgb * (0.15 + diff) + vec3(spec);
+        // Alpha vem direto do vertex (gradiente centro→borda)
+        float alpha   = fragColor.a;
 
+        color = vec4(waterCol, alpha);
+        // Gamma mais suave para a água (não gamma completo, fica menos saturado)
+        color.rgb = pow(max(color.rgb, vec3(0.0)), vec3(1.0 / 1.8));
+        return;
+    }
+
+    // =========================================================
+    // Rochas e anéis
+    // =========================================================
+    if (object_id == ROCK)
+    {
+        Kd0   = fragColor.rgb;
+        color = vec4(Kd0 * (ambient + lambert), 1.0);
+        color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
+        return;
+    }
+
+    if (object_id == RINGS)
+    {
+        float diffuse = max(dot(N, L), 0.2);
+        color = vec4(vec3(1.0, 0.15, 0.15) * diffuse, 1.0);
+        return;
+    }
+
+    // =========================================================
+    // Objetos texturizados / genéricos
+    // =========================================================
+    if (useTexture)
+    {
+        vec4 texColor = texture(diffuseTexture, fragTexcoord);
+        if (texColor.a < 0.3) discard;
         Kd0 = texColor.rgb;
     }
     else
     {
-        Kd0 = fragColor;
+        Kd0 = fragColor.rgb;
     }
 
-    // =====================================================
-    // Cor final
-    // =====================================================
-
-    color =
-        vec4(
-            Kd0 * (ambient + lambert),
-            1.0
-        );
-
-    color.rgb =
-        pow(
-            color.rgb,
-            vec3(1.0 / 2.2)
-        );
+    color     = vec4(Kd0 * (ambient + lambert), 1.0);
+    color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
 }

@@ -1,0 +1,101 @@
+#+TITLE: Documentação: Carregadores de Modelos, Texturas e de /Shaders/
+#+DATE: \date
+
+Descrição dos arquivos responsáveis pelo carregamento de texturas, de modelos e dos /shaders/ GLSL.
+
+* 1. =ObjLoader.cpp=
+Implementa o carregamento de arquivos no formato Wavefront OBJ (com suporte a materiais MTL) usando a biblioteca *tinyobjloader*. Converte os dados lidos em buffers OpenGL (VAO, VBO, EBO) e armazena as informações na estrutura global =g_VirtualScene= para posterior renderização.
+
+** 1.1. Principais Estruturas e Variáveis Globais
+
+- =std::map<std::string, SceneObject> g_VirtualScene=: armazena todos os objetos carregados, indexados por nome. Cada =SceneObject= contém VAO, número de índices, modo de renderização e bounding box.
+- =ObjModel=: estrutura que encapsula os atributos (vértices, normais, coordenadas de textura), formas geométricas e materiais obtidos pelo tinyobjloader.
+
+** 1.2. Funções Relevantes
+
+| Função                                        | Descrição |
+|-----------------------------------------------|-----------|
+| =ObjModel::ObjModel(filename, basepath, triangulate)= | Construtor que carrega o arquivo OBJ, trata avisos/erros e valida a existência de nomes para os objetos. |
+| =BuildTrianglesAndAddToVirtualScene(ObjModel*)= | Constrói os triângulos a partir do modelo, gera VAO/VBO/EBO, calcula bounding boxes e insere o objeto no mapa =g_VirtualScene=. |
+| =ComputeNormals(ObjModel*)=                 | Calcula normais por vértice (método de Gouraud) caso o arquivo OBJ não as forneça. Utiliza grupos de suavização (smoothing groups). |
+| =DrawVirtualObject(const char* name)=       | Renderiza um objeto previamente carregado a partir do seu nome. Aplica bounding boxes (se os uniforms estiverem disponíveis) e executa =glDrawElements=. |
+| =PrintObjModelInfo(ObjModel*)=              | Função de depuração que imprime na tela todos os dados do modelo (vértices, normais, faces, materiais etc.). |
+
+** 1.3. Integração com o Pipeline Gráfico
+
+- Os vértices são enviados como =vec4= (location = 0), normais como =vec4= (location = 1) e coordenadas de textura como =vec2= (location = 2), alinhados com os shaders esperados.
+- A função =DrawVirtualObject= verifica o estado do OpenGL (VAO atual, programa ativo, EBO) antes de desenhar, facilitando a depuração.
+
+* 2. =TextureLoader.cpp=
+Carrega imagens de textura a partir do disco (usando a biblioteca *stb_image*) e as transfere para a GPU como texturas OpenGL 2D com geração automática de mipmaps.
+
+** 2.1. Variável Global
+
+- =GLuint g_NumLoadedTextures=: contador de texturas carregadas, utilizado para atribuir unidades de textura sequenciais (GL_TEXTURE0, GL_TEXTURE1, …).
+
+** 2.2. Função Principal
+
+=GLuint LoadTextureImage(const char* filename)=
+
+**Comportamento:**
+
+1. Lê a imagem (forçando 4 canais RGBA) com =stbi_load=.
+2. Cria uma =texture_id= e um =sampler_id= no OpenGL.
+3. Configura os parâmetros do sampler:
+   - =GL_TEXTURE_WRAP_S/T = GL_CLAMP_TO_EDGE=
+   - =GL_TEXTURE_MIN_FILTER = GL_LINEAR_MIPMAP_LINEAR=
+   - =GL_TEXTURE_MAG_FILTER = GL_LINEAR=
+4. Envia a imagem para a GPU via =glTexImage2D= (formato interno =GL_SRGB8_ALPHA8=) e gera mipmaps com =glGenerateMipmap=.
+5. Atribui a textura à unidade =GL_TEXTURE0 + g_NumLoadedTextures= e vincula o sampler.
+6. Libera a memória da imagem e incrementa o contador global.
+
+**Retorno:** =texture_id= (identificador da textura OpenGL).
+
+** 2.4. Observações de Uso
+
+- As texturas são organizadas em unidades consecutivas; o shader deve declarar os samplers como =uniform sampler2D u_Texture0=, =u_Texture1=, etc.
+- O flip vertical é aplicado (=stbi_set_flip_vertically_on_load(true)=) para alinhar a coordenada Y do OpenGL com o sistema de coordenadas da imagem.
+
+** 3. Considerações
+
+Os dois módulos trabalham de forma integrada: o =ObjLoader= fornece a geometria e as coordenadas de textura, enquanto o =TextureLoader= supre as imagens que serão aplicadas aos materiais. Ambos utilizam bibliotecas leves e amplamente adotadas (tinyobjloader, stb_image) e já estão adaptados ao pipeline gráfico do projeto.
+
+**Pontos de atenção:**
+
+- O =DrawVirtualObject= depende de uniforms globais (=g_bbox_min_uniform=, =g_bbox_max_uniform=) que devem ser inicializados pelo shader principal.
+- A função =ComputeNormals= é chamada automaticamente apenas se não houver normais no arquivo OBJ; garante iluminação correta mesmo em modelos incompletos.
+- O gerenciamento de unidades de textura pelo contador global pressupõe que as texturas serão usadas de forma sequencial; para cenários mais complexos, pode-se adotar um sistema de bind explícito.
+
+** 4. Ver
+
+- tinyobjloader: https://github.com/tinyobjloader/tinyobjloader
+- stb_image: https://github.com/nothings/stb
+- Documentação das aulas de Computação Gráfica (UFGRS): mapeamento de texturas e buffers OpenGL.
+
+* =ShaderLoader.cpp=
+Carrega, compila e linka os shaders GLSL (vértice e fragmento) a partir de arquivos localizados em `assets/shaders/`. Expõe variáveis globais que armazenam os identificadores do programa GPU e dos uniforms usados em toda a aplicação.
+
+** 4.1. Principais Variáveis Globais
+
+| Variável                  | Tipo    | Descrição |
+|---------------------------|---------|-----------|
+| `g_GpuProgramID`          | `GLuint`| ID do programa de shader linkado |
+| `g_model_uniform`         | `GLint` | Localização do uniform `model` |
+| `g_view_uniform`          | `GLint` | Localização do uniform `view` |
+| `g_projection_uniform`    | `GLint` | Localização do uniform `projection` |
+| `g_object_id_uniform`     | `GLint` | Localização do uniform `object_id` |
+| `g_bbox_min_uniform`      | `GLint` | Localização do uniform `bbox_min` |
+| `g_bbox_max_uniform`      | `GLint` | Localização do uniform `bbox_max` |
+| `g_diffuse_texture_uniform` | `GLint` | Localização do uniform da textura difusa |
+
+** 4.2. Funções Relevantes
+
+- `LoadShadersFromFiles()`: carrega e compila os shaders, cria o programa GPU e obtém as localizações dos uniforms.
+- `LoadShader_Vertex(const char*)`, `LoadShader_Fragment(const char*)`: criam e compilam shaders individuais.
+- `LoadShader(const char*, GLuint)`: lê o arquivo, compila e exibe logs de erro/aviso.
+- `CreateGpuProgram(GLuint, GLuint)`: linka os shaders em um programa e o retorna.
+
+** 4.3. Observações
+
+- Os caminhos dos shaders são fixos (`assets/shaders/shader_vertex.glsl` e `shader_fragment.glsl`).
+- O uniform `TextureImage*` é inicializado com `glUniform1i` para associar unidades de textura (0,1,2).

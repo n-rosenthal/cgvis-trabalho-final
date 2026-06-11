@@ -1,0 +1,147 @@
+#+TITLE: Documentação: /Assets/ (texturas e modelos OBJ), Objetos e /Drawables/
+#+DATE: \date
+
+Este documento descreve os principais arquivos relacionados a /assets/, objetos do jogo (edifícios, carta, rochas, anéis, casas) e as implementações concretas da interface `Drawable`. O código está organizado em torno do padrão *GameObject* + *Drawable*, permitindo separar a lógica de jogo da renderização.
+
+* 1. =Assets.cpp=
+Centraliza a definição e o carregamento de texturas e modelos OBJ utilizados no jogo. As texturas são carregadas via `LoadTextureImage()`, e os modelos são descritos por `ModelDefinition` (arquivo `.obj`, lista de meshes e ponteiros para texturas).
+
+** 1.1. Estruturas
+
+- `TextureDefinition`: contém `file` (caminho) e `id` (identificador OpenGL).
+- `ModelDefinition`: contém `objFile`, `meshes` (nomes dos objetos na cena virtual), `textures` (vetor de ponteiros), `alphaCutout` (para transparência).
+
+** 1.2. Funções
+
+- `Assets::LoadTextures()`: carrega texturas de árvores, tijolos, terreno, pássaro.
+- `Assets::BuildModels()`: define os modelos (árvore, pássaro, carta) associando texturas.
+- `Assets::LoadAll()`: chama as duas anteriores.
+
+** 1.3. Observações
+
+- As duas primeiras ilhas (com `house = true`) recebem casas em `Scene::buildHouses()`.
+- O modelo da árvore possui três meshes (folhas, tronco, galhos) com texturas distintas.
+
+* =Drawable.hpp=
+Define a interface base para todos os objetos renderizáveis.
+
+** 1.4. Componentes
+
+- `Buffers`: RAII para VAO, VBO, EBO (cria no construtor, deleta no destrutor).
+- `Vertex`: posição, normal, texcoord, cor (vec4 – alpha usado pela água).
+- `DrawContext`: agrupa uniforms (shader, model_uniform, view_uniform, ...) e object_id.
+- `Drawable`: métodos `buildMesh()`, `computeNormals()`, `setupBuffers()`, `generate()` (chama os três), `model()` (aplica transformações e chama `draw()`). Mantém posição, rotação, escala.
+
+** 1.5. Observação
+
+`model()` é responsável por montar a matriz modelo e enviá‑la ao shader. `draw()` é virtual puro e deve ser implementado por cada subclasse.
+
+** =ObjDrawable.cpp=
+Implementa um `Drawable` que renderiza um modelo OBJ previamente carregado em `g_VirtualScene`. Suporta textura difusa.
+
+** 1.6. Método `draw`
+
+- Verifica se existe textura associada à mesh atual.
+- Se sim, ativa `GL_TEXTURE0`, bind da textura, e define o uniform `useTexture = 1`.
+- Caso contrário, `useTexture = 0`.
+- Chama `DrawVirtualObject(mesh_name)`.
+
+* 2. =StaticObject.cpp=
+Implementa um `GameObject` estático (sem lógica de movimento) a partir de um `ModelDefinition`. Utiliza `ObjDrawable` internamente.
+
+** 2.1. Uso
+Empregado para árvores e outros objetos que não interagem dinamicamente.
+
+* 3. =GameObject.hpp=
+Define um objeto do jogo que possui um `Drawable` e transformações (posição, rotação, escala). Separa a lógica de jogo (`update`) da renderização (`render`).
+
+** 3.1. Métodos Relevantes
+- `render(ctx)`: sincroniza transformações do `GameObject` com o `Drawable` e chama `model(ctx)`.
+- `update(dt)`: virtual, a ser sobrescrito.
+
+** 3.2. Uso
+- `Bird`, `ProceduralRock`, `Ring`, `Letter`, `StaticObject` e `House` herdam de `GameObject`.
+- O `Drawable` é armazenado como `unique_ptr`, permitindo troca dinâmica (ex.: pássaro troca entre modelo voando e em pé).
+
+* 4. Objetos do Jogo
+** 4.1. =Building.cpp=
+Implementa um edifício simples (caixa retangular) com detecção de colisão esfera‑caixa. Não herda de `GameObject` – é uma classe autônoma.
+
+*** 4.1.1. Principais Métodos
+
+| Método                     | Descrição |
+|----------------------------|-----------|
+| `generateBox()`            | Cria vértices e índices de um paralelepípedo centrado na origem. |
+| `setupBuffers()`           | Configura VAO, VBO, EBO. |
+| `Draw(GLuint model_uniform)` | Envia a matriz modelo e desenha o edifício. |
+| `checkCollision(point, radius)` | Verifica colisão esfera‑caixa. |
+
+* 4.2. =Letter.cpp=
+Implementa a carta como `GameObject` utilizando `ObjDrawable` (modelo `the_letter.obj`). A implementação provavelmente está no cabeçalho.
+
+** 4.2.1. Comportamento
+
+- A carta possui três estados: `Carried`, `Falling`, `OnGround`.
+- Em `Carried`, segue o pássaro; em `Falling`, sofre gravidade; ao tocar o chão, torna-se `OnGround` e pode ser capturada.
+- A captura/soltura é controlada pela tecla `G`.
+
+
+* 4.3. =ProceduralRock.cpp=
+Define uma rocha procedural como `GameObject` usando `RockDrawable`. A rocha tem escala variável e um raio de colisão aproximado.
+
+** 4.3.1. Observações
+
+- As colisões são resolvidas diretamente em `Scene::resolveCollisions()` (distância ponto‑segmento), não via `Collider` (por isso `getColliders()` retorna vazio).
+
+* 4.4. =Ring.cpp=
+Implementa um anel (objetivo de coleta) como `GameObject` usando `RingDrawable`. Possui animação de pulsação e escala de destruição.
+
+** 4.4.1. Principais Métodos
+
+- `update(dt)`: atualiza tempo de pulso e escala de animação; sincroniza com `RingDrawable`.
+- `checkCollision(birdPos)`: verifica colisão horizontal (distância no eixo XZ < raio) e vertical (|deltaY| < 2.0). Se coletado, toca som.
+- `isDead()`: retorna `true` após 1 segundo da coleta.
+- `render(ctx, view)`: injeta a matriz de visão no `RingDrawable` para efeito *billboard*.
+
+
+
+* 4.5. =HouseDrawable.cpp=
+`Drawable` para uma casa simples (paralelepípedo com telhado de duas águas), gerada proceduralmente (sem arquivo OBJ). As cores são fixas (bege para paredes, vermelho para o telhado).
+
+** 4.5.1. Principais Características
+
+- `buildMesh()`: cria 10 vértices e 22 índices (triângulos). A cumeeira é um segmento de reta representado por dois vértices.
+- `computeNormals()`: todas as normais apontam para cima (simplificado).
+- `setupBuffers()`: configura atributos (posição, normal, texcoord, cor – esta última é `vec3`).
+- O construtor define `m_modelMatrix` como identidade; `setPosition()` atualiza a matriz de translação.
+
+** 4.5.2. Observação
+
+O método `draw()` não utiliza a matriz `m_modelMatrix` (não a envia para o shader). Isso deve ser corrigido – idealmente a matriz modelo deveria ser aplicada antes do desenho.
+
+* 4.6. =RingDrawable.cpp=
+`Drawable` para o anel, com geometria de um toroide fino (dois círculos concêntricos). Suporta efeito *billboard* (sempre voltado para a câmera) e pulsação.
+
+** 4.6.1. Principais Características
+
+- `buildMesh()`: gera um anel no plano XY (normais em Z). Usa 128 segmentos.
+- `draw()`: aplica translação para `m_position`, depois *billboard* usando `m_view` (remove a rotação da câmera), e escala com animação (`m_animScale` e pulso senoidal). Finalmente desenha.
+- A matriz `model` é enviada diretamente ao shader.
+
+* 4.7. =RockDrawable.cpp=
+`Drawable` para rochas procedurais: esfera deformada por ruído fBm. Gera malha com `subdivisions` (controla número de vértices).
+
+** 4.7.1. Principais Características
+
+- `buildMesh()`: gera coordenadas esféricas com stacks e slices. Aplica deslocamento radial via `fbm(p)` (5 oitavas de ruído senoidal/cossenoidal).
+- `computeNormals()`: recalcula normais suavizadas por média das faces.
+- `draw()`: desenha e desativa o uso de textura (rochas têm cor sólida).
+
+* =Collidable.hpp=
+Interface para objetos que podem participar do sistema de colisão. Exige:
+
+- `getColliders()`: retorna lista de colisores.
+- `updateColliders()`: atualiza a posição dos colisores.
+- `onCollision(glm::vec3)`: reação à colisão.
+
+
