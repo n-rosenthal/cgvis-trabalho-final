@@ -6822,7 +6822,7 @@ vt 0.090500 0.922700
 
 g the_bird2
 
-usemtl mat_0-falcon1.jpg
+usemtl mat_0-bird1l.jpg
 
 f 1/1 2/2 3/3
 f 4/4 5/5 6/6

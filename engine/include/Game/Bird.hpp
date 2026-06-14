@@ -46,8 +46,8 @@ public:
 
     void setSize(const glm::vec3& s) {size = s;}
 
-    static constexpr float DEFAULT_SIZE = 1.2f;
-    static constexpr float STANDING_SCALE_FACTOR = 0.3f;
+    static constexpr float DEFAULT_SIZE          = 1.0f;
+    static constexpr float STANDING_SCALE_FACTOR = 0.2f;
 
     void updateDrawable();
 private:

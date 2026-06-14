@@ -6,16 +6,12 @@ ButterflyNPC::ButterflyNPC(
     glm::vec3 scale
 )
 :
-GameObject(
-    std::make_unique<ObjDrawable>(
-        Assets::BUTTERFLY
-    ),
-    position,
-    rotation,
-    scale
-)
-{
-}
+    GameObject(
+        std::make_unique<ButterflyDrawable>(),
+        position,
+        rotation,
+        scale
+    ) {};
 
 void ButterflyNPC::setPath(
     std::shared_ptr<BezierPath> path

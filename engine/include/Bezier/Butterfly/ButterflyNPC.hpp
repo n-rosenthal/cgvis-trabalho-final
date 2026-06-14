@@ -4,6 +4,7 @@
 #include "Objects/ObjDrawable.hpp"
 
 #include "Bezier/BezierMover.hpp"
+#include "Bezier/Butterfly/ButterflyDrawable.hpp"
 
 class ButterflyNPC : public GameObject
 {

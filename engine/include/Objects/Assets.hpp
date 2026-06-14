@@ -53,6 +53,7 @@ namespace Assets {
 
     extern TextureDefinition BIRD;
     extern TextureDefinition BIRD_STANDING;
+    extern TextureDefinition BIRD_STANDING_LEFT;
 
     extern TextureDefinition BUTTERFLY_ALBEDO_TRANSPARENCY;
     extern TextureDefinition BUTTERFLY_METTALLIC_SMOOTHNENESS;

@@ -27,6 +27,7 @@ namespace Assets {
 
     TextureDefinition BIRD;
     TextureDefinition BIRD_STANDING;
+    TextureDefinition BIRD_STANDING_LEFT;
 
     TextureDefinition BUTTERFLY_ALBEDO_TRANSPARENCY;
     TextureDefinition BUTTERFLY_METTALLIC_SMOOTHNENESS;
@@ -136,12 +137,22 @@ void Assets::LoadTextures() {
 
     BIRD_STANDING.file =
         asset_path(
-            "models/bird/default-grey.jpg"
+            "models/bird_standing/default-grey.jpg"
         );
 
     BIRD_STANDING.id =
         LoadTextureImage(
             BIRD_STANDING.file.c_str()
+        );
+    
+    BIRD_STANDING_LEFT.file =
+        asset_path(
+            "models/bird_standing/bird1l.jpg"
+        );
+
+    BIRD_STANDING_LEFT.id =
+        LoadTextureImage(
+            BIRD_STANDING_LEFT.file.c_str()
         );
 
     // =====================================================
@@ -242,10 +253,9 @@ void Assets::BuildModels() {
 
     BIRD_STANDING_MODEL.textures =
     {
-        &BIRD_STANDING,
-        nullptr
+        &BIRD_STANDING_LEFT,
+        &BIRD_STANDING
     };
-
     // =====================================================
     // LETTER
     // =====================================================
@@ -286,8 +296,8 @@ void Assets::BuildModels() {
     BUTTERFLY.textures =
     {
         &BUTTERFLY_ALBEDO_TRANSPARENCY,
-        &BUTTERFLY_METTALLIC_SMOOTHNENESS,
-        &BUTTERFLY_NORMAL
+        &BUTTERFLY_ALBEDO_TRANSPARENCY,
+        &BUTTERFLY_ALBEDO_TRANSPARENCY,
     };
     
     

@@ -507,6 +507,9 @@ void PrintObjModelInfo(ObjModel* model)
 
 
 void DrawVirtualObject(const char* name) {
+    printf("DrawVirtualObject(%s)\n", name);
+    fflush(stdout);
+
     auto it = g_VirtualScene.find(name);
     if (it == g_VirtualScene.end()) {
         fprintf(stderr, "DrawVirtualObject: objeto '%s' não encontrado\n", name);
@@ -519,6 +522,13 @@ void DrawVirtualObject(const char* name) {
         fprintf(stderr, "DrawVirtualObject: VAO inválido para '%s'\n", name);
         return;
     }
+
+    printf(
+        "vao=%u first=%zu count=%zu\n",
+        it->second.vertex_array_object_id,
+        it->second.first_index,
+        it->second.num_indices
+    );
 
     // Envia bounding boxes (se os uniforms existirem)
     extern GLint g_bbox_min_uniform;
