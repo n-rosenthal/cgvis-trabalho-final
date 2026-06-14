@@ -31,6 +31,7 @@ void Scene::build() {
     buildRings();
     buildLetter();
     buildHouses();
+    buildButterflyNPCs();
 }
 
 /**
@@ -93,8 +94,9 @@ void Scene::update(float dt, GLFWwindow* w) {
 
     // NPCs
 
-    for(auto& npc : m_butterflyNPCs)
+    for(auto& npc : m_butterflyNPCs) {
         npc->update(dt);
+    }
 }
 
 void Scene::updateLetter(
@@ -284,7 +286,7 @@ void Scene::draw(Renderer& r) {
 
     // npcs
     for(auto& npc : m_butterflyNPCs) {
-        r.drawButterflyNPC(*npc); // xxx
+        r.drawButterflyNPC(*npc);
     }
 }
 
@@ -304,11 +306,6 @@ void Scene::buildTerrain() {
 
     assert(m_terrain);
     m_terrain->generate();
-
-        // Debug: imprime algumas alturas
-    printf("Alturas no centro (0,0): %f\n", m_terrain->getHeight(0,0));
-    printf("Altura na borda (60,0): %f\n", m_terrain->getHeight(60,0));
-    printf("Altura dentro do lago (10,10): %f\n", m_terrain->getHeight(10,10));
 }
 
 /**
@@ -449,33 +446,23 @@ void Scene::buildButterflyNPCs()
 {
     BezierPath path;
 
-    path.addPoint(
-        glm::vec3(
-            -30, 30, -30
-        )
-    );
+    path.addPoint(glm::vec3(-30.0f, 15.0f, -30.0f));
+    path.addPoint(glm::vec3(-10.0f,25.0f, 20.0f));
+    path.addPoint(glm::vec3(20.0f,25.0f, 20.0f));
+    path.addPoint(glm::vec3(30.0f,15.0f,-30.0f));
 
-    path.addPoint(
-        glm::vec3(
-            -10, 50, 40
-        )
-    );
+    auto butterfly =
+        std::make_shared<ButterflyNPC>(
+            glm::vec3(0.0f),
+            glm::vec3(0.0f),
+            glm::vec3(2.0f)
+        );
 
-    path.addPoint(
-        glm::vec3(
-            50, 40, 20
-        )
-    );
-
-    path.addPoint(
-        glm::vec3(
-            20, 25, -20
-        )
+    butterfly->setPath(
+        std::make_shared<BezierPath>(path)
     );
 
     m_butterflyNPCs.push_back(
-        std::make_shared<ButterflyNPC>(
-            path
-        )
+        butterfly
     );
 }

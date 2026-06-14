@@ -24,6 +24,8 @@ class Camera;
 class Letter;
 class House;
 
+class ButterflyNPC;
+
 class Renderer {
 public:
     // ── Ciclo de vida ─────────────────────────────────────────────────────────
@@ -43,6 +45,8 @@ public:
     void drawHouses (const std::vector<std::shared_ptr<House>>& houses);
 
     void drawObjects(std::vector<std::shared_ptr<StaticObject>>& objects);
+
+    void drawButterflyNPC(ButterflyNPC& npc);
 
     // ── Utilitários ───────────────────────────────────────────────────────────
     void setWireframe(bool enabled);
@@ -66,7 +70,9 @@ public:
 
         OBJ_LETTER      = 10,
 
-        OBJ_HOUSE       = 11
+        OBJ_HOUSE       = 11,
+
+        OBJ_BUTTERFLY   = 12
     };
 
     //  Acessadores para matrizes de view e projeção

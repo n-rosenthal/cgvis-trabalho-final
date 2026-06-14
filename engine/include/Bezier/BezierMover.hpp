@@ -1,5 +1,8 @@
+#pragma once
+
 #include "Bezier/BezierPath.hpp"
 #include <glm/glm.hpp>
+#include <memory>
 
 class BezierMover
 {
@@ -8,6 +11,7 @@ public:
 
     glm::vec3 getForward() const;
     glm::vec3 getPosition() const;
+    void setPath(const BezierPath& path) { m_path = path; };
 
 private:
     BezierPath m_path;

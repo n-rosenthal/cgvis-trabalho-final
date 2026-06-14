@@ -19,6 +19,8 @@
 #include "Objects/Letter.hpp"
 #include "Objects/House.hpp"
 
+#include "Bezier/Butterfly/ButterflyNPC.hpp"
+
 #include "Renderer/ShaderLoader.hpp"
 #include "Loaders/TextureLoader.hpp"
 #include "Loaders/ObjLoader.hpp"
@@ -183,6 +185,10 @@ void Renderer::drawHouses(
 {
     for(auto& house : houses)
         house->render(makeContext(OBJ_HOUSE));
+}
+
+void Renderer::drawButterflyNPC(ButterflyNPC& npc) {
+    npc.render(makeContext(OBJ_BUTTERFLY));
 }
 
 void Renderer::setWireframe(bool enabled) {

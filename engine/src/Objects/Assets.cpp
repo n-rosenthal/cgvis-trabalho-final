@@ -150,7 +150,7 @@ void Assets::LoadTextures() {
 
     BUTTERFLY_ALBEDO_TRANSPARENCY.file =
         asset_path(
-            "textures/butt_low_lambert1_AlbedoTransparency.png"
+            "textures/butterfly/butt_low_lambert1_AlbedoTransparency.png"
         );
 
     BUTTERFLY_ALBEDO_TRANSPARENCY.id =
@@ -160,7 +160,7 @@ void Assets::LoadTextures() {
 
     BUTTERFLY_METTALLIC_SMOOTHNENESS.file =
         asset_path(
-            "textures/butt_low_lambert1_MetallicSmoothness.pgn"
+            "textures/butterfly/butt_low_lambert1_MetallicSmoothness.png"
         );
 
     BUTTERFLY_METTALLIC_SMOOTHNENESS.id =
@@ -170,7 +170,7 @@ void Assets::LoadTextures() {
     
     BUTTERFLY_NORMAL.file =
         asset_path(
-            "textures/butt_low_lambert1_Normal.png"
+            "textures/butterfly/butt_low_lambert1_Normal.png"
         );
 
     BUTTERFLY_NORMAL.id =
@@ -278,7 +278,9 @@ void Assets::BuildModels() {
     
     BUTTERFLY.meshes =
     {
-        "lambert1"
+        "Butterfly_tri_torso_leg_01",
+        "wing_01",
+        "wing_02"
     };
     
     BUTTERFLY.textures =

@@ -59,6 +59,12 @@ set(SOURCES
   engine/src/Objects/Building.cpp
   engine/src/Objects/Letter.cpp
 
+  # Curvas de Bezier e NPCs
+  engine/src/Bezier/BezierPath.cpp
+  engine/src/Bezier/BezierMover.cpp
+  engine/src/Bezier/Butterfly/ButterflyNPC.cpp
+  engine/src/Bezier/Butterfly/ButterflyDrawable.cpp
+
   # Main
   engine/src/main.cpp
 )

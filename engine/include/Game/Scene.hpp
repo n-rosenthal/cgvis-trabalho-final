@@ -32,6 +32,7 @@
 #include "Objects/House.hpp"
 
 //  Objetos dinâmicos: NPCs
+#include "Bezier/BezierMover.hpp"
 #include "Bezier/Butterfly/ButterflyNPC.hpp"
 
 class Renderer;  // forward

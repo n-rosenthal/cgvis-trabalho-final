@@ -9,9 +9,14 @@ class ButterflyNPC : public GameObject
 {
 public:
     ButterflyNPC(
-        const BezierPath& path
+        glm::vec3 position,
+        glm::vec3 rotation,
+        glm::vec3 scale
     );
 
+    void setPath(
+        std::shared_ptr<BezierPath> path
+    );
     void update(float dt);
 
 private:

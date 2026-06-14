@@ -1,19 +1,27 @@
 #include "Bezier/Butterfly/ButterflyNPC.hpp"
 
 ButterflyNPC::ButterflyNPC(
-    const BezierPath& path
+    glm::vec3 position,
+    glm::vec3 rotation,
+    glm::vec3 scale
 )
 :
 GameObject(
     std::make_unique<ObjDrawable>(
         Assets::BUTTERFLY
     ),
-    glm::vec3(0.0f),
-    glm::vec3(0.0f),
-    glm::vec3(1.0f)
-),
-m_mover(path)
+    position,
+    rotation,
+    scale
+)
 {
+}
+
+void ButterflyNPC::setPath(
+    std::shared_ptr<BezierPath> path
+)
+{
+    m_mover.setPath(*path);
 }
 
 void ButterflyNPC::update(float dt)

@@ -1,5 +1,10 @@
 #include "Bezier/BezierPath.hpp"
 
+void BezierPath::addPoint(glm::vec3 point)
+{
+    m_points.push_back(point);
+}
+
 glm::vec3 BezierPath::evaluate(float t) const
 {
     const glm::vec3& p0 = m_points[0];
