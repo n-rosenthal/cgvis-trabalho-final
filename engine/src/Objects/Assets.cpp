@@ -28,6 +28,10 @@ namespace Assets {
     TextureDefinition BIRD;
     TextureDefinition BIRD_STANDING;
 
+    TextureDefinition BUTTERFLY_ALBEDO_TRANSPARENCY;
+    TextureDefinition BUTTERFLY_METTALLIC_SMOOTHNENESS;
+    TextureDefinition BUTTERFLY_NORMAL;
+
     // =====================================================
     // MODELOS
     // =====================================================
@@ -41,6 +45,8 @@ namespace Assets {
     ModelDefinition BIRD_STANDING_MODEL;
 
     ModelDefinition HOUSE;
+
+    ModelDefinition BUTTERFLY;
 };
 
 void Assets::LoadTextures() {
@@ -137,6 +143,40 @@ void Assets::LoadTextures() {
         LoadTextureImage(
             BIRD_STANDING.file.c_str()
         );
+
+    // =====================================================
+    // BUTTERFLY
+    // =====================================================
+
+    BUTTERFLY_ALBEDO_TRANSPARENCY.file =
+        asset_path(
+            "textures/butt_low_lambert1_AlbedoTransparency.png"
+        );
+
+    BUTTERFLY_ALBEDO_TRANSPARENCY.id =
+        LoadTextureImage(
+            BUTTERFLY_ALBEDO_TRANSPARENCY.file.c_str()
+        );
+
+    BUTTERFLY_METTALLIC_SMOOTHNENESS.file =
+        asset_path(
+            "textures/butt_low_lambert1_MetallicSmoothness.pgn"
+        );
+
+    BUTTERFLY_METTALLIC_SMOOTHNENESS.id =
+        LoadTextureImage(
+            BUTTERFLY_METTALLIC_SMOOTHNENESS.file.c_str()
+        );
+    
+    BUTTERFLY_NORMAL.file =
+        asset_path(
+            "textures/butt_low_lambert1_Normal.png"
+        );
+
+    BUTTERFLY_NORMAL.id =
+        LoadTextureImage(
+            BUTTERFLY_NORMAL.file.c_str()
+        );
 };
 
 void Assets::BuildModels() {
@@ -226,6 +266,29 @@ void Assets::BuildModels() {
     {
         printf("standing mesh: %s\n", mesh.c_str());
     }
+
+    // =====================================================
+    //  Butterfly
+    // =====================================================
+
+    BUTTERFLY.objFile =
+        asset_path(
+            "models/butterfly/butterfly.obj"
+        );
+    
+    BUTTERFLY.meshes =
+    {
+        "lambert1"
+    };
+    
+    BUTTERFLY.textures =
+    {
+        &BUTTERFLY_ALBEDO_TRANSPARENCY,
+        &BUTTERFLY_METTALLIC_SMOOTHNENESS,
+        &BUTTERFLY_NORMAL
+    };
+    
+    
 };
 
 void Assets::LoadAll() {

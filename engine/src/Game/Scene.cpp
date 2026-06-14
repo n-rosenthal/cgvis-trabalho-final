@@ -89,6 +89,12 @@ void Scene::update(float dt, GLFWwindow* w) {
     for(auto& ring : m_rings) {
         ring->update(dt);
     }
+
+
+    // NPCs
+
+    for(auto& npc : m_butterflyNPCs)
+        npc->update(dt);
 }
 
 void Scene::updateLetter(
@@ -275,6 +281,11 @@ void Scene::draw(Renderer& r) {
     r.drawObjects(m_staticObjects);
 
     r.drawHouses(m_houses);
+
+    // npcs
+    for(auto& npc : m_butterflyNPCs) {
+        r.drawButterflyNPC(*npc); // xxx
+    }
 }
 
 
@@ -433,3 +444,38 @@ void Scene::buildHouses() {
     m_houses.push_back(casa1);
     m_houses.push_back(casa2);
 };
+
+void Scene::buildButterflyNPCs()
+{
+    BezierPath path;
+
+    path.addPoint(
+        glm::vec3(
+            -30, 30, -30
+        )
+    );
+
+    path.addPoint(
+        glm::vec3(
+            -10, 50, 40
+        )
+    );
+
+    path.addPoint(
+        glm::vec3(
+            50, 40, 20
+        )
+    );
+
+    path.addPoint(
+        glm::vec3(
+            20, 25, -20
+        )
+    );
+
+    m_butterflyNPCs.push_back(
+        std::make_shared<ButterflyNPC>(
+            path
+        )
+    );
+}

@@ -31,6 +31,9 @@
 #include "Objects/ProceduralRock.hpp"
 #include "Objects/House.hpp"
 
+//  Objetos dinâmicos: NPCs
+#include "Bezier/Butterfly/ButterflyNPC.hpp"
+
 class Renderer;  // forward
 
 /**
@@ -71,6 +74,7 @@ public:
     void buildLetter();
     void buildHouses();
 
+    void buildButterflyNPCs();
 
     //  Acessadores para os objetos da cena
     const std::optional<Bird>& getBird() const { return m_bird; }
@@ -78,6 +82,7 @@ public:
     const std::vector<std::shared_ptr<Ring>>& getRings() const { return m_rings; }
     const std::vector<std::shared_ptr<ProceduralRock>>& getRocks() const { return m_rocks; }
     const std::shared_ptr<Letter>& getLetter() const { return m_letter; }
+
 
     //  Acessador para a câmera
     const Camera& getCamera() const { return m_camera; }
@@ -102,4 +107,8 @@ private:
 
     //  Velocidade da carta
     glm::vec3 m_letterVelocity  = glm::vec3(0.0f);
+
+
+    //  NPCs
+    std::vector<std::shared_ptr<ButterflyNPC>> m_butterflyNPCs;
 };

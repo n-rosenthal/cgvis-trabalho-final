@@ -72,7 +72,7 @@ public:
             m_drawable->setScale(m_scale);
             m_drawable->model(ctx);
         }   else {
-            std::cerr << "GameObject (Tree): Drawable is null" << std::endl;
+            std::cerr << "GameObject (render): Drawable is null" << std::endl;
         }
     }
 

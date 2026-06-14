@@ -81,6 +81,7 @@ void Renderer::loadModels() const
     load(Assets::BIRD_MODEL);
     load(Assets::BIRD_STANDING_MODEL);
     load(Assets::LETTER);
+    load(Assets::BUTTERFLY);
 
     for(const auto& [name, obj] : g_VirtualScene)
     {
