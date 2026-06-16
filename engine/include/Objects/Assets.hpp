@@ -55,9 +55,11 @@ namespace Assets {
     extern TextureDefinition BIRD_STANDING;
     extern TextureDefinition BIRD_STANDING_LEFT;
 
+    //  NPCs
     extern TextureDefinition BUTTERFLY_ALBEDO_TRANSPARENCY;
     extern TextureDefinition BUTTERFLY_METTALLIC_SMOOTHNENESS;
     extern TextureDefinition BUTTERFLY_NORMAL;
+    extern TextureDefinition CARP_NORMAL;
 
     // =====================================================
     // MODELOS
@@ -73,7 +75,9 @@ namespace Assets {
 
     extern ModelDefinition HOUSE;
 
+    //  NPCs
     extern ModelDefinition BUTTERFLY;
+    extern ModelDefinition CARP;
 
     // =====================================================
     // CICLO DE VIDA

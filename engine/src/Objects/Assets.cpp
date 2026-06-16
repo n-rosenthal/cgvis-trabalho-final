@@ -29,9 +29,11 @@ namespace Assets {
     TextureDefinition BIRD_STANDING;
     TextureDefinition BIRD_STANDING_LEFT;
 
+    //  NPCs
     TextureDefinition BUTTERFLY_ALBEDO_TRANSPARENCY;
     TextureDefinition BUTTERFLY_METTALLIC_SMOOTHNENESS;
     TextureDefinition BUTTERFLY_NORMAL;
+    TextureDefinition CARP_NORMAL;
 
     // =====================================================
     // MODELOS
@@ -47,7 +49,9 @@ namespace Assets {
 
     ModelDefinition HOUSE;
 
+    //  NPCs
     ModelDefinition BUTTERFLY;
+    ModelDefinition CARP;
 };
 
 void Assets::LoadTextures() {
@@ -188,6 +192,20 @@ void Assets::LoadTextures() {
         LoadTextureImage(
             BUTTERFLY_NORMAL.file.c_str()
         );
+
+    // =====================================================
+    // CARP
+    // =====================================================
+
+    CARP_NORMAL.file =
+        asset_path(
+            "textures/carp/gltf_embedded_0.jpeg"
+        );
+    
+    CARP_NORMAL.id =
+        LoadTextureImage(
+            CARP_NORMAL.file.c_str()
+        );
 };
 
 void Assets::BuildModels() {
@@ -272,11 +290,6 @@ void Assets::BuildModels() {
 
     LETTER.textures = {};
 
-    for (auto const& mesh : BIRD_STANDING_MODEL.meshes)
-    {
-        printf("standing mesh: %s\n", mesh.c_str());
-    }
-
     // =====================================================
     //  Butterfly
     // =====================================================
@@ -300,8 +313,25 @@ void Assets::BuildModels() {
         &BUTTERFLY_ALBEDO_TRANSPARENCY,
     };
     
+    // =====================================================
+    // CARP
+    // =====================================================
+
+    CARP.objFile =
+        asset_path(
+            "models/carp/carp.obj"
+        );
     
-};
+    CARP.meshes = {
+        "Mesh_0"
+    };
+
+    CARP.textures = {
+        &CARP_NORMAL
+    };
+    
+    CARP.useTexture = true;
+}
 
 void Assets::LoadAll() {
     LoadTextures();

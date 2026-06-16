@@ -38,9 +38,9 @@ ObjModel::ObjModel(const char* filename, const char* basepath, bool triangulate)
         }
     }
 
-    printf("Base path: \"%s\"\n", basepath);
-    printf("Triangulate: %s\n", triangulate ? "true" : "false");
-    printf("Carregando...\n");
+    printf("Base path: \"%s\"...", basepath);
+    printf("Triangulate: %s...", triangulate ? "true" : "false");
+    printf("Carregando...");
 
     std::string warn;
     std::string err;
@@ -48,8 +48,6 @@ ObjModel::ObjModel(const char* filename, const char* basepath, bool triangulate)
 
     if (!err.empty())
         fprintf(stderr, "\n%s\n", err.c_str());
-    else { printf("Nenhum erro encontrado.\n"); }
-
     if (!ret)
         throw std::runtime_error("Erro ao carregar modelo.");
 
@@ -507,9 +505,6 @@ void PrintObjModelInfo(ObjModel* model)
 
 
 void DrawVirtualObject(const char* name) {
-    printf("DrawVirtualObject(%s)\n", name);
-    fflush(stdout);
-
     auto it = g_VirtualScene.find(name);
     if (it == g_VirtualScene.end()) {
         fprintf(stderr, "DrawVirtualObject: objeto '%s' não encontrado\n", name);
@@ -521,14 +516,7 @@ void DrawVirtualObject(const char* name) {
     if (obj.vertex_array_object_id == 0) {
         fprintf(stderr, "DrawVirtualObject: VAO inválido para '%s'\n", name);
         return;
-    }
-
-    printf(
-        "vao=%u first=%zu count=%zu\n",
-        it->second.vertex_array_object_id,
-        it->second.first_index,
-        it->second.num_indices
-    );
+    };
 
     // Envia bounding boxes (se os uniforms existirem)
     extern GLint g_bbox_min_uniform;

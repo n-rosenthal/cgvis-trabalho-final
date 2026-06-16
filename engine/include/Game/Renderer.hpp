@@ -24,7 +24,10 @@ class Camera;
 class Letter;
 class House;
 
+
+//  NPCs
 class ButterflyNPC;
+class CarpNPC;
 
 class Renderer {
 public:
@@ -46,7 +49,10 @@ public:
 
     void drawObjects(std::vector<std::shared_ptr<StaticObject>>& objects);
 
+
+    //  NPCs
     void drawButterflyNPC(ButterflyNPC& npc);
+    void drawCarpNPC(CarpNPC& npc);
 
     // ── Utilitários ───────────────────────────────────────────────────────────
     void setWireframe(bool enabled);
@@ -72,7 +78,9 @@ public:
 
         OBJ_HOUSE       = 11,
 
-        OBJ_BUTTERFLY   = 12
+        //  NPCs
+        OBJ_BUTTERFLY   = 12,
+        OBJ_CARP        = 13
     };
 
     //  Acessadores para matrizes de view e projeção

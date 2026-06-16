@@ -20,6 +20,7 @@
 #include "Objects/House.hpp"
 
 #include "Bezier/Butterfly/ButterflyNPC.hpp"
+#include "Bezier/Carp/CarpNPC.hpp"
 
 #include "Renderer/ShaderLoader.hpp"
 #include "Loaders/TextureLoader.hpp"
@@ -67,7 +68,8 @@ void Renderer::init(GLFWwindow* window){
 
 void Renderer::loadModels() const
 {
-    auto load = [](const ModelDefinition& model) {
+    auto load = [](const ModelDefinition& model)
+    {
         ObjModel obj(model.objFile.c_str());
 
         ComputeNormals(&obj);
@@ -84,11 +86,19 @@ void Renderer::loadModels() const
     load(Assets::BIRD_STANDING_MODEL);
     load(Assets::LETTER);
     load(Assets::BUTTERFLY);
+    load(Assets::CARP);
+
+    printf("\n=== VIRTUAL SCENE ===\n");
 
     for(const auto& [name, obj] : g_VirtualScene)
     {
-        printf("Mesh: %s\n", name.c_str());
+        printf(
+            "Mesh: %s\n",
+            name.c_str()
+        );
     }
+
+    printf("=====================\n");
 }
 
 void Renderer::shutdown() {}
@@ -190,6 +200,14 @@ void Renderer::drawHouses(
 void Renderer::drawButterflyNPC(ButterflyNPC& npc) {
     npc.render(makeContext(OBJ_BUTTERFLY));
 }
+
+void Renderer::drawCarpNPC(CarpNPC& npc)
+{
+    npc.render(
+        makeContext(OBJ_CARP)
+    );
+}
+
 
 void Renderer::setWireframe(bool enabled) {
     glPolygonMode(GL_FRONT_AND_BACK, enabled ? GL_LINE : GL_FILL);

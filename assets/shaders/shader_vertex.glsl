@@ -7,6 +7,7 @@ layout(location = 3) in vec4 vertex_color;   // vec4 agora (alpha usado pela ág
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform vec4 objectColor;
 
 out vec3 fragPosition;
 out vec3 fragNormal;
@@ -19,6 +20,9 @@ void main()
     fragPosition   = worldPos.xyz;
     fragNormal     = mat3(transpose(inverse(model))) * vertex_normal;
     fragTexcoord   = vertex_texcoord;
-    fragColor      = vertex_color;
+    if(vertex_color.a > 0.0)
+        fragColor = vertex_color;
+    else
+        fragColor = objectColor;
     gl_Position    = projection * view * worldPos;
 }

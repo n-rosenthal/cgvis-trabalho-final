@@ -24,14 +24,30 @@ static float distancePointSegment(glm::vec3 p, glm::vec3 a, glm::vec3 b) {
  * @brief   Cria os objetos do jogo
  */
 void Scene::build() {
+    //  Terreno
     buildTerrain();
+
+    //  Pássaro
     m_bird.emplace();
+
+    //  Árvores
     buildTrees();
+
+    //  Rochas
     buildRocks();
+
+    //  Anéis
     buildRings();
+
+    //  Carta
     buildLetter();
+
+    //  Casas
     buildHouses();
+
+    //  NPCs
     buildButterflyNPCs();
+    buildCarpNPCs();
 }
 
 /**
@@ -96,6 +112,10 @@ void Scene::update(float dt, GLFWwindow* w) {
 
     for(auto& npc : m_butterflyNPCs) {
         npc->update(dt);
+    }
+
+    for(auto& carp : m_carpNPCs) {
+        carp->update(dt);
     }
 }
 
@@ -288,6 +308,10 @@ void Scene::draw(Renderer& r) {
     for(auto& npc : m_butterflyNPCs) {
         r.drawButterflyNPC(*npc);
     }
+
+    for(auto& npc : m_carpNPCs) {
+        r.drawCarpNPC(*npc);
+    }
 }
 
 
@@ -329,6 +353,16 @@ void Scene::buildRocks() {
     };
 };
 
+
+/**
+ * @brief       Constrói as árvores na cena virtual
+ * @details     Existem N tipos de árvores distintas (TREE_[1..N])
+ *              Para as árvores TREE_1, são definidas posições absolutas no terreno
+ *                  estas árvores formam um =anel elíptico= ao redor do lago central
+ *                  da cena virtual
+ *              
+ * 
+ */
 void Scene::buildTrees()
 {
     glm::vec3 lake_center(0.0f);
@@ -465,4 +499,41 @@ void Scene::buildButterflyNPCs()
     m_butterflyNPCs.push_back(
         butterfly
     );
+}
+
+void Scene::buildCarpNPCs()
+{
+    BezierPath path;
+
+    path.addPoint(glm::vec3(-20,1,-15));
+    path.addPoint(glm::vec3(-10,3, 20));
+    path.addPoint(glm::vec3( 10,3, 20));
+    path.addPoint(glm::vec3( 20,1,-15));
+    path.addPoint(glm::vec3( 10,2,-25));
+    path.addPoint(glm::vec3(-10,2,-25));
+    path.addPoint(glm::vec3(-20,1,-15));
+
+    for(int i = 0; i < 5; i++)
+    {
+        auto carp =
+            std::make_shared<CarpNPC>(
+                glm::vec3(
+                    i * 2.0f,
+                    0.0f,
+                    i * 1.5f
+                ),
+                glm::vec3(0.0f),
+                glm::vec3(1.5f)
+            );
+
+        carp->setPath(
+            std::make_shared<BezierPath>(
+                path
+            )
+        );
+
+        m_carpNPCs.push_back(
+            carp
+        );
+    }
 }
