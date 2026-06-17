@@ -22,8 +22,6 @@ class ProceduralRock;
 class Ring;
 class Camera;
 class Letter;
-class House;
-
 
 //  NPCs
 class ButterflyNPC;
@@ -45,7 +43,6 @@ public:
     void drawRocks  (std::vector<std::shared_ptr<ProceduralRock>>& rocks);
     void drawRings  (std::vector<std::shared_ptr<Ring>>& rings);
     void drawLetter (Letter& letter);
-    void drawHouses (const std::vector<std::shared_ptr<House>>& houses);
 
     void drawObjects(std::vector<std::shared_ptr<StaticObject>>& objects);
 

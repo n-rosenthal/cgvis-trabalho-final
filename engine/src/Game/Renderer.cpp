@@ -17,7 +17,6 @@
 #include "Objects/ProceduralRock.hpp"
 #include "Objects/Ring.hpp"
 #include "Objects/Letter.hpp"
-#include "Objects/House.hpp"
 
 #include "Bezier/Butterfly/ButterflyNPC.hpp"
 #include "Bezier/Carp/CarpNPC.hpp"
@@ -87,6 +86,8 @@ void Renderer::loadModels() const
     load(Assets::LETTER);
     load(Assets::BUTTERFLY);
     load(Assets::CARP);
+    load(Assets::HOUSE);
+    load(Assets::MAILBOX);
 
     printf("\n=== VIRTUAL SCENE ===\n");
 
@@ -189,13 +190,6 @@ void Renderer::drawLetter(Letter& letter) {
     letter.render(makeContext(OBJ_LETTER));
 }
 
-void Renderer::drawHouses(
-    const std::vector<std::shared_ptr<House>>& houses
-)
-{
-    for(auto& house : houses)
-        house->render(makeContext(OBJ_HOUSE));
-}
 
 void Renderer::drawButterflyNPC(ButterflyNPC& npc) {
     npc.render(makeContext(OBJ_BUTTERFLY));

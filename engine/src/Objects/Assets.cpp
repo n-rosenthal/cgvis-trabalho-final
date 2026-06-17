@@ -29,6 +29,12 @@ namespace Assets {
     TextureDefinition BIRD_STANDING;
     TextureDefinition BIRD_STANDING_LEFT;
 
+    TextureDefinition HOUSE_NORMAL;
+
+    TextureDefinition MAILBOX_COLOR;
+    TextureDefinition MAILBOX_METALLIC;
+    TextureDefinition MAILBOX_NORMAL;
+
     //  NPCs
     TextureDefinition BUTTERFLY_ALBEDO_TRANSPARENCY;
     TextureDefinition BUTTERFLY_METTALLIC_SMOOTHNENESS;
@@ -48,6 +54,7 @@ namespace Assets {
     ModelDefinition BIRD_STANDING_MODEL;
 
     ModelDefinition HOUSE;
+    ModelDefinition MAILBOX;
 
     //  NPCs
     ModelDefinition BUTTERFLY;
@@ -157,6 +164,53 @@ void Assets::LoadTextures() {
     BIRD_STANDING_LEFT.id =
         LoadTextureImage(
             BIRD_STANDING_LEFT.file.c_str()
+        );
+
+
+    // =====================================================
+    // HOUSE
+    // =====================================================
+    HOUSE_NORMAL.file =
+        asset_path(
+            "textures/house/Material__23_baseColor.jpeg"
+        );
+
+    HOUSE_NORMAL.id =
+        LoadTextureImage(
+            HOUSE_NORMAL.file.c_str()
+        );
+
+    // =====================================================
+    // MAILBOX
+    // =====================================================
+    MAILBOX_COLOR.file =
+        asset_path(
+            "textures/mailbox/M_Mailbox_baseColor.png"
+        );
+
+    MAILBOX_COLOR.id =
+        LoadTextureImage(
+            MAILBOX_COLOR.file.c_str()
+        );
+    
+    MAILBOX_METALLIC.file =
+        asset_path(
+            "textures/mailbox/M_Mailbox_metallicRoughness.png"
+        );
+    
+    MAILBOX_METALLIC.id =
+        LoadTextureImage(
+            MAILBOX_METALLIC.file.c_str()
+        );
+    
+    MAILBOX_NORMAL.file =
+        asset_path(
+            "textures/mailbox/M_Mailbox_normal.png"
+        );
+    
+    MAILBOX_NORMAL.id =
+        LoadTextureImage(
+            MAILBOX_NORMAL.file.c_str()
         );
 
     // =====================================================
@@ -289,6 +343,49 @@ void Assets::BuildModels() {
     };
 
     LETTER.textures = {};
+
+
+    // =====================================================
+    // HOUSE
+    // =====================================================
+
+    HOUSE.objFile =
+        asset_path(
+            "models/house/house.obj"
+        );
+
+    HOUSE.meshes =
+    {
+        "Object_3"
+    };
+
+    HOUSE.textures =
+    {
+        &HOUSE_NORMAL
+    };
+
+    HOUSE.useTexture = true;
+
+    // =====================================================
+    // MAILBOX
+    // =====================================================
+
+    MAILBOX.objFile =
+        asset_path(
+            "models/mailbox/mailbox.obj"
+        );
+
+    MAILBOX.meshes =
+    {
+        "Object_3"
+    };
+
+    MAILBOX.textures =
+    {
+        &MAILBOX_NORMAL
+    };
+
+    MAILBOX.useTexture = true;
 
     // =====================================================
     //  Butterfly

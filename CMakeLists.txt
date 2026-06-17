@@ -50,7 +50,6 @@ set(SOURCES
 
   engine/src/Objects/Drawables/RingDrawable.cpp
   engine/src/Objects/Drawables/RockDrawable.cpp
-  engine/src/Objects/Drawables/HouseDrawable.cpp
 
   # GameObjects: parte lógica, física dos objetos
   engine/src/Game/Bird.cpp
@@ -58,6 +57,7 @@ set(SOURCES
   engine/src/Objects/ProceduralRock.cpp
   engine/src/Objects/Building.cpp
   engine/src/Objects/Letter.cpp
+  engine/src/Objects/Mailbox.cpp
 
   # Curvas de Bezier e NPCs
   engine/src/Bezier/BezierPath.cpp

@@ -43,7 +43,10 @@ void Scene::build() {
     buildLetter();
 
     //  Casas
-    buildHouses();
+    buildHouse();
+
+    //  Mailbox
+    buildMailbox();
 
     //  NPCs
     buildButterflyNPCs();
@@ -302,8 +305,6 @@ void Scene::draw(Renderer& r) {
 
     r.drawObjects(m_staticObjects);
 
-    r.drawHouses(m_houses);
-
     // npcs
     for(auto& npc : m_butterflyNPCs) {
         r.drawButterflyNPC(*npc);
@@ -414,6 +415,32 @@ void Scene::buildTrees()
 
 
 /**
+ * @brief   Constrói a casa principal do jogo
+ */
+void Scene::buildHouse() {
+    auto house =
+    std::make_shared<StaticObject>(
+        Assets::HOUSE,
+        glm::vec3(-25.0f, 0.0f, -25.0f),
+        glm::vec3(0.0f),
+        glm::vec3(2.0f)
+    );
+
+    m_staticObjects.push_back(house);
+}
+
+/**
+ * @brief   Constrói a mailbox, objetivo
+ */
+void Scene::buildMailbox() {
+    m_mailbox = std::make_shared<Mailbox>(
+        glm::vec3(80.0f, 0.0f, 80.0f),
+        glm::vec3(0.0f),
+        glm::vec3(1.0f)
+    );
+}
+
+/**
  * @brief   Constrói os anéis de objetivo do jogo
  */
 void Scene::buildRings() {
@@ -455,26 +482,6 @@ void Scene::buildLetter()
         glm::vec3(0.0f);
 }
 
-void Scene::buildHouses() {
-    auto casa1 = std::make_shared<House>(
-        glm::vec3(
-            -128.0f,
-            m_terrain->getHeight(-128.0f, 128.0f) - 5.0f,
-            128.0f
-        )
-    );
-
-    auto casa2 = std::make_shared<House>(
-        glm::vec3(
-            128.0f,
-            m_terrain->getHeight(128.0f, -128.0f) - 5.0f,
-            -128.0f
-        )
-    );
-    
-    m_houses.push_back(casa1);
-    m_houses.push_back(casa2);
-};
 
 void Scene::buildButterflyNPCs()
 {

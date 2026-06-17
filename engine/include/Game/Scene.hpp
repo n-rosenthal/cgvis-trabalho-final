@@ -29,7 +29,8 @@
 
 #include "Objects/Ring.hpp"
 #include "Objects/ProceduralRock.hpp"
-#include "Objects/House.hpp"
+
+#include "Objects/Mailbox.hpp"
 
 //  Objetos dinâmicos: NPCs
 #include "Bezier/BezierMover.hpp"
@@ -71,10 +72,11 @@ public:
     //  Métodos de construção dos objetos
     void buildTerrain();
     void buildTrees();
+    void buildHouse();
     void buildRocks();
     void buildRings();
     void buildLetter();
-    void buildHouses();
+    void buildMailbox();
 
     void buildButterflyNPCs();
     void buildCarpNPCs();
@@ -93,17 +95,18 @@ public:
 
 private:
     // optional evita exigir construtor padrão de Terrain e Bird
-    std::optional<Bird>                         m_bird;
-    std::unique_ptr<Terrain>                    m_terrain;
-    Camera                                      m_camera;
+    std::optional<Bird>                             m_bird;
+    std::unique_ptr<Terrain>                        m_terrain;
+    Camera                                          m_camera;
 
-    //  Vetor de objetos estáticos
-    std::vector<std::shared_ptr<StaticObject>>  m_staticObjects;
+    //  Vetor de objetos estáticos (árvores, casa)
+    std::vector<std::shared_ptr<StaticObject>>      m_staticObjects;
 
-    std::vector<std::shared_ptr<Ring>>           m_rings;
-    std::vector<std::shared_ptr<ProceduralRock>> m_rocks;
-    std::shared_ptr<Letter>                      m_letter;
-    std::vector<std::shared_ptr<House>>          m_houses;
+    std::vector<std::shared_ptr<Ring>>              m_rings;
+    std::vector<std::shared_ptr<ProceduralRock>>    m_rocks;
+    std::shared_ptr<Letter>                         m_letter;
+
+    std::shared_ptr<Mailbox>                        m_mailbox;
 
     //  Estado atual da carta
     LetterState m_letterState   = LetterState::OnGround;

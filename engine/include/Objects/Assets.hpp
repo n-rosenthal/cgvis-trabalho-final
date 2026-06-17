@@ -55,6 +55,12 @@ namespace Assets {
     extern TextureDefinition BIRD_STANDING;
     extern TextureDefinition BIRD_STANDING_LEFT;
 
+    extern TextureDefinition HOUSE_NORMAL;
+
+    extern TextureDefinition MAILBOX_COLOR;
+    extern TextureDefinition MAILBOX_METALLIC;
+    extern TextureDefinition MAILBOX_NORMAL;
+
     //  NPCs
     extern TextureDefinition BUTTERFLY_ALBEDO_TRANSPARENCY;
     extern TextureDefinition BUTTERFLY_METTALLIC_SMOOTHNENESS;
@@ -74,6 +80,7 @@ namespace Assets {
     extern ModelDefinition BIRD_STANDING_MODEL;
 
     extern ModelDefinition HOUSE;
+    extern ModelDefinition MAILBOX;
 
     //  NPCs
     extern ModelDefinition BUTTERFLY;
