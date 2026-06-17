@@ -11,13 +11,21 @@
  *          ou noturna
  */
 void Application::updateDayNight() {
-    time_t now = time(0);
-    struct tm* t = localtime(&now);
-    int hour = t->tm_hour;
+    static bool isDayTime = true;
+    static float lastCheckTime = -1.0f;
+    float current = (float)glfwGetTime();
 
-    // Dia = entre 6h e 18h
-    bool actualDayTime = !(hour >= 18 || hour < 6);
-    bool isDayTime = g_ManualDayNight ? g_DayTime : actualDayTime;
+    // Check system time only once per second to avoid expensive system calls every frame
+    if (current - lastCheckTime > 1.0f) {
+        lastCheckTime = current;
+        time_t now = time(0);
+        struct tm* t = localtime(&now);
+        int hour = t->tm_hour;
+
+        // Dia = entre 6h e 18h
+        bool actualDayTime = !(hour >= 18 || hour < 6);
+        isDayTime = g_ManualDayNight ? g_DayTime : actualDayTime;
+    }
 
     if (isDayTime) glClearColor(0.9f, 0.9f, 1.0f, 1.0f);
     else           glClearColor(0.1f, 0.1f, 0.2f, 1.0f);

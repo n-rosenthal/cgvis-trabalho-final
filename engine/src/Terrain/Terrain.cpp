@@ -380,7 +380,35 @@ void Terrain::buildMesh()
 }
 
 // Also update getHeight to use full pipeline
-float Terrain::getHeight(float x, float z) const { return sampleHeightFull(x, z); }
+float Terrain::getHeight(float x, float z) const {
+    // Optimization: Bilinear interpolation from the precomputed mesh
+    float gridX = (x + m_halfW) / m_spacing;
+    float gridZ = (z + m_halfD) / m_spacing;
+
+    gridX = glm::clamp(gridX, 0.0f, (float)m_width);
+    gridZ = glm::clamp(gridZ, 0.0f, (float)m_depth);
+
+    int x0 = (int)std::floor(gridX);
+    int z0 = (int)std::floor(gridZ);
+    int x1 = std::min(x0 + 1, m_width);
+    int z1 = std::min(z0 + 1, m_depth);
+
+    float tx = gridX - (float)x0;
+    float tz = gridZ - (float)z0;
+
+    auto getVertY = [&](int ix, int iz) {
+        return m_vertices[iz * (m_width + 1) + ix].position.y;
+    };
+
+    float y00 = getVertY(x0, z0);
+    float y10 = getVertY(x1, z0);
+    float y01 = getVertY(x0, z1);
+    float y11 = getVertY(x1, z1);
+
+    float y0 = y00 + tx * (y10 - y00);
+    float y1 = y01 + tx * (y11 - y01);
+    return y0 + tz * (y1 - y0);
+}
 
 // ============================================================================
 //  Normal computation
@@ -630,9 +658,9 @@ void Terrain::draw(const DrawContext& /*ctx*/)
 glm::vec3 Terrain::getNormal(float x, float z) const
 {
     float eps = m_spacing * 0.5f;
-    float r = sampleHeightFull(x + eps, z);
-    float l = sampleHeightFull(x - eps, z);
-    float f = sampleHeightFull(x, z + eps);
-    float b = sampleHeightFull(x, z - eps);
+    float r = getHeight(x + eps, z);
+    float l = getHeight(x - eps, z);
+    float f = getHeight(x, z + eps);
+    float b = getHeight(x, z - eps);
     return glm::normalize(glm::vec3(l - r, 2.f * eps, b - f));
 }
