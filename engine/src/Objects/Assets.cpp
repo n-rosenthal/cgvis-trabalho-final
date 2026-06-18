@@ -251,15 +251,15 @@ void Assets::LoadTextures() {
     // CARP
     // =====================================================
 
-    CARP_NORMAL.file =
-        asset_path(
-            "textures/carp/gltf_embedded_0.jpeg"
-        );
+    // CARP_NORMAL.file =
+    //     asset_path(
+    //         "textures/carp/gltf_embedded_0.jpeg"
+    //     );
     
-    CARP_NORMAL.id =
-        LoadTextureImage(
-            CARP_NORMAL.file.c_str()
-        );
+    // CARP_NORMAL.id =
+    //     LoadTextureImage(
+    //         CARP_NORMAL.file.c_str()
+    //     );
 };
 
 void Assets::BuildModels() {
@@ -414,20 +414,20 @@ void Assets::BuildModels() {
     // CARP
     // =====================================================
 
-    CARP.objFile =
-        asset_path(
-            "models/carp/carp.obj"
-        );
+    // CARP.objFile =
+    //     asset_path(
+    //         "models/carp/carp.obj"
+    //     );
     
-    CARP.meshes = {
-        "Mesh_0"
-    };
+    // CARP.meshes = {
+    //     "Mesh_0"
+    // };
 
-    CARP.textures = {
-        &CARP_NORMAL
-    };
+    // CARP.textures = {
+    //     &CARP_NORMAL
+    // };
     
-    CARP.useTexture = true;
+    // CARP.useTexture = true;
 }
 
 void Assets::LoadAll() {

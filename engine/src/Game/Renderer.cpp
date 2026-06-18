@@ -87,23 +87,82 @@ void Renderer::loadModels() const
 {
     auto load = [](const ModelDefinition& model)
     {
-        ObjModel obj(model.objFile.c_str());
+        glfwPollEvents();
 
-        ComputeNormals(&obj);
-        BuildTrianglesAndAddToVirtualScene(&obj);
+        double start = glfwGetTime();
 
         printf(
-            "Loaded %s\n",
+            "\n[LOAD] %s\n",
             model.objFile.c_str()
         );
+
+        ObjModel obj(model.objFile.c_str());
+
+        double afterLoad = glfwGetTime();
+
+        printf(
+            "  OBJ parse: %.3f s\n",
+            afterLoad - start
+        );
+
+        glfwPollEvents();
+
+        ComputeNormals(&obj);
+
+        double afterNormals = glfwGetTime();
+
+        printf(
+            "  Normals: %.3f s\n",
+            afterNormals - afterLoad
+        );
+
+        glfwPollEvents();
+
+        BuildTrianglesAndAddToVirtualScene(&obj);
+
+        double afterGPU = glfwGetTime();
+
+        printf(
+            "  Scene build: %.3f s\n",
+            afterGPU - afterNormals
+        );
+
+        printf(
+            "  Total: %.3f s\n",
+            afterGPU - start
+        );
+
+        printf(
+            "  Vertices: %zu\n",
+            obj.attrib.vertices.size() / 3
+        );
+
+        printf(
+            "  Normals: %zu\n",
+            obj.attrib.normals.size() / 3
+        );
+
+        printf(
+            "  TexCoords: %zu\n",
+            obj.attrib.texcoords.size() / 2
+        );
+
+        printf(
+            "  Shapes: %zu\n",
+            obj.shapes.size()
+        );
+
+        glfwPollEvents();
     };
+
+    double totalStart = glfwGetTime();
 
     load(Assets::TREE_1);
     load(Assets::BIRD_MODEL);
     load(Assets::BIRD_STANDING_MODEL);
     load(Assets::LETTER);
     load(Assets::BUTTERFLY);
-    load(Assets::CARP);
+    // load(Assets::CARP);
     load(Assets::HOUSE);
     load(Assets::MAILBOX);
 
@@ -118,6 +177,11 @@ void Renderer::loadModels() const
     }
 
     printf("=====================\n");
+
+    printf(
+        "\nTotal model loading time: %.3f s\n",
+        glfwGetTime() - totalStart
+    );
 }
 
 void Renderer::shutdown() {}

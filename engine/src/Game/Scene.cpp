@@ -319,9 +319,9 @@ void Scene::draw(Renderer& r) {
         r.drawButterflyNPC(*npc);
     }
 
-    for(auto& npc : m_carpNPCs) {
-        r.drawCarpNPC(*npc);
-    }
+    // for(auto& npc : m_carpNPCs) {
+    //     r.drawCarpNPC(*npc);
+    // }
 }
 
 
@@ -524,37 +524,37 @@ void Scene::buildButterflyNPCs()
 
 void Scene::buildCarpNPCs()
 {
-    BezierPath path;
+//     BezierPath path;
 
-    path.addPoint(glm::vec3(-20,1,-15));
-    path.addPoint(glm::vec3(-10,3, 20));
-    path.addPoint(glm::vec3( 10,3, 20));
-    path.addPoint(glm::vec3( 20,1,-15));
-    path.addPoint(glm::vec3( 10,2,-25));
-    path.addPoint(glm::vec3(-10,2,-25));
-    path.addPoint(glm::vec3(-20,1,-15));
+//     path.addPoint(glm::vec3(-20,1,-15));
+//     path.addPoint(glm::vec3(-10,3, 20));
+//     path.addPoint(glm::vec3( 10,3, 20));
+//     path.addPoint(glm::vec3( 20,1,-15));
+//     path.addPoint(glm::vec3( 10,2,-25));
+//     path.addPoint(glm::vec3(-10,2,-25));
+//     path.addPoint(glm::vec3(-20,1,-15));
 
-    for(int i = 0; i < 5; i++)
-    {
-        auto carp =
-            std::make_shared<CarpNPC>(
-                glm::vec3(
-                    i * 2.0f,
-                    0.0f,
-                    i * 1.5f
-                ),
-                glm::vec3(0.0f),
-                glm::vec3(1.5f)
-            );
+//     for(int i = 0; i < 5; i++)
+//     {
+//         auto carp =
+//             std::make_shared<CarpNPC>(
+//                 glm::vec3(
+//                     i * 2.0f,
+//                     0.0f,
+//                     i * 1.5f
+//                 ),
+//                 glm::vec3(0.0f),
+//                 glm::vec3(1.5f)
+//             );
 
-        carp->setPath(
-            std::make_shared<BezierPath>(
-                path
-            )
-        );
+//         carp->setPath(
+//             std::make_shared<BezierPath>(
+//                 path
+//             )
+//         );
 
-        m_carpNPCs.push_back(
-            carp
-        );
-    }
+//         m_carpNPCs.push_back(
+//             carp
+//         );
+//     }
 }

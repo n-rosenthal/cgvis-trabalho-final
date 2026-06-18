@@ -48,8 +48,20 @@ void Application::updateDayNight() {
  */
 void Application::init(const char* title, int w, int h) {
     m_window.init(title, w, h);
+    
+    double start = glfwGetTime();
     m_renderer.init(m_window.get());    // carrega shaders, texturas, modelos OBJ
-    m_scene.build();                    // constrói terreno, objetos, etc.
+    printf(
+        "Renderer init: %.3f s\n",
+        glfwGetTime() - start
+    );
+
+    start = glfwGetTime();
+    m_scene.build();
+    printf(
+        "Scene build: %.3f s\n",
+        glfwGetTime() - start
+    );
 }
 
 /**

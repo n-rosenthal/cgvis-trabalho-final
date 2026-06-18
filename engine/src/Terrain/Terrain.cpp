@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "Terrain/Terrain.hpp"
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -686,6 +688,16 @@ void Terrain::buildMesh()
             m_indices.push_back(tl); m_indices.push_back(bl); m_indices.push_back(tr);
             m_indices.push_back(tr); m_indices.push_back(bl); m_indices.push_back(br);
         }
+
+    std::cout
+        << "Terrain vertices: "
+        << m_vertices.size()
+        << "\n";
+
+    std::cout
+        << "Terrain triangles: "
+        << m_indices.size() / 3
+        << "\n";
 }
 
 float Terrain::getHeight(float x, float z) const {
@@ -858,6 +870,11 @@ void Terrain::buildWater()
             m_waterIndices.push_back(br);
         }
     }
+
+    //  print water info
+    std::cout
+        << "Water vertices: " << m_waterVertices.size() << "\n"
+        << "Water indices:  " << m_waterIndices.size() << "\n";
 }
 
 // ============================================================================
