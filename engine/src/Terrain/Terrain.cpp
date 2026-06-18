@@ -107,8 +107,8 @@ float Terrain::borderMountains(float x, float z) const
     float nz = std::abs(z) / m_halfD;
     float edgeDist = std::max(nx, nz);
 
-    // Mountains start at edgeDist > 0.30 (wide band) and peak at the wall.
-    float borderFactor = glm::clamp((edgeDist - 0.30f) / 0.70f, 0.0f, 1.0f);
+    // Mountains start at edgeDist > 0.55 (wider field) and peak at the wall.
+    float borderFactor = glm::clamp((edgeDist - 0.55f) / 0.45f, 0.0f, 1.0f);
     // Gentle exponent — the mountain zone is wide and consistently tall
     borderFactor = std::pow(borderFactor, 1.2f);
 
@@ -132,8 +132,8 @@ float Terrain::borderMountains(float x, float z) const
     float angle  = std::atan2(z, x);
     float aspect = 0.85f + 0.15f * std::cos(angle * 2.0f);
 
-    // Peak ≈ 80u; minimum at wall ≈ 18u — very visible even from far away
-    return borderFactor * aspect * (58.0f * n + 18.0f);
+    // Peak ≈ 116u; minimum at wall ≈ 18u — very visible even from far away
+    return borderFactor * aspect * (98.0f * n + 18.0f);
 }
 
 // ============================================================================
@@ -185,8 +185,8 @@ float Terrain::innerField(float x, float z) const
     float nz = std::abs(z) / m_halfD;
     float edgeDist = std::max(nx, nz);
 
-    // Only active in the flat middle zone [0, 0.45]
-    float fieldFactor = glm::clamp(1.0f - edgeDist / 0.45f, 0.0f, 1.0f);
+    // Only active in the flat middle zone [0, 0.60]
+    float fieldFactor = glm::clamp(1.0f - edgeDist / 0.60f, 0.0f, 1.0f);
     fieldFactor = fieldFactor * fieldFactor;
 
     // Elliptic distance – suppress hills near the lake shore

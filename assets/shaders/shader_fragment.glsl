@@ -10,6 +10,10 @@ uniform int  object_id;
 uniform vec4 bbox_min;
 uniform vec4 bbox_max;
 uniform sampler2D diffuseTexture;
+uniform sampler2D texSand;
+uniform sampler2D texGrass;
+uniform sampler2D texRock;
+uniform sampler2D texSnow;
 uniform bool useTexture;
 
 out vec4 color;
@@ -40,7 +44,29 @@ void main()
     // =========================================================
     if (object_id == PLANE)
     {
-        Kd0   = fragColor.rgb;
+        vec2 tiledUV = fragTexcoord * 60.0; // Repeat the textures
+
+        vec4 colSand = texture(texSand, tiledUV);
+        vec4 colGrass = texture(texGrass, tiledUV);
+        vec4 colRock = texture(texRock, tiledUV);
+        vec4 colSnow = texture(texSnow, tiledUV);
+
+        float y = fragPosition.y;
+
+        float t1 = smoothstep(-2.0, 4.0, y);
+        float t2 = smoothstep(20.0, 40.0, y);
+        float t3 = smoothstep(75.0, 95.0, y);
+
+        vec3 colorMix = mix(colSand.rgb, colGrass.rgb, t1);
+        colorMix = mix(colorMix, colRock.rgb, t2);
+        colorMix = mix(colorMix, colSnow.rgb, t3);
+
+        // Mix in rock based on slope
+        float slope = 1.0 - max(dot(N, vec3(0.0, 1.0, 0.0)), 0.0);
+        float rockAmount = smoothstep(0.25, 0.5, slope);
+        colorMix = mix(colorMix, colRock.rgb, rockAmount * (1.0 - t3));
+
+        Kd0 = colorMix;
         color = vec4(Kd0 * (ambient + lambert), 1.0);
         color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
         return;

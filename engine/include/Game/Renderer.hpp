@@ -94,6 +94,11 @@ private:
     glm::mat4 m_view              = glm::mat4(1.0f);
     glm::mat4 m_projection        = glm::mat4(1.0f);
 
+    GLuint    m_texSand           = 0;
+    GLuint    m_texGrass          = 0;
+    GLuint    m_texRock           = 0;
+    GLuint    m_texSnow           = 0;
+
     // Helpers
     void        bindProgram()                          const;
     void        setObjectId(ObjectId id)               const;

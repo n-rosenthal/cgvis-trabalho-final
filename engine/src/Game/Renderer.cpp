@@ -60,6 +60,11 @@ void Renderer::init(GLFWwindow* window){
 
     TextRendering_Init(window);
 
+    m_texSand = LoadTextureImage("assets/textures/terrain/Texturelabs_Soil_125M.jpg");
+    m_texGrass = LoadTextureImage("assets/textures/terrain/Texturelabs_Soil_135M.jpg");
+    m_texRock = LoadTextureImage("assets/textures/terrain/Texturelabs_Stone_137M.jpg");
+    m_texSnow = LoadTextureImage("assets/textures/terrain/Texturelabs_Water_156M.jpg");
+
     glEnable(GL_DEPTH_TEST);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
@@ -166,6 +171,24 @@ void Renderer::drawTerrain(
     Terrain& terrain
 )
 {
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_texSand);
+    glUniform1i(glGetUniformLocation(m_program, "texSand"), 1);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, m_texGrass);
+    glUniform1i(glGetUniformLocation(m_program, "texGrass"), 2);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, m_texRock);
+    glUniform1i(glGetUniformLocation(m_program, "texRock"), 3);
+
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, m_texSnow);
+    glUniform1i(glGetUniformLocation(m_program, "texSnow"), 4);
+
+    glActiveTexture(GL_TEXTURE0);
+
     terrain.model(
         makeContext(OBJ_PLANE)
     );
