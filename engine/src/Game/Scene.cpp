@@ -9,6 +9,8 @@
 #include "audio/AudioManager.hpp"
 #include "Collision/CollisionSystem.hpp"
 
+#include "Game/Window.hpp" // varr. depuração LETTER
+
 extern SoundManager g_Sound;
 
 // distancePointSegment — mantida aqui, fora do main
@@ -35,7 +37,7 @@ void Scene::build() {
     buildTrees();
 
     //  Rochas
-    buildRocks();
+    // buildRocks();
 
     //  Anéis
     buildRings();
@@ -64,7 +66,11 @@ void Scene::build() {
  */
 void Scene::update(float dt, GLFWwindow* w) {
     m_bird->update(dt, w);
-
+    
+    //  depuração de LETTER
+    g_DebugLetterPosition = m_letter->getPosition();
+    g_DebugLetterRotation = m_letter->getRotation();
+    
     // --------------------------------------------------
     // Soltar carta (tecla G)
     // --------------------------------------------------
@@ -300,7 +306,7 @@ void Scene::draw(Renderer& r) {
     }
 
     r.drawTerrain(*m_terrain);
-    r.drawRocks(m_rocks);
+    // r.drawRocks(m_rocks);
     r.drawRings(m_rings);
     if (m_letter) r.drawLetter(*m_letter);
 

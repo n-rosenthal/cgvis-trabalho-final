@@ -688,7 +688,6 @@ void Terrain::buildMesh()
         }
 }
 
-// Also update getHeight to use full pipeline
 float Terrain::getHeight(float x, float z) const {
     // Optimization: Bilinear interpolation from the precomputed mesh
     float gridX = (x + m_halfW) / m_spacing;

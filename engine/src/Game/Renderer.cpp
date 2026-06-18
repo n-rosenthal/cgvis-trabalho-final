@@ -41,7 +41,9 @@ namespace {
 // ── Ciclo de vida ─────────────────────────────────────────────────────────────
 
 void Renderer::init(GLFWwindow* window){
+    glfwPollEvents();
     LoadShadersFromFiles();
+    glfwPollEvents();
 
     m_program         = g_GpuProgramID;
     m_modelUniform    = g_model_uniform;
@@ -55,19 +57,27 @@ void Renderer::init(GLFWwindow* window){
         exit(1);
     }
 
+    glfwPollEvents();
     Assets::LoadAll();
-
+    glfwPollEvents();
+    
     loadModels();
-
+    glfwPollEvents();
+    
     TextRendering_Init(window);
-
+    glfwPollEvents();
+    
     //  O segundo parâmetro de `LoadTextureImage` indica se a textura deve ser repetida ou se deve ser clamped.
     //  true: repetir, false: clamp-to-the-edges
     m_texSand = LoadTextureImage("assets/textures/terrain/Texturelabs_Soil_126M.jpg", true);
+    glfwPollEvents();
     m_texGrass = LoadTextureImage("assets/textures/terrain/Texturelabs_Soil_135M.jpg", true);
+    glfwPollEvents();
     m_texRock = LoadTextureImage("assets/textures/terrain/Texturelabs_Stone_137M.jpg", true);
+    glfwPollEvents();
     m_texSnow = LoadTextureImage("assets/textures/terrain/Texturelabs_Water_156M.jpg", true);
-
+    glfwPollEvents();
+    
     glEnable(GL_DEPTH_TEST);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);

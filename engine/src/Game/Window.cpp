@@ -19,6 +19,15 @@ glm::vec3 g_DebugLetterVelocity;
 float     g_DebugLetterSpeed;
 glm::vec3 g_DebugLetterRotation;
 
+//  varr. debug. tempo  de execução dos métodos
+//                      da aplicação principal
+float g_debug_updateDayNight;
+float g_debug_sceneUpdate;
+float g_debug_sceneResolveCollisions;
+float g_debug_rendererBeginFrame;
+float g_debug_rendererDraw;
+float g_debug_rendererEndFrame;
+
 // Window.cpp
 void Window::init(const char* title, int w, int h) {
     //  Inicialização GLFW
@@ -39,6 +48,8 @@ void Window::init(const char* title, int w, int h) {
 
     //  Criação da janela e definição de um handle para esta
     m_handle = glfwCreateWindow(w, h, title, NULL, NULL);
+
+    glfwSwapInterval(0);
 
     //  Verifica criação da janela
     if (!m_handle) {

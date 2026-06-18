@@ -454,7 +454,106 @@ void TextRendering_ShowDebugPanel(GLFWwindow* window)
     );
 
 
-    //  FIM: Informações sobre a carta
+    //  Depuração: tempo de execução dos métodos da app. principal
+
+    char updateDayNight_buffer[128];
+    char sceneUpdate_buffer[128];
+    char sceneResolveCollisions_buffer[128];
+    char rendererBeginFrame_buffer[128];
+    char rendererDraw_buffer[128];
+    char rendererEndFrame_buffer[128];
+
+    snprintf(
+        updateDayNight_buffer,
+        sizeof(updateDayNight_buffer),
+        "Application::updateDayNight(): %.3f",
+        g_debug_updateDayNight
+    );
+
+    snprintf(
+        sceneUpdate_buffer,
+        sizeof(sceneUpdate_buffer),
+        "Scene::update(): %.3f",
+        g_debug_sceneUpdate
+    );
+
+    snprintf(
+        sceneResolveCollisions_buffer,
+        sizeof(sceneResolveCollisions_buffer),
+        "Scene::resolveCollisions(): %.3f",
+        g_debug_sceneResolveCollisions
+    );
+
+    snprintf(
+        rendererBeginFrame_buffer,
+        sizeof(rendererBeginFrame_buffer),
+        "Renderer::beginFrame(): %.3f",
+        g_debug_rendererBeginFrame
+    );
+
+    snprintf(
+        rendererDraw_buffer,
+        sizeof(rendererDraw_buffer),
+        "Renderer::draw(): %.3f",
+        g_debug_rendererDraw
+    );
+
+    snprintf(
+        rendererEndFrame_buffer,
+        sizeof(rendererEndFrame_buffer),
+        "Renderer::endFrame(): %.3f",
+        g_debug_rendererEndFrame
+    );
+
+    TextRendering_PrintString(
+        window,
+        updateDayNight_buffer,
+        -1.0f + charwidth,
+        1.0f - 15*lineheight,
+        1.0f
+    );
+
+    TextRendering_PrintString(
+        window,
+        sceneUpdate_buffer,
+        -1.0f + charwidth,
+        1.0f - 16*lineheight,
+        1.0f
+    );
+
+    TextRendering_PrintString(
+        window,
+        sceneResolveCollisions_buffer,
+        -1.0f + charwidth,
+        1.0f - 17*lineheight,
+        1.0f
+    );
+
+    TextRendering_PrintString(
+        window,
+        rendererBeginFrame_buffer,
+        -1.0f + charwidth,
+        1.0f - 18*lineheight,
+        1.0f
+    );
+
+    TextRendering_PrintString(
+        window,
+        rendererDraw_buffer,
+        -1.0f + charwidth,
+        1.0f - 19*lineheight,
+        1.0f
+    );
+
+    TextRendering_PrintString(
+        window,
+        rendererEndFrame_buffer,
+        -1.0f + charwidth,
+        1.0f - 20*lineheight,
+        1.0f
+    );
+    
+    TextRendering_ShowFramesPerSecond(window);
 }
 
 

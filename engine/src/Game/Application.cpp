@@ -71,6 +71,7 @@ void Application::run() {
         processFrame(dt);
 
         //  buffers e poll events
+        glFinish();
         m_window.swapAndPoll();
     }
 }
@@ -86,17 +87,15 @@ void Application::processFrame(float dt) {
     updateDayNight();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::vec3 sun = glm::normalize(glm::vec3(0.6f, 0.8f, 0.3f));
-    m_skybox.draw(m_renderer.getProjectionMatrix(), m_renderer.getViewMatrix(), sun, 0.5f);  // 0.5 = meio-dia
+    // glm::vec3 sun = glm::normalize(glm::vec3(0.6f, 0.8f, 0.3f));
+    // m_skybox.draw(m_renderer.getProjectionMatrix(), m_renderer.getViewMatrix(), sun, 0.5f);  // 0.5 = meio-dia
 
-
-    //  lógica do jogo
     m_scene.update(dt, m_window.get());
 
-    //
-    m_scene.resolveCollisions();                 // física/som separado da render
 
+    m_scene.resolveCollisions();
     m_renderer.beginFrame(m_scene.getCamera());
+
     m_scene.draw(m_renderer);
     m_renderer.endFrame(m_window.get());
 }

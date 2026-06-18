@@ -27,6 +27,16 @@ extern glm::vec3 g_DebugLetterVelocity;
 extern float     g_DebugLetterSpeed;
 extern glm::vec3 g_DebugLetterRotation;
 
+//  varr. debug. tempo  de execução dos métodos
+//                      da aplicação principal
+extern float g_debug_updateDayNight;
+extern float g_debug_sceneUpdate;
+extern float g_debug_sceneResolveCollisions;
+extern float g_debug_rendererBeginFrame;
+extern float g_debug_rendererDraw;
+extern float g_debug_rendererEndFrame;
+
+
 class Window {
 public:
     void        init(const char* title, int w, int h);
