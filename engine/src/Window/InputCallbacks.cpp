@@ -1,4 +1,7 @@
 #include "textrendering.hpp"
+
+#include "Game/Window.hpp" //   variáveis de depuração do pássaro no menu de debug
+
 #include "Window/InputCallbacks.hpp"
 #include "Window/WindowCallbacks.hpp"
 #include "Renderer/ShaderLoader.hpp"
@@ -290,6 +293,168 @@ void TextRendering_ShowDebugPanel(GLFWwindow* window)
     // Informações de data e hora
     TextRendering_PrintString(window, "Data e hora:", -1.0f + charwidth, 1.0f - 2*lineheight, 1.0f);
     TextRendering_PrintString(window, asctime(currentTime), -1.0f + charwidth, 1.0f - 3*lineheight, 1.0f);
+
+
+    //  Informações do Pássaro
+    //  Posição
+    char birdPosition_buffer[128];
+
+    snprintf(
+        birdPosition_buffer,
+        sizeof(birdPosition_buffer),
+        "Bird Pos: (%.1f %.1f %.1f)",
+        g_DebugBirdPosition.x,
+        g_DebugBirdPosition.y,
+        g_DebugBirdPosition.z
+    );
+
+    TextRendering_PrintString(
+        window,
+        birdPosition_buffer,
+        -1.0f + charwidth,
+        1.0f - 5*lineheight,
+        1.0f
+    );
+
+    //  Velocidade
+    char birdVelocity_buffer[128];
+
+    snprintf(
+        birdVelocity_buffer,
+        sizeof(birdVelocity_buffer),
+        "Bird Vel: (%.1f %.1f %.1f)",
+        g_DebugBirdVelocity.x,
+        g_DebugBirdVelocity.y,
+        g_DebugBirdVelocity.z
+    );
+
+    TextRendering_PrintString(
+        window,
+        birdVelocity_buffer,
+        -1.0f + charwidth,
+        1.0f - 6*lineheight,
+        1.0f
+    );
+
+    //  Velocidade (magnitude)
+    char birdSpeed_buffer[128];
+
+    snprintf(
+        birdSpeed_buffer,
+        sizeof(birdSpeed_buffer),
+        "Bird Speed: %.3f",
+        glm::length(g_DebugBirdVelocity)
+    );
+
+    TextRendering_PrintString(
+        window,
+        birdSpeed_buffer,
+        -1.0f + charwidth,
+        1.0f - 7*lineheight,
+        1.0f
+    );
+
+    //  Rotação
+    char birdRotation_buffer[128];
+
+    snprintf(
+        birdRotation_buffer,
+        sizeof(birdRotation_buffer),
+        "Bird Rot: (%.1f %.1f %.1f)",
+        g_DebugBirdRotation.x,
+        g_DebugBirdRotation.y,
+        g_DebugBirdRotation.z
+    );
+
+    TextRendering_PrintString(
+        window,
+        birdRotation_buffer,
+        -1.0f + charwidth,
+        1.0f - 8*lineheight,
+        1.0f
+    );
+
+    // Informações sobre a carta (letter)
+    //  Posição
+    char letterPosition_buffer[128];
+
+    snprintf(
+        letterPosition_buffer,
+        sizeof(letterPosition_buffer),
+        "Letter Pos: (%.1f %.1f %.1f)",
+        g_DebugLetterPosition.x,
+        g_DebugLetterPosition.y,
+        g_DebugLetterPosition.z
+    );
+
+    TextRendering_PrintString(
+        window,
+        letterPosition_buffer,
+        -1.0f + charwidth,
+        1.0f - 10*lineheight,
+        1.0f
+    );
+
+    //  Velocidade
+    char letterVelocity_buffer[128];
+
+    snprintf(
+        letterVelocity_buffer,
+        sizeof(letterVelocity_buffer),
+        "Letter Vel: (%.1f %.1f %.1f)",
+        g_DebugLetterVelocity.x,
+        g_DebugLetterVelocity.y,
+        g_DebugLetterVelocity.z
+    );
+
+    TextRendering_PrintString(
+        window,
+        letterVelocity_buffer,
+        -1.0f + charwidth,
+        1.0f - 11*lineheight,
+        1.0f
+    );
+
+    //  Velocidade (magnitude)
+    char letterSpeed_buffer[128];
+
+    snprintf(
+        letterSpeed_buffer,
+        sizeof(letterSpeed_buffer),
+        "Letter Speed: %.3f",
+        glm::length(g_DebugLetterVelocity)
+    );
+
+    TextRendering_PrintString(
+        window,
+        letterSpeed_buffer,
+        -1.0f + charwidth,
+        1.0f - 12*lineheight,
+        1.0f
+    );
+
+    //  Rotação
+    char letterRotation_buffer[128];
+
+    snprintf(
+        letterRotation_buffer,
+        sizeof(letterRotation_buffer),
+        "Letter Rot: (%.1f %.1f %.1f)",
+        g_DebugLetterRotation.x,
+        g_DebugLetterRotation.y,
+        g_DebugLetterRotation.z
+    );
+
+    TextRendering_PrintString(
+        window,
+        letterRotation_buffer,
+        -1.0f + charwidth,
+        1.0f - 13*lineheight,
+        1.0f
+    );
+
+
+    //  FIM: Informações sobre a carta
 }
 
 

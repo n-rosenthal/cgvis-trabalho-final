@@ -24,7 +24,7 @@ public:
     float lakeRX() const { return m_lakeRX; }
     float lakeRZ() const { return m_lakeRZ; }
 
-    static constexpr float WATER_LEVEL = -10.2f;
+    static constexpr float WATER_LEVEL = -5.5f;
 
     // Island descriptor (world-space units after scaling)
     struct IslandDef {
@@ -50,14 +50,13 @@ private:
     struct WaterBuffers { GLuint VAO=0, VBO=0, EBO=0; } m_waterBuffers;
 
     // ----- Terrain dimensions -----------------------------------------------
-    // NOTE: m_vertices, m_indices, m_buffers are inherited from Drawable.
-    //       Do NOT redeclare them here.
+    // m_vertices, m_indices, m_buffers são herdados de `Drawable`
     int   m_width, m_depth;
     float m_spacing;
     float m_halfW, m_halfD;   // world-space half-extents
 
-    float m_lakeRX;           // ellipse semi-axis X (= 0.42 * m_halfW)
-    float m_lakeRZ;           // ellipse semi-axis Z (= 0.28 * m_halfD)
+    float m_lakeRX;           // elipse semi-axis X (= 0.42 * m_halfW)
+    float m_lakeRZ;           // elipse semi-axis Z (= 0.28 * m_halfD)
 
     // ----- Island table (lazily built from fraction constants) ---------------
     mutable std::vector<IslandDef> m_islandCache;
@@ -70,6 +69,7 @@ private:
     float lakeBasin       (float x, float z) const;
     float addIslands      (float x, float z) const;
     float innerField      (float x, float z) const;
+    float ellipticDistance(float x, float z) const;
 
     // ----- Colour -----------------------------------------------------------
     glm::vec4 sampleColor(float y, float x, float z) const;

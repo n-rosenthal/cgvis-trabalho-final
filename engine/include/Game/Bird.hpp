@@ -59,6 +59,9 @@ private:
     float m_pitch = 0.0f;
     float m_roll  = 0.0f;
 
+    float m_smoothYawInput   = 0.0f;
+    float m_smoothPitchInput = 0.0f;
+
     glm::vec3 m_velocity =
         glm::vec3(0.0f);
 

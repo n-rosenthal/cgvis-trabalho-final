@@ -5,6 +5,20 @@
 
 #include "Game/Window.hpp"
 
+
+//  Variáveis globais para obter info. do pássaro
+//  e encaminhá-las para menu de debug
+glm::vec3 g_DebugBirdPosition;
+glm::vec3 g_DebugBirdVelocity;
+float     g_DebugBirdSpeed;
+glm::vec3 g_DebugBirdRotation;
+
+//  varr. debug letter
+glm::vec3 g_DebugLetterPosition;
+glm::vec3 g_DebugLetterVelocity;
+float     g_DebugLetterSpeed;
+glm::vec3 g_DebugLetterRotation;
+
 // Window.cpp
 void Window::init(const char* title, int w, int h) {
     //  Inicialização GLFW

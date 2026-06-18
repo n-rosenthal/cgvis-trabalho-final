@@ -14,6 +14,19 @@
 #include "Window/InputCallbacks.hpp"
 #include "Window/WindowCallbacks.hpp"
 
+//  Variáveis globais para obter info. do pássaro
+//  e encaminhá-las para menu de debug
+extern glm::vec3 g_DebugBirdPosition;
+extern glm::vec3 g_DebugBirdVelocity;
+extern float     g_DebugBirdSpeed;
+extern glm::vec3 g_DebugBirdRotation;
+
+//  varr. debug LETTER
+extern glm::vec3 g_DebugLetterPosition;
+extern glm::vec3 g_DebugLetterVelocity;
+extern float     g_DebugLetterSpeed;
+extern glm::vec3 g_DebugLetterRotation;
+
 class Window {
 public:
     void        init(const char* title, int w, int h);

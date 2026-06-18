@@ -29,7 +29,7 @@ out vec4 color;
 #define RINGS       8
 #define BUILDING    9
 #define LETTER      10
-#define WATER       11         // novo
+#define WATER       11
 
 void main()
 {
@@ -44,31 +44,167 @@ void main()
     // =========================================================
     if (object_id == PLANE)
     {
-        vec2 tiledUV = fragTexcoord * 60.0; // Repeat the textures
+        // =====================================================
+        // Texturas (cada material com sua própria escala)
+        // =====================================================
 
-        vec4 colSand = texture(texSand, tiledUV);
-        vec4 colGrass = texture(texGrass, tiledUV);
-        vec4 colRock = texture(texRock, tiledUV);
-        vec4 colSnow = texture(texSnow, tiledUV);
+        vec4 colSand  = texture(texSand , fragTexcoord * 40.0);
+        vec4 colGrass = texture(texGrass, fragTexcoord * 30.0);
+        vec4 colRock  = texture(texRock , fragTexcoord * 20.0);
+        vec4 colSnow  = texture(texSnow , fragTexcoord * 15.0);
 
         float y = fragPosition.y;
 
-        float t1 = smoothstep(-2.0, 4.0, y);
-        float t2 = smoothstep(20.0, 40.0, y);
-        float t3 = smoothstep(75.0, 95.0, y);
+        // =====================================================
+        // Inclinação
+        // 0 = plano
+        // 1 = parede vertical
+        // =====================================================
 
-        vec3 colorMix = mix(colSand.rgb, colGrass.rgb, t1);
-        colorMix = mix(colorMix, colRock.rgb, t2);
-        colorMix = mix(colorMix, colSnow.rgb, t3);
+        float slope =
+            1.0 -
+            max(dot(N, vec3(0.0, 1.0, 0.0)), 0.0);
 
-        // Mix in rock based on slope
-        float slope = 1.0 - max(dot(N, vec3(0.0, 1.0, 0.0)), 0.0);
-        float rockAmount = smoothstep(0.25, 0.5, slope);
-        colorMix = mix(colorMix, colRock.rgb, rockAmount * (1.0 - t3));
+        // =====================================================
+        // Transições de bioma por altitude
+        // =====================================================
 
-        Kd0 = colorMix;
-        color = vec4(Kd0 * (ambient + lambert), 1.0);
-        color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
+        float sandToGrass =
+            smoothstep(-2.0, 4.0, y);
+
+        float grassToRock =
+            smoothstep(12.0, 35.0, y);
+
+        float rockToSnow =
+            smoothstep(55.0, 80.0, y);
+
+        // =====================================================
+        // Mistura principal
+        // =====================================================
+
+        vec3 terrainColor =
+            mix(
+                colSand.rgb,
+                colGrass.rgb,
+                sandToGrass
+            );
+
+        terrainColor =
+            mix(
+                terrainColor,
+                colRock.rgb,
+                grassToRock
+            );
+
+        terrainColor =
+            mix(
+                terrainColor,
+                colSnow.rgb,
+                rockToSnow
+            );
+
+        // =====================================================
+        // Rocha automática em encostas
+        // =====================================================
+
+        float rockSlope =
+            smoothstep(
+                0.25,
+                0.50,
+                slope
+            );
+
+        terrainColor =
+            mix(
+                terrainColor,
+                colRock.rgb,
+                rockSlope * (1.0 - rockToSnow)
+            );
+
+        // =====================================================
+        // Paredões muito íngremes
+        // =====================================================
+
+        float cliffRock =
+            smoothstep(
+                0.60,
+                0.85,
+                slope
+            );
+
+        terrainColor =
+            mix(
+                terrainColor,
+                colRock.rgb,
+                cliffRock
+            );
+
+        // =====================================================
+        // Neve extra apenas nos picos
+        // =====================================================
+
+        float peakSnow =
+            smoothstep(
+                75.0,
+                110.0,
+                y
+            );
+
+        terrainColor =
+            mix(
+                terrainColor,
+                colSnow.rgb,
+                peakSnow
+            );
+
+        // =====================================================
+        // Color grading procedural
+        //
+        // fragColor vem do CPU (sampleColor()).
+        // Isso permite modificar a tonalidade do terreno
+        // sem perder os detalhes das texturas.
+        // =====================================================
+
+        terrainColor *= fragColor.rgb;
+
+        // =====================================================
+        // Escurecimento suave por inclinação
+        // Dá mais profundidade visual às montanhas.
+        // =====================================================
+
+        float slopeShade =
+            mix(
+                1.0,
+                0.75,
+                slope
+            );
+
+        terrainColor *= slopeShade;
+
+        // =====================================================
+        // Iluminação
+        // =====================================================
+
+        vec3 litColor =
+            terrainColor *
+            (ambient + lambert);
+
+        color =
+            vec4(
+                litColor,
+                1.0
+            );
+
+        // =====================================================
+        // Correção gamma
+        // =====================================================
+
+        color.rgb =
+            pow(
+                max(color.rgb, vec3(0.0)),
+                vec3(1.0 / 2.2)
+            );
+
         return;
     }
 

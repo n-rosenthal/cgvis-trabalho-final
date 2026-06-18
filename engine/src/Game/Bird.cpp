@@ -1,5 +1,7 @@
 #include "Game/Bird.hpp"
 
+#include "Game/Window.hpp" //   variáveis de depuração do pássaro no menu de debug
+
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace
@@ -215,6 +217,13 @@ void Bird::onCollision(glm::vec3 obstaclePos) {};
  * @param window 
  */
 void Bird::update(float dt,  GLFWwindow* window) {
+    //  Encaminha as informações do pássaro para o menu de depuração
+    g_DebugBirdPosition         = m_position;
+    g_DebugBirdVelocity         = m_velocity;
+    g_DebugBirdSpeed            = m_speed;
+    g_DebugBirdRotation         = m_rotation;
+
+
     //  < ESPAÇO >: "bater asas" = aumentar velocidade
     bool flapPressed = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
     if(flapPressed && !m_flapHeld) {
@@ -238,13 +247,18 @@ void Bird::update(float dt,  GLFWwindow* window) {
             (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS ? 1.0f : 0.0f)
         +   (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS ? -1.0f : 0.0f);
 
+    // Smooth inputs
+    float inputSmoothSpeed = 5.0f * dt;
+    m_smoothYawInput = glm::mix(m_smoothYawInput, yawInput, inputSmoothSpeed);
+    m_smoothPitchInput = glm::mix(m_smoothPitchInput, pitchInput, inputSmoothSpeed);
+
     //  Controle angular (eixo Y)
-    m_yaw   +=  yawInput
+    m_yaw   +=  m_smoothYawInput
             *   kYawSpeed
             *   dt;
 
     //  Controle vertical (eixo X)
-    m_pitch +=  pitchInput
+    m_pitch +=  m_smoothPitchInput
             *   kPitchSpeed
             *   dt;
 
@@ -252,7 +266,7 @@ void Bird::update(float dt,  GLFWwindow* window) {
     m_pitch = glm::clamp(m_pitch, -kPitchMax, kPitchMax);
 
     //  Controle de roll (eixo Z)
-    float rollTarget = -yawInput
+    float rollTarget = -m_smoothYawInput
                      *  kRollTarget;
 
     //  Suaviza o roll
@@ -284,8 +298,8 @@ void Bird::update(float dt,  GLFWwindow* window) {
     //  Atualiza o modelo
     updateDrawable();
 
-    //  Atualiza a rotação
-    m_rotation  = glm::vec3(m_pitch, m_yaw + glm::pi<float>(), m_roll);
+    //  Atualiza a rotação (removido +PI para o pássaro apontar na direção certa)
+    m_rotation  = glm::vec3(m_pitch, m_yaw, m_roll);
 
     //  Atualiza os colisores
     updateColliders();

@@ -30,23 +30,23 @@ void ObjDrawable::draw(const DrawContext& ctx){
         );
 
     for(size_t i = 0; i < m_model->meshes.size(); ++i) {
-        printf("i=%zu\n", i);
+        // printf("i=%zu\n", i);
 
-        printf(
-            "mesh_count=%zu texture_count=%zu\n",
-            m_model->meshes.size(),
-            m_model->textures.size()
-        );
+        // printf(
+        //     "mesh_count=%zu texture_count=%zu\n",
+        //     m_model->meshes.size(),
+        //     m_model->textures.size()
+        // );
 
         fflush(stdout);
 
         const std::string& meshName =
             m_model->meshes.at(i);
 
-        printf(
-            "mesh=%s\n",
-            meshName.c_str()
-        );
+        // printf(
+        //     "mesh=%s\n",
+        //     meshName.c_str()
+        // );
 
         fflush(stdout);
 
@@ -54,19 +54,19 @@ void ObjDrawable::draw(const DrawContext& ctx){
             i < m_model->textures.size() &&
             m_model->textures[i] != nullptr;
 
-        printf(
-            "hasTexture=%d\n",
-            (int)hasTexture
-        );
+        // printf(
+        //     "hasTexture=%d\n",
+        //     (int)hasTexture
+        // );
 
         fflush(stdout);
 
         if(hasTexture)
         {
-            printf(
-                "texture id=%u\n",
-                m_model->textures[i]->id
-            );
+            // printf(
+            //     "texture id=%u\n",
+            //     m_model->textures[i]->id
+            // );
 
             fflush(stdout);
 

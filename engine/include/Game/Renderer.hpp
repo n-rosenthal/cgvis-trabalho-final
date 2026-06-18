@@ -22,6 +22,7 @@ class ProceduralRock;
 class Ring;
 class Camera;
 class Letter;
+class Mailbox;
 
 //  NPCs
 class ButterflyNPC;
@@ -29,20 +30,21 @@ class CarpNPC;
 
 class Renderer {
 public:
-    // ── Ciclo de vida ─────────────────────────────────────────────────────────
+    // Ciclo de vida
     void init(GLFWwindow* window);   // carrega shaders, texturas e modelos OBJ
     void shutdown();
 
-    // ── Frame ─────────────────────────────────────────────────────────────────
+    // Frame
     void beginFrame(const Camera& camera);
     void endFrame(GLFWwindow* window);
 
-    // ── Draw calls ────────────────────────────────────────────────────────────
+    // Draw calls
     void drawBird   (Bird& bird, bool standing);
     void drawTerrain(Terrain& terrain);
     void drawRocks  (std::vector<std::shared_ptr<ProceduralRock>>& rocks);
     void drawRings  (std::vector<std::shared_ptr<Ring>>& rings);
     void drawLetter (Letter& letter);
+    void drawMailbox(Mailbox& mailbox);
 
     void drawObjects(std::vector<std::shared_ptr<StaticObject>>& objects);
 
@@ -51,7 +53,7 @@ public:
     void drawButterflyNPC(ButterflyNPC& npc);
     void drawCarpNPC(CarpNPC& npc);
 
-    // ── Utilitários ───────────────────────────────────────────────────────────
+    // Utilitários
     void setWireframe(bool enabled);
 
     // IDs de objeto — espelham os #define do código original
@@ -61,6 +63,7 @@ public:
         OBJ_PLANE       = 2,
 
         OBJ_TREE        = 3,
+        OBJ_FLOWER      = 15,
 
         OBJ_BIRD        = 4,
         OBJ_BIRD2       = 5,
@@ -74,10 +77,12 @@ public:
         OBJ_LETTER      = 10,
 
         OBJ_HOUSE       = 11,
+        OBJ_MAILBOX     = 12,
 
         //  NPCs
-        OBJ_BUTTERFLY   = 12,
-        OBJ_CARP        = 13
+        OBJ_BUTTERFLY   = 13,
+        OBJ_CARP        = 14,
+
     };
 
     //  Acessadores para matrizes de view e projeção

@@ -71,16 +71,14 @@ struct Buffers {
 // ============================================================================
 //  Vertex
 //
-//  color is vec4: rgb + alpha.  Alpha is 1.0 for all opaque objects and is
-//  used only by the water mesh for transparency.  The vertex shader passes it
-//  through as fragColor (vec4); opaque object branches in the fragment shader
-//  simply ignore the alpha channel.
+//  color = vec4: rgb + alpha.  alpha é 1.0 para todos objetos opacos;
+//                              exceto água e possíveis objetos transparentes
 // ============================================================================
 struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec2 texcoord;
-    glm::vec4 color;     // was vec3 – alpha channel added for water transparency
+    glm::vec4 color;     // vec3 – alpha channel added for water transparency
 };
 
 // ============================================================================
@@ -151,7 +149,7 @@ protected:
     glm::vec3 m_rotation = glm::vec3(0.0f);
     glm::vec3 m_scale    = glm::vec3(1.0f);
 
-    Buffers             m_buffers;   // GL context must exist when constructed
+    Buffers             m_buffers;
     std::vector<Vertex> m_vertices;
     std::vector<GLuint> m_indices;
     DrawContext         m_ctx;

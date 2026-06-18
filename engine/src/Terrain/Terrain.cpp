@@ -7,6 +7,11 @@
 #include <random>
 #include "Objects/Interfaces/Drawable.hpp"
 
+float smoothstep(float edge0, float edge1, float x) {
+    float t = glm::clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
+    return t * t * (3.0f - 2.0f * t);
+}
+
 // ============================================================================
 //  Permutation table (deterministic, seed 42)
 // ============================================================================
@@ -78,6 +83,20 @@ Terrain::Terrain(int width, int depth, float spacing)
     setupWaterBuffers();
 }
 
+/**
+ * @brief   Calcula a distância elíptica
+ */
+float Terrain::ellipticDistance(float x, float z) const
+{
+    const float valleyRX = m_halfW * 0.92f;
+    const float valleyRZ = m_halfD * 0.80f;
+
+    float ex = x / valleyRX;
+    float ez = z / valleyRZ;
+
+    return std::sqrt(ex*ex + ez*ez);
+}
+
 // ============================================================================
 //  Master height sampler
 //  Pipeline: mountains → lake basin carves in → islands push up
@@ -103,37 +122,53 @@ float Terrain::sampleHeight(float x, float z) const
 // ============================================================================
 float Terrain::borderMountains(float x, float z) const
 {
-    float nx = std::abs(x) / m_halfW;
-    float nz = std::abs(z) / m_halfD;
-    float edgeDist = std::max(nx, nz);
+    float d = ellipticDistance(x, z);
 
-    // Mountains start at edgeDist > 0.55 (wider field) and peak at the wall.
-    float borderFactor = glm::clamp((edgeDist - 0.55f) / 0.45f, 0.0f, 1.0f);
-    // Gentle exponent — the mountain zone is wide and consistently tall
-    borderFactor = std::pow(borderFactor, 1.2f);
+    // montanhas começam após a elipse central
+    float borderFactor =
+        glm::smoothstep(
+            0.65f,
+            1.00f,
+            d
+        );
 
-    if (borderFactor < 0.001f) return 0.0f;
+    
+    borderFactor =
+        borderFactor * borderFactor;
 
-    // --- Domain warping (two layers) ---
+    if (borderFactor < 0.001f)
+        return 0.0f;
+
     float fx0 = x * (3.2f / m_halfW);
     float fz0 = z * (3.2f / m_halfD);
+
     float warpAmp = 0.70f;
-    float wx2 = fbm(fx0 + 0.3f, fz0 + 1.7f, 4) * warpAmp;
-    float wz2 = fbm(fx0 + 5.2f, fz0 + 3.4f, 4) * warpAmp;
+
+    float wx2 =
+        fbm(fx0 + 0.3f, fz0 + 1.7f, 4) * warpAmp;
+
+    float wz2 =
+        fbm(fx0 + 5.2f, fz0 + 3.4f, 4) * warpAmp;
+
     float fx = fx0 + wx2;
     float fz = fz0 + wz2;
-    float n = fbm(fx, fz, 7);   // 7 octaves for rich detail
 
-    // Ridge sharpening
-    float ridge = 1.0f - std::abs(2.0f * n - 1.0f);
+    float n = fbm(fx, fz, 7);
+
+    float ridge =
+        1.0f - std::abs(2.0f * n - 1.0f);
+
     ridge = ridge * ridge * ridge;
+
     n = glm::mix(n, ridge, 0.55f);
 
-    float angle  = std::atan2(z, x);
-    float aspect = 0.85f + 0.15f * std::cos(angle * 2.0f);
+    float angle = std::atan2(z, x);
 
-    // Peak ≈ 116u; minimum at wall ≈ 18u — very visible even from far away
-    return borderFactor * aspect * (98.0f * n + 18.0f);
+    float aspect =
+        0.85f + 0.15f * std::cos(angle * 2.0f);
+
+    return borderFactor * aspect *
+        (75.0f * n + 10.0f);
 }
 
 // ============================================================================
@@ -145,32 +180,53 @@ float Terrain::borderMountains(float x, float z) const
 float Terrain::lakeBasin(float x, float z) const
 {
     const float shoreW    = 0.09f * m_halfW;
-    const float lakeFloor = WATER_LEVEL - 2.5f;  // deeper for contrast
+    const float lakeFloor = WATER_LEVEL - 2.5f;
+
+    // ruído de baixa frequência
+    float coastNoise =
+        fbm(
+            x * (0.8f / m_halfW) * 8.0f,
+            z * (0.8f / m_halfD) * 8.0f,
+            4
+        );
+
+    coastNoise = (coastNoise - 0.5f) * 0.35f;
 
     float ex = x / m_lakeRX;
     float ez = z / m_lakeRZ;
-    float de = std::sqrt(ex * ex + ez * ez);
 
-    // Perturb the shore radius slightly for an organic shoreline
-    float shoreNoise = fbm(x * (1.2f / m_halfW) * 5.f,
-                           z * (1.2f / m_halfD) * 5.f, 3);
-    float shoreRel = (shoreW / m_lakeRX) * (0.75f + 0.50f * shoreNoise);
+    float de =
+        std::sqrt(ex * ex + ez * ez);
 
-    if (de >= 1.0f + shoreRel)
+    // raio local deformado
+    float localRadius =
+        1.0f + coastNoise;
+
+    float shoreRel =
+        shoreW / m_lakeRX;
+
+    if (de >= localRadius + shoreRel)
         return 1e6f;
 
-    if (de <= 1.0f) {
-        // Lake bed: mostly flat, tiny geological ripple
-        float ripple = fbm(x * (4.f / m_halfW) * 12.f,
-                           z * (4.f / m_halfD) * 12.f, 3) * 0.35f;
+    if (de <= localRadius)
+    {
+        float ripple =
+            fbm(
+                x * (4.f / m_halfW) * 12.f,
+                z * (4.f / m_halfD) * 12.f,
+                3
+            ) * 0.35f;
+
         return lakeFloor + ripple;
     }
 
-    // Shore ramp with smoothstep
-    float t = (de - 1.0f) / shoreRel;
+    float t =
+        (de - localRadius) / shoreRel;
+
     t = fade(t);
-    // Rises to ~7u (just above WATER_LEVEL + beach height)
-    return lakeFloor + t * (7.0f - lakeFloor);
+
+    return lakeFloor +
+           t * (7.0f - lakeFloor);
 }
 
 // ============================================================================
@@ -181,29 +237,48 @@ float Terrain::lakeBasin(float x, float z) const
 // ============================================================================
 float Terrain::innerField(float x, float z) const
 {
-    float nx = std::abs(x) / m_halfW;
-    float nz = std::abs(z) / m_halfD;
-    float edgeDist = std::max(nx, nz);
+    float valleyDist =
+        ellipticDistance(x, z);
 
-    // Only active in the flat middle zone [0, 0.60]
-    float fieldFactor = glm::clamp(1.0f - edgeDist / 0.60f, 0.0f, 1.0f);
-    fieldFactor = fieldFactor * fieldFactor;
+    float fieldFactor =
+        glm::clamp(
+            1.0f - valleyDist,
+            0.0f,
+            1.0f
+        );
 
-    // Elliptic distance – suppress hills near the lake shore
+    fieldFactor *= fieldFactor;
+
     float ex = x / m_lakeRX;
     float ez = z / m_lakeRZ;
-    float de = std::sqrt(ex * ex + ez * ez);
-    float lakeFade = glm::clamp((de - 1.25f) / 0.40f, 0.0f, 1.0f);
 
-    float combined = fieldFactor * lakeFade;
-    if (combined < 0.001f) return 0.0f;
+    float lakeDist =
+        std::sqrt(ex * ex + ez * ez);
 
-    // Low-frequency rolling hills (2–3 world units amplitude)
-    float hx = x * (1.8f / m_halfW);
-    float hz = z * (1.8f / m_halfD);
-    float hill = fbm(hx, hz, 4);   // [0,1]
+    float lakeFade =
+        glm::clamp(
+            (lakeDist - 1.25f) / 0.40f,
+            0.0f,
+            1.0f
+        );
 
-    return combined * (hill * 3.5f + 0.5f);  // up to ~4u bump
+    float combined =
+        fieldFactor * lakeFade;
+
+    if (combined < 0.001f)
+        return 0.0f;
+
+    float hx =
+        x * (1.8f / m_halfW);
+
+    float hz =
+        z * (1.8f / m_halfD);
+
+    float hill =
+        fbm(hx, hz, 4);
+
+    return combined *
+           (hill * 8.5f + 0.5f);
 }
 
 // ============================================================================
@@ -245,54 +320,288 @@ glm::vec3 Terrain::getIslandCenter(int index) const
 //  makes mountain sides look rocky and the flat field stay green.
 //  Slope is approximated by comparing y against 4 neighbours.
 // ============================================================================
-glm::vec4 Terrain::sampleColor(float y, float x, float z) const
+glm::vec4 Terrain::sampleColor(
+    float y,
+    float x,
+    float z
+) const
 {
-    // --- Below water: lake colours (invisible under water mesh, but correct) ---
-    if (y < WATER_LEVEL - 1.5f)
-        return glm::vec4(0.06f, 0.11f, 0.38f, 1.0f);  // deep lake bed
-    if (y < WATER_LEVEL)
-        return glm::vec4(0.12f, 0.35f, 0.62f, 1.0f);  // shallow lake bed
+    // =====================================================
+    // Fundo do lago
+    // =====================================================
 
-    // --- Shore: sand band keyed on elliptic distance ---
+    if (y < WATER_LEVEL - 2.0f)
+        return glm::vec4(
+            0.05f,
+            0.09f,
+            0.22f,
+            1.0f
+        );
+
+    if (y < WATER_LEVEL)
+        return glm::vec4(
+            0.12f,
+            0.28f,
+            0.45f,
+            1.0f
+        );
+
+    // =====================================================
+    // Praia
+    // =====================================================
+
+    float coastNoise =
+        fbm(
+            x * (0.8f / m_halfW) * 8.0f,
+            z * (0.8f / m_halfD) * 8.0f,
+            4
+        );
+
+    float localRadius =
+        1.0f +
+        (coastNoise - 0.5f) * 0.35f;
+
     float ex = x / m_lakeRX;
     float ez = z / m_lakeRZ;
-    float de = std::sqrt(ex * ex + ez * ez);
+
+    float de =
+        sqrt(
+            ex * ex +
+            ez * ez
+        );
+
+    de /= localRadius;
+
     if (de < 1.20f)
-        return glm::vec4(0.78f, 0.68f, 0.48f, 1.0f);  // sandy beach
+    {
+        float wetness =
+            glm::clamp(
+                (1.20f - de) / 0.20f,
+                0.0f,
+                1.0f
+            );
 
-    // --- Slope estimation (finite differences, cheap) ---
+        glm::vec3 drySand(
+            0.90f,
+            0.82f,
+            0.58f
+        );
+
+        glm::vec3 wetSand(
+            0.68f,
+            0.60f,
+            0.42f
+        );
+
+        return glm::vec4(
+            glm::mix(
+                drySand,
+                wetSand,
+                wetness
+            ),
+            1.0f
+        );
+    }
+
+    // =====================================================
+    // Inclinação
+    // =====================================================
+
     float eps = m_spacing;
-    float dydx = (sampleHeight(x + eps, z) - sampleHeight(x - eps, z)) / (2.f * eps);
-    float dydz = (sampleHeight(x, z + eps) - sampleHeight(x, z - eps)) / (2.f * eps);
-    float slope = std::sqrt(dydx * dydx + dydz * dydz);  // tangent of slope angle
-    // Normalize: slope > ~1.5 (≈56°) is "very steep"
-    float steepness = glm::clamp(slope / 1.5f, 0.0f, 1.0f);
 
-    // --- Height ramp over land ---
-    const float fieldTop = 9.0f;    // flat field ceiling
-    const float mtnPeak  = 55.0f;
-    float t = glm::clamp((y - fieldTop) / (mtnPeak - fieldTop), 0.0f, 1.0f);
+    float dydx =
+        (
+            sampleHeight(x + eps, z)
+            -
+            sampleHeight(x - eps, z)
+        ) /
+        (2.0f * eps);
 
-    // Blend steepness into t: steep slopes look browner/rockier at same height
-    t = glm::clamp(t + steepness * 0.35f, 0.0f, 1.0f);
+    float dydz =
+        (
+            sampleHeight(x, z + eps)
+            -
+            sampleHeight(x, z - eps)
+        ) /
+        (2.0f * eps);
 
-    // Small noise patch to break colour banding
-    float n = fbm(x * (2.0f / m_halfW) * 38.f,
-                  z * (2.0f / m_halfD) * 38.f, 3);
-    t = glm::clamp(t + (n - 0.5f) * 0.07f, 0.0f, 1.0f);
+    float slope =
+        sqrt(
+            dydx * dydx +
+            dydz * dydz
+        );
 
-    // Colour stops: grass → brown → grey rock → snow
-    const glm::vec3 grass(0.21f, 0.53f, 0.13f);   // rich meadow green
-    const glm::vec3 brown(0.50f, 0.34f, 0.16f);   // earthy mountain base
-    const glm::vec3 grey (0.49f, 0.47f, 0.45f);   // bare rock
-    const glm::vec3 snow (0.92f, 0.93f, 0.96f);
+    float steepness =
+        glm::clamp(
+            slope / 1.5f,
+            0.0f,
+            1.0f
+        );
 
-    glm::vec3 rgb;
-    if      (t < 0.22f) rgb = glm::mix(grass, brown, t / 0.22f);
-    else if (t < 0.58f) rgb = glm::mix(brown, grey,  (t - 0.22f) / 0.36f);
-    else                rgb = glm::mix(grey,  snow,  (t - 0.58f) / 0.42f);
+    // =====================================================
+    // Ruído para quebrar uniformidade
+    // =====================================================
 
-    return glm::vec4(rgb, 1.0f);
+    float vegetationNoise =
+        fbm(
+            x * 0.015f,
+            z * 0.015f,
+            5
+        );
+
+    float detailNoise =
+        fbm(
+            x * 0.08f,
+            z * 0.08f,
+            3
+        );
+
+    // =====================================================
+    // Paleta
+    // =====================================================
+
+    const glm::vec3 lushGrass(
+        0.30f,
+        0.62f,
+        0.22f
+    );
+
+    const glm::vec3 dryGrass(
+        0.55f,
+        0.60f,
+        0.25f
+    );
+
+    const glm::vec3 mountainGrass(
+        0.42f,
+        0.50f,
+        0.28f
+    );
+
+    const glm::vec3 rock(
+        0.55f,
+        0.53f,
+        0.50f
+    );
+
+    const glm::vec3 snow(
+        0.95f,
+        0.96f,
+        0.98f
+    );
+
+    // =====================================================
+    // Campos
+    // =====================================================
+
+    if (y < 18.0f)
+    {
+        glm::vec3 grass =
+            glm::mix(
+                dryGrass,
+                lushGrass,
+                vegetationNoise
+            );
+
+        grass *=
+            0.90f +
+            detailNoise * 0.20f;
+
+        return glm::vec4(
+            grass,
+            1.0f
+        );
+    }
+
+    // =====================================================
+    // Encostas verdes
+    // =====================================================
+
+    if (y < 40.0f)
+    {
+        float t =
+            (y - 18.0f) /
+            (40.0f - 18.0f);
+
+        glm::vec3 color =
+            glm::mix(
+                lushGrass,
+                mountainGrass,
+                t
+            );
+
+        color =
+            glm::mix(
+                color,
+                rock,
+                steepness * 0.5f
+            );
+
+        return glm::vec4(
+            color,
+            1.0f
+        );
+    }
+
+    // =====================================================
+    // Montanhas
+    // =====================================================
+
+    if (y < 75.0f)
+    {
+        float t =
+            (y - 40.0f) /
+            (75.0f - 40.0f);
+
+        glm::vec3 color =
+            glm::mix(
+                mountainGrass,
+                rock,
+                t
+            );
+
+        color =
+            glm::mix(
+                color,
+                rock,
+                steepness
+            );
+
+        return glm::vec4(
+            color,
+            1.0f
+        );
+    }
+
+    // =====================================================
+    // Picos nevados
+    // =====================================================
+
+    float snowAmount =
+        glm::clamp(
+            (y - 75.0f) / 30.0f,
+            0.0f,
+            1.0f
+        );
+
+    glm::vec3 summit =
+        glm::mix(
+            rock,
+            snow,
+            snowAmount
+        );
+
+    summit =
+        glm::mix(
+            summit,
+            snow,
+            steepness * 0.25f
+        );
+
+    return glm::vec4(
+        summit,
+        1.0f
+    );
 }
 
 // ============================================================================
@@ -501,19 +810,8 @@ void Terrain::buildWater()
             float ez = wz / m_lakeRZ;
             float de = std::sqrt(ex*ex + ez*ez);   // 0=centre, 1=ellipse edge
 
-            // Y position:
-            //   inside ellipse (de <= 1)  → flat at WATER_LEVEL
-            //   outside (de > 1)          → follows terrain height so the mesh
-            //                               dips under the shore and disappears
-            float wy;
-            if (de <= 1.0f) {
-                wy = WATER_LEVEL;
-            } else {
-                // Snap to terrain; add a tiny offset so it is guaranteed below
-                wy = sampleHeightFull(wx, wz) - 0.05f;
-                // Never rise above WATER_LEVEL (would poke through the surface)
-                wy = std::min(wy, WATER_LEVEL);
-            }
+            // Keep water flat everywhere so it correctly intersects the rising shore
+            float wy = WATER_LEVEL;
 
             // Colour: deep blue centre → teal shore → invisible outside ellipse
             glm::vec4 deepColor (0.08f, 0.18f, 0.52f, 0.78f);
@@ -521,11 +819,11 @@ void Terrain::buildWater()
             glm::vec4 edgeColor (0.18f, 0.55f, 0.76f, 0.00f);
 
             glm::vec4 col;
-            if (de <= 1.0f) {
-                float ct = de * de;   // eases colour toward shore
+            if (de <= 1.15f) {
+                float ct = (de / 1.15f) * (de / 1.15f);   // eases colour toward shore
                 col = glm::mix(deepColor, shoreColor, ct);
             } else {
-                float t = glm::clamp((de - 1.0f) / (overshoot - 1.0f), 0.0f, 1.0f);
+                float t = glm::clamp((de - 1.15f) / (overshoot - 1.15f), 0.0f, 1.0f);
                 // Smooth fade so the buried skirt has no hard alpha edge
                 t = t * t * (3.0f - 2.0f * t);
                 col = glm::mix(shoreColor, edgeColor, t);

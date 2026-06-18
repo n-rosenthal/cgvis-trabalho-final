@@ -377,12 +377,12 @@ void Assets::BuildModels() {
 
     MAILBOX.meshes =
     {
-        "Object_3"
+        "Object_4"
     };
 
     MAILBOX.textures =
     {
-        &MAILBOX_NORMAL
+        &MAILBOX_COLOR
     };
 
     MAILBOX.useTexture = true;

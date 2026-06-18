@@ -29,6 +29,7 @@ void Scene::build() {
 
     //  Pássaro
     m_bird.emplace();
+    m_bird->setPosition(glm::vec3(-180.0f, m_terrain->getHeight(-180.0f, -200.0f) + 20.0f, -200.0f));
 
     //  Árvores
     buildTrees();
@@ -42,7 +43,7 @@ void Scene::build() {
     //  Carta
     buildLetter();
 
-    //  Casas
+    //  Casa
     buildHouse();
 
     //  Mailbox
@@ -303,6 +304,8 @@ void Scene::draw(Renderer& r) {
     r.drawRings(m_rings);
     if (m_letter) r.drawLetter(*m_letter);
 
+    r.drawMailbox(*m_mailbox);
+
     r.drawObjects(m_staticObjects);
 
     // npcs
@@ -324,9 +327,9 @@ void Scene::draw(Renderer& r) {
  */
 void Scene::buildTerrain() {
     m_terrain = std::make_unique<Terrain>(
-        200,
-        256,
-        2.0f
+        130.5,
+        90.5,
+        6.0f
     );
 
     assert(m_terrain);
@@ -418,12 +421,13 @@ void Scene::buildTrees()
  * @brief   Constrói a casa principal do jogo
  */
 void Scene::buildHouse() {
+    float x = 120.0f, z = 120.0f;
     auto house =
     std::make_shared<StaticObject>(
         Assets::HOUSE,
-        glm::vec3(-25.0f, 0.0f, -25.0f),
-        glm::vec3(0.0f),
-        glm::vec3(2.0f)
+        glm::vec3(x, m_terrain->getHeight(x, z), z),
+        glm::vec3(0.0f, 45.0f, 0.0f),
+        glm::vec3(0.08f)
     );
 
     m_staticObjects.push_back(house);
@@ -433,10 +437,11 @@ void Scene::buildHouse() {
  * @brief   Constrói a mailbox, objetivo
  */
 void Scene::buildMailbox() {
+    float x = 155.0f, z = 135.0f;
     m_mailbox = std::make_shared<Mailbox>(
-        glm::vec3(80.0f, 0.0f, 80.0f),
+        glm::vec3(x, m_terrain->getHeight(x, z), z),
         glm::vec3(0.0f),
-        glm::vec3(1.0f)
+        glm::vec3(3.0f)
     );
 }
 
@@ -446,11 +451,13 @@ void Scene::buildMailbox() {
 void Scene::buildRings() {
     // Posições (x, offset_y, z) — offset_y é somado à altura do terreno
     const std::vector<glm::vec3> positions = {
-        { 20.0f, 20.0f,  20.0f },
-        { 40.0f, 30.0f,  25.0f },
-        { 60.0f, 40.0f,  30.0f },
-        { 80.0f, 50.0f,  25.0f },
-        {100.0f, 60.0f,  20.0f },
+        {-140.0f, 30.0f, -150.0f},
+        { -90.0f, 40.0f, -100.0f},
+        { -40.0f, 50.0f,  -50.0f},
+        {  10.0f, 50.0f,    0.0f},
+        {  60.0f, 40.0f,   50.0f},
+        { 110.0f, 30.0f,  100.0f},
+        { 150.0f, 20.0f,  150.0f},
     };
 
     //  construção dos anéis
@@ -466,12 +473,13 @@ void Scene::buildRings() {
  */
 void Scene::buildLetter()
 {
+    float x = -180.0f, z = -200.0f;
     m_letter =
         std::make_shared<Letter>(
             glm::vec3(
-                0.0f,
-                20.0f,
-                0.0f
+                x,
+                m_terrain->getHeight(x, z) + 1.0f,
+                z
             )
         );
 

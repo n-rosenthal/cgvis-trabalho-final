@@ -17,6 +17,7 @@
 #include "Objects/ProceduralRock.hpp"
 #include "Objects/Ring.hpp"
 #include "Objects/Letter.hpp"
+#include "Objects/Mailbox.hpp"
 
 #include "Bezier/Butterfly/ButterflyNPC.hpp"
 #include "Bezier/Carp/CarpNPC.hpp"
@@ -60,10 +61,12 @@ void Renderer::init(GLFWwindow* window){
 
     TextRendering_Init(window);
 
-    m_texSand = LoadTextureImage("assets/textures/terrain/Texturelabs_Soil_125M.jpg");
-    m_texGrass = LoadTextureImage("assets/textures/terrain/Texturelabs_Soil_135M.jpg");
-    m_texRock = LoadTextureImage("assets/textures/terrain/Texturelabs_Stone_137M.jpg");
-    m_texSnow = LoadTextureImage("assets/textures/terrain/Texturelabs_Water_156M.jpg");
+    //  O segundo parâmetro de `LoadTextureImage` indica se a textura deve ser repetida ou se deve ser clamped.
+    //  true: repetir, false: clamp-to-the-edges
+    m_texSand = LoadTextureImage("assets/textures/terrain/Texturelabs_Soil_126M.jpg", true);
+    m_texGrass = LoadTextureImage("assets/textures/terrain/Texturelabs_Soil_135M.jpg", true);
+    m_texRock = LoadTextureImage("assets/textures/terrain/Texturelabs_Stone_137M.jpg", true);
+    m_texSnow = LoadTextureImage("assets/textures/terrain/Texturelabs_Water_156M.jpg", true);
 
     glEnable(GL_DEPTH_TEST);
     glCullFace(GL_BACK);
@@ -171,22 +174,57 @@ void Renderer::drawTerrain(
     Terrain& terrain
 )
 {
+    // =====================================================
+    // Desabilita os sampler objects para estas unidades.
+    // O OpenGL passará a usar os parâmetros armazenados
+    // diretamente nas texturas.
+    // =====================================================
+    glBindSampler(1, 0);
+    glBindSampler(2, 0);
+    glBindSampler(3, 0);
+    glBindSampler(4, 0);
+
+    // =====================================================
+    // Sand
+    // =====================================================
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, m_texSand);
-    glUniform1i(glGetUniformLocation(m_program, "texSand"), 1);
+    glUniform1i(
+        glGetUniformLocation(m_program, "texSand"),
+        1
+    );
 
+    // =====================================================
+    // Grass
+    // =====================================================
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, m_texGrass);
-    glUniform1i(glGetUniformLocation(m_program, "texGrass"), 2);
+    glUniform1i(
+        glGetUniformLocation(m_program, "texGrass"),
+        2
+    );
 
+    // =====================================================
+    // Rock
+    // =====================================================
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, m_texRock);
-    glUniform1i(glGetUniformLocation(m_program, "texRock"), 3);
+    glUniform1i(
+        glGetUniformLocation(m_program, "texRock"),
+        3
+    );
 
+    // =====================================================
+    // Snow
+    // =====================================================
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, m_texSnow);
-    glUniform1i(glGetUniformLocation(m_program, "texSnow"), 4);
+    glUniform1i(
+        glGetUniformLocation(m_program, "texSnow"),
+        4
+    );
 
+    // Volta para a unidade padrão
     glActiveTexture(GL_TEXTURE0);
 
     terrain.model(
@@ -213,6 +251,9 @@ void Renderer::drawLetter(Letter& letter) {
     letter.render(makeContext(OBJ_LETTER));
 }
 
+void Renderer::drawMailbox(Mailbox& mailbox) {
+    mailbox.render(makeContext(OBJ_MAILBOX));
+}
 
 void Renderer::drawButterflyNPC(ButterflyNPC& npc) {
     npc.render(makeContext(OBJ_BUTTERFLY));
