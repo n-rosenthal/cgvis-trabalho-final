@@ -48,9 +48,6 @@ namespace Assets {
     extern TextureDefinition TREE_2_TWIGS;
     extern TextureDefinition TREE_2_LEAVES;
 
-    extern TextureDefinition RED_BRICKS;
-    extern TextureDefinition ROCKY_TERRAIN;
-
     extern TextureDefinition BIRD;
     extern TextureDefinition BIRD_STANDING;
     extern TextureDefinition BIRD_STANDING_LEFT;
@@ -58,14 +55,9 @@ namespace Assets {
     extern TextureDefinition HOUSE_NORMAL;
 
     extern TextureDefinition MAILBOX_COLOR;
-    extern TextureDefinition MAILBOX_METALLIC;
-    extern TextureDefinition MAILBOX_NORMAL;
 
     //  NPCs
     extern TextureDefinition BUTTERFLY_ALBEDO_TRANSPARENCY;
-    extern TextureDefinition BUTTERFLY_METTALLIC_SMOOTHNENESS;
-    extern TextureDefinition BUTTERFLY_NORMAL;
-    extern TextureDefinition CARP_NORMAL;
 
     // =====================================================
     // MODELOS
@@ -84,7 +76,6 @@ namespace Assets {
 
     //  NPCs
     extern ModelDefinition BUTTERFLY;
-    extern ModelDefinition CARP;
 
     // =====================================================
     // CICLO DE VIDA

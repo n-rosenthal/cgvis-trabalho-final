@@ -22,9 +22,6 @@ namespace Assets {
     TextureDefinition TREE_2_TWIGS;
     TextureDefinition TREE_2_LEAVES;
 
-    TextureDefinition RED_BRICKS;
-    TextureDefinition ROCKY_TERRAIN;
-
     TextureDefinition BIRD;
     TextureDefinition BIRD_STANDING;
     TextureDefinition BIRD_STANDING_LEFT;
@@ -32,14 +29,9 @@ namespace Assets {
     TextureDefinition HOUSE_NORMAL;
 
     TextureDefinition MAILBOX_COLOR;
-    TextureDefinition MAILBOX_METALLIC;
-    TextureDefinition MAILBOX_NORMAL;
 
     //  NPCs
     TextureDefinition BUTTERFLY_ALBEDO_TRANSPARENCY;
-    TextureDefinition BUTTERFLY_METTALLIC_SMOOTHNENESS;
-    TextureDefinition BUTTERFLY_NORMAL;
-    TextureDefinition CARP_NORMAL;
 
     // =====================================================
     // MODELOS
@@ -91,46 +83,22 @@ void Assets::LoadTextures() {
 
     TREE_1_TRUNK.id =
         LoadTextureImage(
-            TREE_1_TRUNK.file.c_str()
+            TREE_1_TRUNK.file.c_str(),
+            true
         );
 
     TREE_1_TWIGS.id =
         LoadTextureImage(
-            TREE_1_TWIGS.file.c_str()
+            TREE_1_TWIGS.file.c_str(),
+            true
         );
 
     TREE_1_LEAVES.id =
         LoadTextureImage(
-            TREE_1_LEAVES.file.c_str()
+            TREE_1_LEAVES.file.c_str(),
+            true
         );
 
-    // =====================================================
-    // BRICKS
-    // =====================================================
-
-    RED_BRICKS.file =
-        asset_path(
-            "textures/red_brick_diff_1k.jpg"
-        );
-
-    RED_BRICKS.id =
-        LoadTextureImage(
-            RED_BRICKS.file.c_str()
-        );
-
-    // =====================================================
-    // TERRAIN
-    // =====================================================
-
-    ROCKY_TERRAIN.file =
-        asset_path(
-            "textures/rocky_terrain_02_diff_1k.jpg"
-        );
-
-    ROCKY_TERRAIN.id =
-        LoadTextureImage(
-            ROCKY_TERRAIN.file.c_str()
-        );
 
     // =====================================================
     // BIRD
@@ -143,7 +111,8 @@ void Assets::LoadTextures() {
 
     BIRD.id =
         LoadTextureImage(
-            BIRD.file.c_str()
+            BIRD.file.c_str(),
+            true
         );
 
     BIRD_STANDING.file =
@@ -153,7 +122,8 @@ void Assets::LoadTextures() {
 
     BIRD_STANDING.id =
         LoadTextureImage(
-            BIRD_STANDING.file.c_str()
+            BIRD_STANDING.file.c_str(),
+            true
         );
     
     BIRD_STANDING_LEFT.file =
@@ -163,7 +133,8 @@ void Assets::LoadTextures() {
 
     BIRD_STANDING_LEFT.id =
         LoadTextureImage(
-            BIRD_STANDING_LEFT.file.c_str()
+            BIRD_STANDING_LEFT.file.c_str(),
+            true
         );
 
 
@@ -177,7 +148,8 @@ void Assets::LoadTextures() {
 
     HOUSE_NORMAL.id =
         LoadTextureImage(
-            HOUSE_NORMAL.file.c_str()
+            HOUSE_NORMAL.file.c_str(),
+            true
         );
 
     // =====================================================
@@ -190,27 +162,8 @@ void Assets::LoadTextures() {
 
     MAILBOX_COLOR.id =
         LoadTextureImage(
-            MAILBOX_COLOR.file.c_str()
-        );
-    
-    MAILBOX_METALLIC.file =
-        asset_path(
-            "textures/mailbox/M_Mailbox_metallicRoughness.png"
-        );
-    
-    MAILBOX_METALLIC.id =
-        LoadTextureImage(
-            MAILBOX_METALLIC.file.c_str()
-        );
-    
-    MAILBOX_NORMAL.file =
-        asset_path(
-            "textures/mailbox/M_Mailbox_normal.png"
-        );
-    
-    MAILBOX_NORMAL.id =
-        LoadTextureImage(
-            MAILBOX_NORMAL.file.c_str()
+            MAILBOX_COLOR.file.c_str(),
+            true
         );
 
     // =====================================================
@@ -224,27 +177,8 @@ void Assets::LoadTextures() {
 
     BUTTERFLY_ALBEDO_TRANSPARENCY.id =
         LoadTextureImage(
-            BUTTERFLY_ALBEDO_TRANSPARENCY.file.c_str()
-        );
-
-    BUTTERFLY_METTALLIC_SMOOTHNENESS.file =
-        asset_path(
-            "textures/butterfly/butt_low_lambert1_MetallicSmoothness.png"
-        );
-
-    BUTTERFLY_METTALLIC_SMOOTHNENESS.id =
-        LoadTextureImage(
-            BUTTERFLY_METTALLIC_SMOOTHNENESS.file.c_str()
-        );
-    
-    BUTTERFLY_NORMAL.file =
-        asset_path(
-            "textures/butterfly/butt_low_lambert1_Normal.png"
-        );
-
-    BUTTERFLY_NORMAL.id =
-        LoadTextureImage(
-            BUTTERFLY_NORMAL.file.c_str()
+            BUTTERFLY_ALBEDO_TRANSPARENCY.file.c_str(),
+            true
         );
 
     // =====================================================

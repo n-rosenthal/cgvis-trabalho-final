@@ -47,7 +47,7 @@ void CarpDrawable::model(
 
     glBindTexture(
         GL_TEXTURE_2D,
-        Assets::CARP_NORMAL.id
+        Assets::BUTTERFLY_ALBEDO_TRANSPARENCY.id
     );
 
     glUniform1i(
