@@ -31,7 +31,15 @@ class CarpNPC;
 class Renderer {
 public:
     // Ciclo de vida
-    void init(GLFWwindow* window);   // carrega shaders, texturas e modelos OBJ
+    void init(GLFWwindow* window);          // carrega shaders, texturas e modelos OBJ
+    
+    void initMinimal(GLFWwindow* window);
+    void loadShaders();
+    void loadTextures();
+    void loadModels();
+    void drawLoadingScreen(float progress);
+    void drawMenu();
+
     void shutdown();
 
     // Frame
@@ -119,6 +127,4 @@ private:
     void        setObjectId(ObjectId id)               const;
     void        setModel(const glm::mat4& model)       const;
     DrawContext makeContext(ObjectId id);
-
-    void loadModels() const;
 };

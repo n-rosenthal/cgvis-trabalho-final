@@ -1,80 +1,63 @@
 /**
- * @file    `Letter.hpp`
- * @brief   Header para impl. da interface `GameObject` (objeto do jogo) para `Letter`
+ * @file    Letter.hpp
+ * @brief   Header for the Letter class (floating collectible)
  */
 
 #pragma once
 
 #include "Objects/Interfaces/GameObject.hpp"
-
 #include "Objects/Assets.hpp"
 #include "Objects/ObjDrawable.hpp"
-
 #include <memory>
-#include <iostream>
 
 class Letter : public GameObject {
 public:
     /**
-     * @brief Construtor padrão para `Letter`
-     * 
-     * @param   position (glm::vec3)
-     *          posição inicial 
-     * @param   rotation (glm::vec3)
-     *          rotação inicial
-     * @param   scale (glm::vec3)
-     *          escala inicial  
+     * @brief Constructor
+     * @param position  initial world position
+     * @param rotation  initial rotation
+     * @param scale     initial scale
      */
     Letter(
-        const glm::vec3& position 
-                = glm::vec3(5.0f, -0.9f, 5.0f),
-        const glm::vec3& rotation
-                = glm::vec3(0.0f),
-        const glm::vec3& scale
-                = glm::vec3(1.0f)
-    ) : GameObject(std::make_unique<ObjDrawable>(
-        Assets::LETTER
-    ), position, rotation, scale) {};
+        const glm::vec3& position = glm::vec3(5.0f, -0.9f, 5.0f),
+        const glm::vec3& rotation = glm::vec3(0.0f),
+        const glm::vec3& scale    = glm::vec3(1.0f)
+    ) : GameObject(std::make_unique<ObjDrawable>(Assets::LETTER), position, rotation, scale) {}
 
-    //  Getters
-
-    /**
-     * @brief   Acessador à posição atual de `Letter`
-     * @return  (glm::vec3)
-     *          posição atual de `Letter`
-     */
+    // ---- Getters ----
     glm::vec3 getPosition() const { return m_position; }
-
-    /**
-     * @brief   Retorna o tamanho da carta
-     * @return  (float)
-     *          tamanho da carta
-     */
     float getSize() const { return m_size; }
 
-    //  Setters
-    /**
-     * @brief   Define posição de `Letter`
-     * @param   position (glm::vec3)
-     *          posição a ser definida para `Letter`
-     */
-    void setPosition(const glm::vec3& position) { m_position = position; }
+    // Ground position (the (x,z) where the letter rests)
+    glm::vec2 getGroundPos() const { return m_groundPos; }
+    float getFloatHeight() const { return m_floatHeight; }
+    float getAmplitude() const { return m_amplitude; }
+    float getPhase() const { return m_phase; }
 
-    void setRotation(const glm::vec3& rotation) { m_rotation = rotation; }
-
-    /**
-     * @brief   Define o tamanho de `Letter`
-     * @param   size (float)
-     *          tamanho a ser definido para `Letter`
-     */
+    // ---- Setters ----
+    void setPosition(const glm::vec3& pos) { m_position = pos; }
+    void setRotation(const glm::vec3& rot) { m_rotation = rot; }
     void setSize(float size) { m_size = size; }
 
+    void setGroundPos(const glm::vec2& pos) { m_groundPos = pos; }
+    void setFloatHeight(float h) { m_floatHeight = h; }
+    void setAmplitude(float a) { m_amplitude = a; }
+    void setPhase(float p) { m_phase = p; }
 
 private:
-    //  Tamanho da carta
-    float m_size;
+    float m_size = 1.0f;                     // scale factor (if needed separately)
 
-    //  Ponteiro para uma instância de classe
-    //  que implementa a interface `Drawable`
+    // Floating parameters (used when OnGround)
+    glm::vec2 m_groundPos = glm::vec2(0.0f); // (x,z) where the letter sits
+    float m_floatHeight = 2.0f;              // base height above terrain (h)
+    float m_amplitude   = 0.5f;              // oscillation amplitude (d)
+    float m_phase       = 0.0f;              // initial phase offset for oscillation
+
     std::unique_ptr<ObjDrawable> m_drawable;
+};
+
+enum class LetterState {
+    OnGround,
+    Carried,
+    Falling
 };

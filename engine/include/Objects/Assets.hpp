@@ -53,10 +53,7 @@ namespace Assets {
 
     //  Árvore BIRCH
     //  sem textura?
-
-    //  Árvore PINE
-    extern TextureDefinition PINE_TEXTURE;
-
+    
     //  Árvore OAK
     extern TextureDefinition OAK_TEXTURE;
     extern TextureDefinition OAK_LEAVES_TEXTURE;
@@ -85,8 +82,6 @@ namespace Assets {
     extern TextureDefinition ROCK_3_TEXTURE;
     extern TextureDefinition ROCK_4_TEXTURE;
     extern TextureDefinition ROCK_5_TEXTURE;
-    // extern TextureDefinition ROCK_6_TEXTURE;
-    // extern TextureDefinition HUGE_ROCK_TEXTURE;
 
     //  Pássaro voador (NPC)
     extern TextureDefinition FLYING_BIRD_TEXTURE;
@@ -110,12 +105,7 @@ namespace Assets {
 
     extern ModelDefinition HOUSE;
     extern ModelDefinition MAILBOX;
-    
-    //  Árvore BIRCH
-    extern ModelDefinition BIRCH;
 
-    //  Árvore PINE
-    extern ModelDefinition PINE;
 
     //  Árvore OAK
     extern ModelDefinition OAK;
@@ -135,17 +125,12 @@ namespace Assets {
     //  Planta MARINE
     extern ModelDefinition MARINE_PLANT;
 
-    //  Flor MARGARIDA
-    extern ModelDefinition MARGARITE;
-
-    //  ROCHAS (1-5, HUGE_ROCK)
+    //  ROCHAS (1-5)
     extern ModelDefinition ROCK_1;
     extern ModelDefinition ROCK_2;
     extern ModelDefinition ROCK_3;
     extern ModelDefinition ROCK_4;
     extern ModelDefinition ROCK_5;
-    // extern ModelDefinition ROCK_6;
-    extern ModelDefinition HUGE_ROCK;
 
     //  Pássaro voador (NPC)
     extern ModelDefinition FLYING_BIRD;

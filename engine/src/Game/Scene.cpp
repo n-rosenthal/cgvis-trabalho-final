@@ -9,6 +9,13 @@
 #include "audio/AudioManager.hpp"
 #include "Collision/CollisionSystem.hpp"
 
+#include <tuple>
+#include <algorithm>
+#include <random>
+#include <chrono>
+
+
+
 #include "Game/Window.hpp" // varr. depuração LETTER
 
 extern SoundManager g_Sound;
@@ -30,8 +37,7 @@ void Scene::build() {
     buildTerrain();
 
     //  Pássaro
-    m_bird.emplace();
-    m_bird->setPosition(glm::vec3(-180.0f, m_terrain->getHeight(-180.0f, -200.0f) + 20.0f, -200.0f));
+    spawnBird();
 
     //  Objetos estáticos
     buildStaticObjects();
@@ -49,6 +55,15 @@ void Scene::build() {
     //  NPCs
     buildButterflyNPCs();
     buildCarpNPCs();
+}
+
+/**
+ * @brief   Instancia o pássaro controlável e posiciona-o no ponto de partida.
+ *          Depende de m_terrain já estar construído (buildTerrain()).
+ */
+void Scene::spawnBird() {
+    m_bird.emplace();
+    m_bird->setPosition(glm::vec3(-180.0f, m_terrain->getHeight(-180.0f, -200.0f) + 20.0f, -200.0f));
 }
 
 /**
@@ -124,54 +139,59 @@ void Scene::update(float dt, GLFWwindow* w) {
     }
 }
 
-void Scene::updateLetter(
-    float dt,
-    GLFWwindow* window
-)
+void Scene::updateLetter(float dt, GLFWwindow* window)
 {
-    if(!m_letter)
-        return;
+    if (!m_letter) return;
 
-    switch(m_letterState)
-    {
+    switch (m_letterState) {
         case LetterState::Carried:
         {
-            glm::vec3 offset =
-                m_bird->getForward() * 2.0f
-                -
-                m_bird->getUp() * 0.5f;
-
-            m_letter->setPosition(
-                m_bird->getPosition()
-                +
-                offset
-            );
-
-            m_letter->setRotation(
-                m_bird->getRotation()
-            );
-
+            glm::vec3 offset = m_bird->getForward() * 2.0f - m_bird->getUp() * 0.5f;
+            m_letter->setPosition(m_bird->getPosition() + offset);
+            m_letter->setRotation(m_bird->getRotation());
             break;
         }
 
         case LetterState::Falling:
         {
-            m_letterVelocity.y -=
-                9.8f * dt;
-
-            glm::vec3 p =
-                m_letter->getPosition();
-
-            p +=
-                m_letterVelocity * dt;
-
+            m_letterVelocity.y -= 9.8f * dt;
+            glm::vec3 p = m_letter->getPosition();
+            p += m_letterVelocity * dt;
             m_letter->setPosition(p);
-
             break;
         }
 
         case LetterState::OnGround:
         {
+            // --- Floating oscillation ---
+            // Accumulate time
+            m_letterOscillationTime += dt;
+
+            // Get parameters from the letter
+            glm::vec2 ground = m_letter->getGroundPos();
+            float h = m_letter->getFloatHeight();
+            float d = m_letter->getAmplitude();
+            float phase = m_letter->getPhase();
+
+            // Compute vertical offset: sin wave
+            float omega = 1.5f;              // angular frequency (rad/s)
+            float offset = d * sin(omega * m_letterOscillationTime + phase);
+
+            // Get terrain height at the ground position
+            float terrainY = m_terrain->getHeight(ground.x, ground.y);
+
+            // Set new position
+            float y = terrainY + h + offset;
+            m_letter->setPosition(glm::vec3(ground.x, y, ground.y));
+
+            // --- Continuous rotation around Y axis ---
+            glm::vec3 rot = m_letter->getRotation();
+            float rotSpeed = 0.8f;          // radians per second
+            rot.y += rotSpeed * dt;
+            // Keep rotation in range (optional)
+            if (rot.y > 2.0f * M_PI) rot.y -= 2.0f * M_PI;
+            m_letter->setRotation(rot);
+
             break;
         }
     }
@@ -337,92 +357,272 @@ void Scene::buildTerrain() {
     m_terrain->generate();
 }
 
+float Scene::terrainSlope(float x, float z) const {
+    constexpr float eps = 1.0f;
+
+    float h1 = m_terrain->getHeight(x + eps, z);
+    float h2 = m_terrain->getHeight(x - eps, z);
+
+    float h3 = m_terrain->getHeight(x, z + eps);
+    float h4 = m_terrain->getHeight(x, z - eps);
+
+    float dx = (h1 - h2) / (2.0f * eps);
+    float dz = (h3 - h4) / (2.0f * eps);
+
+    return std::sqrt(dx*dx + dz*dz);
+}
+
+float Scene::lakeDistance(float x, float z) const {
+    float ex = x / m_terrain->lakeRX();
+    float ez = z / m_terrain->lakeRZ();
+
+    return std::sqrt(ex*ex + ez*ez);
+}
+
+
+std::vector<StaticObjectDef> Scene::generateLakeObjects(int count) {
+    std::vector<StaticObjectDef> out;
+
+    std::mt19937 rng(42);
+
+    std::uniform_real_distribution<float>
+        px(-300.f,300.f),
+        pz(-300.f,300.f),
+        rot(0.f,360.f),
+        scale(0.2f,0.8f);
+
+    const ModelDefinition* lakeModels[] =
+    {
+        &Assets::MARINE_PLANT
+    };
+
+    while (out.size() < count)
+    {
+        float x = px(rng);
+        float z = pz(rng);
+
+        float y =
+            m_terrain->getHeight(x,z);
+
+        float lake =
+            lakeDistance(x,z);
+
+        if(lake > 1.1f || lake < 0.6f)
+            continue;
+        
+        auto model = lakeModels[0];
+
+        out.emplace_back(
+            model,
+            glm::vec3(x,y,z),
+            glm::vec3(0.0f),
+            scale(rng)
+        );
+    }
+
+    return out;
+}
+
+std::vector<StaticObjectDef> Scene::generateTrees(int count) {
+    std::vector<StaticObjectDef> out;
+
+    std::mt19937 rng(42);
+
+    std::uniform_real_distribution<float>
+        px(-300.f,300.f),
+        pz(-300.f,300.f),
+        rot(0.f,360.f),
+        scale(2.5f,6.0f);
+
+    const ModelDefinition* treeModels[] =
+    {
+        &Assets::OAK
+    };
+
+    while(out.size() < count)
+    {
+        float x = px(rng);
+        float z = pz(rng);
+
+        float y =
+            m_terrain->getHeight(x,z);
+
+        float slope =
+            terrainSlope(x,z);
+
+        float lake =
+            lakeDistance(x,z);
+
+        if(slope > 0.6f)
+            continue;
+
+        if(lake < 1.2f)
+            continue;
+
+        if(lake > 2.3f)
+            continue;
+
+        auto model = treeModels[0];
+
+        out.emplace_back(
+            model,
+            glm::vec3(x, m_terrain->getHeight(x,z) - 0.2f, z),
+            glm::vec3(
+                0.f,
+                rot(rng),
+                0.f
+            ),
+            scale(rng)
+        );
+    }
+
+    return out;
+}
+
+std::vector<StaticObjectDef>
+Scene::generateBushes(int count)
+{
+    std::vector<StaticObjectDef> out;
+
+    std::mt19937 rng(43);
+
+    std::uniform_real_distribution<float>
+        px(-300.f,300.f),
+        pz(-300.f,300.f);
+
+    while(out.size() < count)
+    {
+        float x = px(rng);
+        float z = pz(rng);
+
+        float y =
+            m_terrain->getHeight(x,z);
+
+        float lake =
+            lakeDistance(x,z);
+
+        if(lake < 1.1f)
+            continue;
+
+        if(lake > 1.9f)
+            continue;
+
+        if(terrainSlope(x,z) > 0.4f)
+            continue;
+
+        out.emplace_back(
+            &Assets::STYLED_SHRUB,
+            glm::vec3(x,m_terrain->getHeight(x,z) - 0.2f, z),
+            glm::vec3(0.f),
+            2.0f + (rng()%100)/200.f
+        );
+    }
+
+    return out;
+}
+
+std::vector<StaticObjectDef>
+Scene::generateRocks(int count)
+{
+    std::vector<StaticObjectDef> out;
+
+    std::mt19937 rng(44);
+
+    std::uniform_real_distribution<float>
+        px(-300.f,300.f),
+        pz(-300.f,300.f),
+        scale(0.05f, 0.1f);
+
+    const ModelDefinition* rocks[] =
+    {
+        // &Assets::ROCK_1,
+        &Assets::ROCK_2,
+        // &Assets::ROCK_3,
+        &Assets::ROCK_4,
+        &Assets::ROCK_5
+    };
+
+    while(out.size() < count)
+    {
+        float x = px(rng);
+        float z = pz(rng);
+        float s = scale(rng);
+        
+        float lake =
+            lakeDistance(x,z);
+        
+        if(lake < 1.5f || lake > 2.0f)
+            continue;
+
+
+        out.emplace_back(
+            rocks[rng()%3],
+            glm::vec3(x, m_terrain->getHeight(x,z) - 1.5f , z),
+            m_terrain->getNormal(x,z),
+            s
+        );
+
+        float h = m_terrain->getHeight(x,z);
+
+        std::cout
+            << "rock "
+            << x << " "
+            << z << " "
+            << "height=" << h
+            << "\n";
+    }
+
+    return out;
+}
 
 /**
  * @brief   Constrói os objetos estáticos do jogo
  */
 void Scene::buildStaticObjects() {
-    //  Limpa o vetor `m_staticObjects`
     m_staticObjects.clear();
-    
-    //  ======================================================================
-    //  ROCHAS (ROCK_{1-5}, HUGE_ROCK)
-    //  ======================================================================
-    //  Posições das rochas (x, z)
-    const std::vector<glm::vec2> rock_positions = {
-        { 0.0f, -145.0f },
-        { 5.0f, -145.0f },
-        { 6.0f, -146.0f },
-        { 10.0f, -140.0f },
-        { 20.0f, -135.0f },
-    };
 
-    //  Posições das huge rocks (x, z)
-    const std::vector<glm::vec2> huge_rocks_positions = {
-        { 10.0f, -140.0f },
-        { 15.0f, -135.0f },
-        { 20.0f, -130.0f },
-    };
+    std::vector<StaticObjectDef> objs;
 
-    //  Construção das rochas
-    for (int i = 0; i < rock_positions.size(); ++i) {
-        //  vetor de objetos estáticos
+    auto trees  = generateTrees(30);
+    glfwPollEvents();
+
+    auto bushes = generateBushes(50);
+    glfwPollEvents();
+
+    auto rocks  = generateRocks(45);
+    glfwPollEvents();
+
+    auto lake_objs = generateLakeObjects(100);
+    glfwPollEvents();
+
+    objs.insert(objs.end(), trees.begin(), trees.end());
+    objs.insert(objs.end(), bushes.begin(), bushes.end());
+    objs.insert(objs.end(), rocks.begin(), rocks.end());
+    objs.insert(objs.end(), lake_objs.begin(), lake_objs.end());
+
+    for (size_t i = 0; i < objs.size(); ++i)
+    {
+        const auto& def = objs[i];
+
+        const ModelDefinition* model = std::get<0>(def);
+        glm::vec3 pos              = std::get<1>(def);
+        glm::vec3 rot              = std::get<2>(def);
+        float scale                = std::get<3>(def);
+
         m_staticObjects.push_back(
-            //  ponteiro para objeto estático
             std::make_shared<StaticObject>(
-                //  Modelo a ser utilizado
-                Assets::ROCK_3,
-
-                //  Posição do objeto
-                glm::vec3(
-                    rock_positions[i].x,
-                    m_terrain->getHeight(rock_positions[i].x, rock_positions[i].y) - 0.5f,
-                    rock_positions[i].y
-                ),
-
-                //  Rotação do objeto
-                glm::vec3(0.0f),
-
-                //  Escala
-                glm::vec3(0.05f)
+                *model,
+                pos,
+                rot,
+                glm::vec3(scale)
             )
         );
 
-        std::cout
-            << "rock at "
-            << rock_positions[i].x
-            << ", "
-            << m_terrain->getHeight(rock_positions[i].x, rock_positions[i].y)
-            << ", "
-            << rock_positions[i].y
-            << '\n';
+        // Mantém a janela responsiva durante a construção dos ~225 objetos
+        if (i % 20 == 0)
+            glfwPollEvents();
     }
-
-    //  Construção das huge rocks
-    // for (int i = 0; i < huge_rocks_positions.size(); ++i) {
-    //     //  vetor de objetos estáticos
-    //     m_staticObjects.push_back(
-    //         //  ponteiro para objeto estático
-    //         std::make_shared<StaticObject>(
-    //             //  Modelo a ser utilizado
-    //             Assets::HUGE_ROCK,
-
-    //             //  Posição do objeto
-    //             glm::vec3(
-    //                 huge_rocks_positions[i].x,
-    //                 m_terrain->getHeight(huge_rocks_positions[i].x, huge_rocks_positions[i].y) - 0.5f,
-    //                 huge_rocks_positions[i].y
-    //             ),
-
-    //             //  Rotação do objeto
-    //             glm::vec3(0.0f),
-
-    //             //  Escala
-    //             glm::vec3(1.0f)
-    //         )
-    //     );
-    // };
-};
+}
 
 
 
@@ -467,20 +667,21 @@ void Scene::buildRings() {
 void Scene::buildLetter()
 {
     float x = -180.0f, z = -200.0f;
-    m_letter =
-        std::make_shared<Letter>(
-            glm::vec3(
-                x,
-                m_terrain->getHeight(x, z) + 1.0f,
-                z
-            )
-        );
+    float terrainY = m_terrain->getHeight(x, z);
 
-    m_letterState =
-        LetterState::OnGround;
+    m_letter = std::make_shared<Letter>(
+        glm::vec3(x, terrainY + 2.0f, z)  // start at float height
+    );
 
-    m_letterVelocity =
-        glm::vec3(0.0f);
+    // Set floating parameters
+    m_letter->setGroundPos(glm::vec2(x, z));
+    m_letter->setFloatHeight(2.0f);   // h
+    m_letter->setAmplitude(0.8f);     // d
+    m_letter->setPhase(0.0f);         // initial phase (optional)
+
+    m_letterState = LetterState::OnGround;
+    m_letterVelocity = glm::vec3(0.0f);
+    m_letterOscillationTime = 0.0f;   // reset timer
 }
 
 

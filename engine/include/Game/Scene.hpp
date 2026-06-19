@@ -39,23 +39,21 @@
 
 class Renderer;  // forward
 
-/**
- * @brief   `LetterState` representa o estado da `Letter`
- * @details  correspondem aos estados possíveis da carta
- *              - `OnGround`: carta no chão, passível de ser pega pelo pássaro
- *              - `Carried`: carta sendo carregada pelo pássaro
- *              - `Falling`: carta caindo
- */
-enum class LetterState {
-    OnGround,
-    Carried,
-    Falling
-};
+
+using StaticObjectDef =
+    std::tuple<
+        const ModelDefinition*, // modelo
+        glm::vec3,              // posição (x,y,z)
+        glm::vec3,              // rotação
+        float                   // escala
+    >;
 
 class Scene {
 public:
     //  Aceleração da gravidade
     static constexpr float GRAVITY = 9.81f;
+
+    void spawnBird();
 
     //  `build` invoca todos os métodos de construção dos objetos
     void build();
@@ -76,6 +74,12 @@ public:
     void buildMailbox();
 
     //  Constrói os objetos estáticos do jogo
+    float lakeDistance(float x, float z) const;
+    float terrainSlope(float x, float z) const;
+    std::vector<StaticObjectDef> generateBushes(int count);
+    std::vector<StaticObjectDef> generateTrees(int count);
+    std::vector<StaticObjectDef> generateRocks(int count);
+    std::vector<StaticObjectDef> generateLakeObjects(int count);
     void buildStaticObjects();
 
     void buildButterflyNPCs();
@@ -113,6 +117,9 @@ private:
 
     //  Velocidade da carta
     glm::vec3 m_letterVelocity  = glm::vec3(0.0f);
+
+    //  Animação da carta
+    float m_letterOscillationTime = 0.0f;
 
 
     //  NPCs

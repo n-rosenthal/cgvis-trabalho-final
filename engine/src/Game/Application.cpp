@@ -1,113 +1,268 @@
 /**
- * @file    `Application.cpp`
- * @brief   Implementação da classe que lida com o ciclo de vida do jogo, em alto nível
+ * @file Application.cpp
+ * @brief Implementação da classe que controla o ciclo de vida do jogo.
  */
 
 #include "Game/Application.hpp"
+#include "Game/AssetLoader.hpp"
 
-/**
- * @brief   Faz chamada de sistema para descobrir o timestamp
- *          do sistema atual e decide por iluminação diurna
- *          ou noturna
- */
-void Application::updateDayNight() {
+#include <ctime>
+
+//
+// ============================================================
+// DIA / NOITE
+// ============================================================
+//
+
+void Application::updateDayNight()
+{
     static bool isDayTime = true;
     static float lastCheckTime = -1.0f;
-    float current = (float)glfwGetTime();
 
-    // Check system time only once per second to avoid expensive system calls every frame
-    if (current - lastCheckTime > 1.0f) {
+    float current =
+        static_cast<float>(glfwGetTime());
+
+    if (current - lastCheckTime > 1.0f)
+    {
         lastCheckTime = current;
-        time_t now = time(0);
-        struct tm* t = localtime(&now);
+
+        time_t now = time(nullptr);
+        tm* t = localtime(&now);
+
         int hour = t->tm_hour;
 
-        // Dia = entre 6h e 18h
-        bool actualDayTime = !(hour >= 18 || hour < 6);
-        isDayTime = g_ManualDayNight ? g_DayTime : actualDayTime;
+        bool actualDayTime =
+            !(hour >= 18 || hour < 6);
+
+        isDayTime =
+            g_ManualDayNight
+            ? g_DayTime
+            : actualDayTime;
     }
 
-    if (isDayTime) glClearColor(0.9f, 0.9f, 1.0f, 1.0f);
-    else           glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
+    if (isDayTime)
+        glClearColor(
+            0.9f,
+            0.9f,
+            1.0f,
+            1.0f
+        );
+    else
+        glClearColor(
+            0.1f,
+            0.1f,
+            0.2f,
+            1.0f
+        );
 }
 
+//
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+//
 
-/**
- * @brief   Invoca métodos de classes específicas para
- *          inicializar a aplicação do jogo
- * @details `title`, `h` e `w` são passados para a classe
- *          `Window`, que inicializa GLAD e GLFW. Em seguida,
- *          inicializa a classe `Renderer` e a classe `Scene`.
- * 
- * @param title (const char*)
- *          nome da janela
- * @param w     (int)
- *          altura da janela
- * @param h     (int)
- *          largura da janela
- */
-void Application::init(const char* title, int w, int h) {
-    m_window.init(title, w, h);
-    
-    double start = glfwGetTime();
-    m_renderer.init(m_window.get());    // carrega shaders, texturas, modelos OBJ
-    printf(
-        "Renderer init: %.3f s\n",
-        glfwGetTime() - start
+void Application::init(
+    const char* title,
+    int w,
+    int h
+)
+{
+    //
+    // Janela
+    //
+    m_window.init(
+        title,
+        w,
+        h
     );
 
-    start = glfwGetTime();
-    m_scene.build();
-    printf(
-        "Scene build: %.3f s\n",
-        glfwGetTime() - start
+    //
+    // Renderer mínimo
+    //
+    m_renderer.initMinimal(
+        m_window.get()
+    );
+
+    //
+    // Loader
+    //
+    m_loader =
+        std::make_unique<AssetLoader>(
+            m_renderer,
+            m_scene
+        );
+
+    //
+    // Começa na tela de loading
+    //
+    m_state =
+        GameState::LOADING;
+
+    m_lastTime =
+        static_cast<float>(
+            glfwGetTime()
+        );
+}
+
+//
+// ============================================================
+// LOADING
+// ============================================================
+//
+
+void Application::processLoading(float)
+{
+    if (!m_loader->finished())
+    {
+        m_loader->loadNextStep();
+        return;
+    }
+
+    m_state =
+        GameState::MENU;
+}
+
+void Application::renderLoading()
+{
+    glClear(
+        GL_COLOR_BUFFER_BIT |
+        GL_DEPTH_BUFFER_BIT
+    );
+
+    float progress =
+        m_loader->progress();
+
+    m_renderer.drawLoadingScreen(
+        progress
     );
 }
 
-/**
- * @brief   Inicia o ciclo de vida do jogo, em alto nível
- */
-void Application::run() {
-    m_lastTime = (float)glfwGetTime();
+//
+// ============================================================
+// MENU
+// ============================================================
+//
 
-    while (!m_window.shouldClose()) {
-        //  Controle do tempo
-        float now = (float)glfwGetTime();
-        float dt  = now - m_lastTime;
+void Application::processMenu(float)
+{
+    GLFWwindow* window =
+        m_window.get();
 
-        //  armazena em campo pŕoprio da classe
-        //  o tempo atual
-        m_lastTime = now;
-
-        //  processa um frame
-        processFrame(dt);
-
-        //  buffers e poll events
-        glFinish();
-        m_window.swapAndPoll();
+    if (
+        glfwGetKey(
+            window,
+            GLFW_KEY_ENTER
+        ) == GLFW_PRESS
+    )
+    {
+        m_state =
+            GameState::PLAYING;
     }
 }
 
-/**
- * @brief   Processa um frame
- * 
- * @param dt (float)
- *          passagem do tempo
- */
-void Application::processFrame(float dt) {
-    //  limpa a tela, verifica se noite ou dia
-    updateDayNight();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+void Application::renderMenu()
+{
+    glClear(
+        GL_COLOR_BUFFER_BIT |
+        GL_DEPTH_BUFFER_BIT
+    );
 
-    // glm::vec3 sun = glm::normalize(glm::vec3(0.6f, 0.8f, 0.3f));
-    // m_skybox.draw(m_renderer.getProjectionMatrix(), m_renderer.getViewMatrix(), sun, 0.5f);  // 0.5 = meio-dia
+    m_renderer.drawMenu();
+}
 
-    m_scene.update(dt, m_window.get());
+//
+// ============================================================
+// JOGO
+// ============================================================
+//
 
+void Application::processPlaying(float dt)
+{
+    m_scene.update(
+        dt,
+        m_window.get()
+    );
 
     m_scene.resolveCollisions();
-    m_renderer.beginFrame(m_scene.getCamera());
+}
 
-    m_scene.draw(m_renderer);
-    m_renderer.endFrame(m_window.get());
+void Application::processFrame(float dt)
+{
+    switch(m_state)
+    {
+        case GameState::LOADING:
+            processLoading(dt);
+            renderLoading();
+            break;
+
+        case GameState::MENU:
+            processMenu(dt);
+            renderMenu();
+            break;
+
+        case GameState::PLAYING:
+        {
+            updateDayNight();
+
+            glClear(
+                GL_COLOR_BUFFER_BIT |
+                GL_DEPTH_BUFFER_BIT
+            );
+
+            processPlaying(dt);
+
+            m_renderer.beginFrame(
+                m_scene.getCamera()
+            );
+
+            m_scene.draw(
+                m_renderer
+            );
+
+            m_renderer.endFrame(
+                m_window.get()
+            );
+
+            break;
+        }
+
+        default:
+            break;
+    }
+}
+
+//
+// ============================================================
+// LOOP PRINCIPAL
+// ============================================================
+//
+
+void Application::run()
+{
+    while(
+        !glfwWindowShouldClose(
+            m_window.get()
+        )
+    )
+    {
+        float current =
+            static_cast<float>(
+                glfwGetTime()
+            );
+
+        float dt =
+            current - m_lastTime;
+
+        m_lastTime =
+            current;
+
+        processFrame(dt);
+
+        glfwSwapBuffers(
+            m_window.get()
+        );
+
+        glfwPollEvents();
+    }
 }

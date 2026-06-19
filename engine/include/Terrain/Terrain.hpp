@@ -32,6 +32,15 @@ public:
         bool  house;
     };
 
+    float ellipticDistance(float x, float z) const;
+
+    // ----- Island table (lazily built from fraction constants) ---------------
+    mutable std::vector<IslandDef> m_islandCache;
+    const std::vector<IslandDef>& islandTable() const;
+
+    int   m_width, m_depth;
+    float m_spacing;
+    float m_halfW, m_halfD;   // world-space half-extents
 protected:
     // Drawable interface
     void buildMesh()      override;
@@ -51,16 +60,11 @@ private:
 
     // ----- Terrain dimensions -----------------------------------------------
     // m_vertices, m_indices, m_buffers são herdados de `Drawable`
-    int   m_width, m_depth;
-    float m_spacing;
-    float m_halfW, m_halfD;   // world-space half-extents
+
 
     float m_lakeRX;           // elipse semi-axis X (= 0.42 * m_halfW)
     float m_lakeRZ;           // elipse semi-axis Z (= 0.28 * m_halfD)
 
-    // ----- Island table (lazily built from fraction constants) ---------------
-    mutable std::vector<IslandDef> m_islandCache;
-    const std::vector<IslandDef>& islandTable() const;
 
     // ----- Height pipeline --------------------------------------------------
     float sampleHeight    (float x, float z) const;
@@ -69,7 +73,6 @@ private:
     float lakeBasin       (float x, float z) const;
     float addIslands      (float x, float z) const;
     float innerField      (float x, float z) const;
-    float ellipticDistance(float x, float z) const;
 
     // ----- Colour -----------------------------------------------------------
     glm::vec4 sampleColor(float y, float x, float z) const;

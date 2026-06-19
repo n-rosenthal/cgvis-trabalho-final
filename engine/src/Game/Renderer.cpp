@@ -1,13 +1,15 @@
 /**
- * @file    `Renderer.cpp`
+ * @file Renderer.cpp
  */
 
-#include "glad/glad.h"
-#include <glm/gtc/type_ptr.hpp>
+#include "Game/Renderer.hpp"
+
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include "Window/WindowCallbacks.hpp"
-#include "Game/Renderer.hpp"
 #include "Game/Camera.hpp"
 
 #include "Objects/Assets.hpp"
@@ -25,25 +27,29 @@
 #include "Renderer/ShaderLoader.hpp"
 #include "Loaders/TextureLoader.hpp"
 #include "Loaders/ObjLoader.hpp"
+
 #include "matrices.h"
 #include "textrendering.hpp"
 
-inline std::string asset_path(const std::string& sub) {
-    return std::string("assets/") + sub;
-}
+#include <cmath>
+#include <cstdio>
 
-namespace {
+namespace
+{
     constexpr float kFov  = glm::pi<float>() / 2.0f;
     constexpr float kNear = -0.1f;
     constexpr float kFar  = -512.0f;
 }
 
-// ── Ciclo de vida ─────────────────────────────────────────────────────────────
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
 
-void Renderer::init(GLFWwindow* window){
+void Renderer::initMinimal(GLFWwindow* window)
+{
     glfwPollEvents();
+
     LoadShadersFromFiles();
-    glfwPollEvents();
 
     m_program         = g_GpuProgramID;
     m_modelUniform    = g_model_uniform;
@@ -54,38 +60,68 @@ void Renderer::init(GLFWwindow* window){
     if (m_program == 0)
     {
         fprintf(stderr, "ERRO: shader inválido!\n");
-        exit(1);
+        std::exit(EXIT_FAILURE);
     }
 
-    glfwPollEvents();
-    Assets::LoadAll();
-    glfwPollEvents();
-    
-    loadModels();
-    glfwPollEvents();
-    
     TextRendering_Init(window);
-    glfwPollEvents();
-    
-    //  O segundo parâmetro de `LoadTextureImage` indica se a textura deve ser repetida ou se deve ser clamped.
-    //  true: repetir, false: clamp-to-the-edges
-    m_texSand = LoadTextureImage("assets/textures/terrain/Texturelabs_Soil_126M.jpg", true);
-    glfwPollEvents();
-    m_texGrass = LoadTextureImage("assets/textures/terrain/Texturelabs_Soil_135M.jpg", true);
-    glfwPollEvents();
-    m_texRock = LoadTextureImage("assets/textures/terrain/Texturelabs_Stone_137M.jpg", true);
-    glfwPollEvents();
-    m_texSnow = LoadTextureImage("assets/textures/terrain/Texturelabs_Water_156M.jpg", true);
-    glfwPollEvents();
-    
+
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 }
 
-void Renderer::loadModels() const
+void Renderer::loadShaders()
 {
-    auto load = [](const ModelDefinition& model)
+    // Os shaders já são carregados em initMinimal() (LoadShadersFromFiles),
+    // antes da tela de loading começar a rodar. Este passo do AssetLoader
+    // existe só para manter a barra de progresso com 5 estágios uniformes.
+}
+
+void Renderer::loadTextures()
+{
+    printf("\n=================================\n");
+    printf("CARREGANDO TEXTURAS\n");
+    printf("=================================\n");
+
+    m_texSand =
+        LoadTextureImage(
+            "assets/textures/terrain/Texturelabs_Soil_126M.jpg",
+            true
+        );
+
+    glfwPollEvents();
+
+    m_texGrass =
+        LoadTextureImage(
+            "assets/textures/terrain/Texturelabs_Soil_135M.jpg",
+            true
+        );
+
+    glfwPollEvents();
+
+    m_texRock =
+        LoadTextureImage(
+            "assets/textures/terrain/Texturelabs_Stone_137M.jpg",
+            true
+        );
+
+    glfwPollEvents();
+
+    m_texSnow =
+        LoadTextureImage(
+            "assets/textures/terrain/Texturelabs_Water_156M.jpg",
+            true
+        );
+
+    glfwPollEvents();
+}
+
+void Renderer::loadModels()
+{
+    auto load =
+    [](const ModelDefinition& model)
     {
         glfwPollEvents();
 
@@ -105,8 +141,6 @@ void Renderer::loadModels() const
             afterLoad - start
         );
 
-        glfwPollEvents();
-
         ComputeNormals(&obj);
 
         double afterNormals = glfwGetTime();
@@ -115,8 +149,6 @@ void Renderer::loadModels() const
             "  Normals: %.3f s\n",
             afterNormals - afterLoad
         );
-
-        glfwPollEvents();
 
         BuildTrianglesAndAddToVirtualScene(&obj);
 
@@ -132,56 +164,59 @@ void Renderer::loadModels() const
             afterGPU - start
         );
 
-        printf(
-            "  Vertices: %zu\n",
-            obj.attrib.vertices.size() / 3
-        );
-
-        printf(
-            "  Normals: %zu\n",
-            obj.attrib.normals.size() / 3
-        );
-
-        printf(
-            "  TexCoords: %zu\n",
-            obj.attrib.texcoords.size() / 2
-        );
-
-        printf(
-            "  Shapes: %zu\n",
-            obj.shapes.size()
-        );
-
         glfwPollEvents();
     };
 
     double totalStart = glfwGetTime();
 
     printf("\n=================================\n");
-    printf("carregando OBJETOS ESTÁTICOS...\n");
+    printf("CARREGANDO MODELOS\n");
     printf("=================================\n");
+
+    // ------------------------------------------------------------------------
+    // Rochas
+    // ------------------------------------------------------------------------
+
     load(Assets::ROCK_1);
     load(Assets::ROCK_2);
     load(Assets::ROCK_3);
     load(Assets::ROCK_4);
     load(Assets::ROCK_5);
-    load(Assets::HUGE_ROCK);
-    
+
+    // ------------------------------------------------------------------------
+    // Vegetação
+    // ------------------------------------------------------------------------
+
+    load(Assets::OAK);
+
+    load(Assets::BUSH);
+    load(Assets::STYLED_SHRUB);
+    load(Assets::BUXUS);
+    load(Assets::SHRUB);
+
+    load(Assets::MARINE_PLANT);
+
+    // ------------------------------------------------------------------------
+    // Gameplay
+    // ------------------------------------------------------------------------
 
     load(Assets::TREE_1);
+
     load(Assets::BIRD_MODEL);
     load(Assets::BIRD_STANDING_MODEL);
+
     load(Assets::LETTER);
+
     load(Assets::BUTTERFLY);
+
     // load(Assets::CARP);
+
     load(Assets::HOUSE);
     load(Assets::MAILBOX);
 
-
-
     printf("\n=== VIRTUAL SCENE ===\n");
 
-    for(const auto& [name, obj] : g_VirtualScene)
+    for (const auto& [name, obj] : g_VirtualScene)
     {
         printf(
             "Mesh: %s\n",
@@ -197,121 +232,177 @@ void Renderer::loadModels() const
     );
 }
 
-void Renderer::shutdown() {}
+void Renderer::init(GLFWwindow* window)
+{
+    initMinimal(window);
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+    Assets::LoadAll();
 
-void Renderer::bindProgram() const { glUseProgram(m_program); }
-
-void Renderer::setObjectId(ObjectId id) const {
-    glUniform1i(m_objectIdUniform, id);
+    loadTextures();
+    loadModels();
 }
 
-void Renderer::setModel(const glm::mat4& model) const {
-    glUniformMatrix4fv(m_modelUniform, 1, GL_FALSE, glm::value_ptr(model));
+void Renderer::shutdown()
+{
 }
 
-DrawContext Renderer::makeContext(ObjectId id) {
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+void Renderer::bindProgram() const
+{
+    glUseProgram(m_program);
+}
+
+void Renderer::setObjectId(ObjectId id) const
+{
+    glUniform1i(
+        m_objectIdUniform,
+        id
+    );
+}
+
+void Renderer::setModel(const glm::mat4& model) const
+{
+    glUniformMatrix4fv(
+        m_modelUniform,
+        1,
+        GL_FALSE,
+        glm::value_ptr(model)
+    );
+}
+
+DrawContext Renderer::makeContext(ObjectId id)
+{
     return {
-        .shader_program             = m_program,
-        .model_uniform              = m_modelUniform,
-        .view_uniform               = m_viewUniform,
-        .projection_uniform         = m_projUniform,
-        .object_id_uniform          = m_objectIdUniform,
-        .diffuse_texture_uniform    = g_diffuse_texture_uniform,
-        .object_id                  = (int)id
+        .shader_program          = m_program,
+        .model_uniform           = m_modelUniform,
+        .view_uniform            = m_viewUniform,
+        .projection_uniform      = m_projUniform,
+        .object_id_uniform       = m_objectIdUniform,
+        .diffuse_texture_uniform = g_diffuse_texture_uniform,
+        .object_id               = static_cast<int>(id)
     };
 }
 
-// ── Frame ─────────────────────────────────────────────────────────────────────
+// ============================================================================
+// FRAME
+// ============================================================================
 
-void Renderer::beginFrame(const Camera& camera) {
-    m_view       = camera.getViewMatrix();
-    m_projection = Matrix_Perspective(kFov, g_ScreenRatio, kNear, kFar);
+void Renderer::beginFrame(const Camera& camera)
+{
+    m_view =
+        camera.getViewMatrix();
 
+    m_projection =
+        Matrix_Perspective(
+            kFov,
+            g_ScreenRatio,
+            kNear,
+            kFar
+        );
 
     bindProgram();
-    glUniformMatrix4fv(m_viewUniform, 1, GL_FALSE, glm::value_ptr(m_view));
-    glUniformMatrix4fv(m_projUniform, 1, GL_FALSE, glm::value_ptr(m_projection));
+
+    glUniformMatrix4fv(
+        m_viewUniform,
+        1,
+        GL_FALSE,
+        glm::value_ptr(m_view)
+    );
+
+    glUniformMatrix4fv(
+        m_projUniform,
+        1,
+        GL_FALSE,
+        glm::value_ptr(m_projection)
+    );
 }
 
-void Renderer::endFrame(GLFWwindow* window) {
+void Renderer::endFrame(GLFWwindow* window)
+{
     TextRendering_ShowEulerAngles(window);
     TextRendering_ShowProjection(window);
     TextRendering_ShowFramesPerSecond(window);
     TextRendering_ShowDebugPanel(window);
 }
 
-// ── Draw calls ────────────────────────────────────────────────────────────────
+// ============================================================================
+// DRAW CALLS
+// ============================================================================
 
-void Renderer::drawObjects(std::vector<std::shared_ptr<StaticObject>>& objects) {
-    for(auto& object : objects)
-        object->render(makeContext(OBJ_TREE));
-}
-
-void Renderer::drawBird(Bird& bird, bool standing) {
-    if (standing) {
-        bird.render(makeContext(OBJ_BIRD2));
-    } else {
-        bird.render(makeContext(OBJ_BIRD));
-    }
-}
-
-void Renderer::drawTerrain(
-    Terrain& terrain
+void Renderer::drawObjects(
+    std::vector<std::shared_ptr<StaticObject>>& objects
 )
 {
-    // =====================================================
-    // Desabilita os sampler objects para estas unidades.
-    // O OpenGL passará a usar os parâmetros armazenados
-    // diretamente nas texturas.
-    // =====================================================
+    auto ctx = makeContext(OBJ_TREE);
+
+    for (auto& object : objects)
+        object->render(ctx);
+}
+
+void Renderer::drawBird(
+    Bird& bird,
+    bool standing
+)
+{
+    bird.render(
+        makeContext(
+            standing
+                ? OBJ_BIRD2
+                : OBJ_BIRD
+        )
+    );
+}
+
+void Renderer::drawTerrain(Terrain& terrain)
+{
     glBindSampler(1, 0);
     glBindSampler(2, 0);
     glBindSampler(3, 0);
     glBindSampler(4, 0);
 
-    // =====================================================
-    // Sand
-    // =====================================================
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, m_texSand);
     glUniform1i(
-        glGetUniformLocation(m_program, "texSand"),
+        glGetUniformLocation(
+            m_program,
+            "texSand"
+        ),
         1
     );
 
-    // =====================================================
-    // Grass
-    // =====================================================
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, m_texGrass);
     glUniform1i(
-        glGetUniformLocation(m_program, "texGrass"),
+        glGetUniformLocation(
+            m_program,
+            "texGrass"
+        ),
         2
     );
 
-    // =====================================================
-    // Rock
-    // =====================================================
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, m_texRock);
     glUniform1i(
-        glGetUniformLocation(m_program, "texRock"),
+        glGetUniformLocation(
+            m_program,
+            "texRock"
+        ),
         3
     );
 
-    // =====================================================
-    // Snow
-    // =====================================================
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, m_texSnow);
     glUniform1i(
-        glGetUniformLocation(m_program, "texSnow"),
+        glGetUniformLocation(
+            m_program,
+            "texSnow"
+        ),
         4
     );
 
-    // Volta para a unidade padrão
     glActiveTexture(GL_TEXTURE0);
 
     terrain.model(
@@ -319,41 +410,244 @@ void Renderer::drawTerrain(
     );
 }
 
-void Renderer::drawRocks(std::vector<std::shared_ptr<ProceduralRock>>& rocks) {
-    auto ctx = makeContext(OBJ_ROCK);
-    for (const auto& rock : rocks)
-        rock->render(ctx);   // GameObject::render -> RockDrawable::draw
+void Renderer::drawRocks(
+    std::vector<std::shared_ptr<ProceduralRock>>& rocks
+)
+{
+    auto ctx =
+        makeContext(OBJ_ROCK);
+
+    for (auto& rock : rocks)
+        rock->render(ctx);
 }
 
+void Renderer::drawRings(
+    std::vector<std::shared_ptr<Ring>>& rings
+)
+{
+    auto ctx =
+        makeContext(OBJ_RING);
 
-void Renderer::drawRings(std::vector<std::shared_ptr<Ring>>& rings) {
-    auto ctx = makeContext(OBJ_RING);
     glDisable(GL_CULL_FACE);
-    for (const auto& ring : rings)
-        ring->render(ctx, m_view);   // Ring::render injeta view no RingDrawable
+
+    for (auto& ring : rings)
+        ring->render(ctx, m_view);
+
     glEnable(GL_CULL_FACE);
 }
 
-void Renderer::drawLetter(Letter& letter) {
-    letter.render(makeContext(OBJ_LETTER));
+void Renderer::drawLetter(Letter& letter)
+{
+    letter.render(
+        makeContext(OBJ_LETTER)
+    );
 }
 
-void Renderer::drawMailbox(Mailbox& mailbox) {
-    mailbox.render(makeContext(OBJ_MAILBOX));
+void Renderer::drawMailbox(Mailbox& mailbox)
+{
+    mailbox.render(
+        makeContext(OBJ_MAILBOX)
+    );
 }
 
-void Renderer::drawButterflyNPC(ButterflyNPC& npc) {
-    npc.render(makeContext(OBJ_BUTTERFLY));
+void Renderer::drawButterflyNPC(
+    ButterflyNPC& npc
+)
+{
+    npc.render(
+        makeContext(OBJ_BUTTERFLY)
+    );
 }
 
-void Renderer::drawCarpNPC(CarpNPC& npc)
+void Renderer::drawCarpNPC(
+    CarpNPC& npc
+)
 {
     npc.render(
         makeContext(OBJ_CARP)
     );
 }
 
+void Renderer::setWireframe(bool enabled)
+{
+    glPolygonMode(
+        GL_FRONT_AND_BACK,
+        enabled
+            ? GL_LINE
+            : GL_FILL
+    );
+}
 
-void Renderer::setWireframe(bool enabled) {
-    glPolygonMode(GL_FRONT_AND_BACK, enabled ? GL_LINE : GL_FILL);
+// ============================================================================
+// UI SCREENS (LOADING / MENU)
+// ============================================================================
+
+namespace
+{
+    // Desenha um retângulo preenchido em coordenadas de tela (pixels),
+    // origem no canto inferior esquerdo, sem precisar de shader/geometria
+    // dedicados — usa glScissor + glClear isolados.
+    void DrawScreenRect(
+        int x,
+        int y,
+        int w,
+        int h,
+        float r,
+        float g,
+        float b
+    )
+    {
+        glEnable(GL_SCISSOR_TEST);
+
+        glScissor(x, y, w, h);
+
+        glClearColor(r, g, b, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glDisable(GL_SCISSOR_TEST);
+    }
+}
+
+void Renderer::drawLoadingScreen(float progress)
+{
+    // fundo já foi limpo pelo Application::renderLoading()
+
+    int winW, winH;
+    glfwGetFramebufferSize(
+        glfwGetCurrentContext(),
+        &winW,
+        &winH
+    );
+
+    // ----------------------------------------------------------
+    // Barra de progresso (moldura + preenchimento)
+    // ----------------------------------------------------------
+
+    const int barW = static_cast<int>(winW * 0.5f);
+    const int barH = 24;
+    const int barX = (winW - barW) / 2;
+    const int barY = winH / 2 - barH / 2;
+
+    // moldura
+    DrawScreenRect(
+        barX - 3, barY - 3,
+        barW + 6, barH + 6,
+        0.85f, 0.85f, 0.85f
+    );
+
+    // fundo da barra (vazio)
+    DrawScreenRect(
+        barX, barY,
+        barW, barH,
+        0.15f, 0.15f, 0.15f
+    );
+
+    // preenchimento proporcional ao progresso
+    progress = glm::clamp(progress, 0.0f, 1.0f);
+
+    int fillW =
+        static_cast<int>(barW * progress);
+
+    if (fillW > 0)
+    {
+        DrawScreenRect(
+            barX, barY,
+            fillW, barH,
+            0.3f, 0.7f, 0.3f
+        );
+    }
+
+    // ----------------------------------------------------------
+    // Texto
+    // ----------------------------------------------------------
+
+    GLFWwindow* window =
+        glfwGetCurrentContext();
+
+    // Nome da etapa atual, deduzido da fração de progresso.
+    // (5 estágios uniformes: shaders, texturas, modelos, terreno, objetos)
+    const char* stageName = "Inicializando...";
+
+    if (progress >= 0.8f)      stageName = "Construindo objetos...";
+    else if (progress >= 0.6f) stageName = "Gerando terreno...";
+    else if (progress >= 0.4f) stageName = "Carregando modelos...";
+    else if (progress >= 0.2f) stageName = "Carregando texturas...";
+    else                       stageName = "Carregando shaders...";
+
+    TextRendering_PrintString(
+        window,
+        stageName,
+        -0.2f,
+        0.15f,
+        1.3f
+    );
+
+    char pct[16];
+    snprintf(
+        pct,
+        sizeof(pct),
+        "%d%%",
+        static_cast<int>(progress * 100.0f)
+    );
+
+    TextRendering_PrintString(
+        window,
+        pct,
+        -0.03f,
+        -0.05f,
+        1.2f
+    );
+}
+
+void Renderer::drawMenu()
+{
+    GLFWwindow* window =
+        glfwGetCurrentContext();
+
+    // Título
+    TextRendering_PrintString(
+        window,
+        "O VOO DA CARTA",
+        -0.35f,
+        0.6f,
+        2.2f
+    );
+
+    // Instruções de controle
+    TextRendering_PrintString(
+        window,
+        "WASD - mover   |   ESPACO - subir   |   SHIFT - descer",
+        -0.55f,
+        0.05f,
+        1.0f
+    );
+
+    TextRendering_PrintString(
+        window,
+        "G - soltar/pegar carta   |   MOUSE - olhar ao redor",
+        -0.5f,
+        -0.05f,
+        1.0f
+    );
+
+    // "Pressione ENTER" piscando
+    static double startTime =
+        glfwGetTime();
+
+    double elapsed =
+        glfwGetTime() - startTime;
+
+    bool visible =
+        fmod(elapsed, 1.0) < 0.6;
+
+    if (visible)
+    {
+        TextRendering_PrintString(
+            window,
+            "PRESSIONE ENTER PARA COMECAR",
+            -0.4f,
+            -0.4f,
+            1.3f
+        );
+    }
 }

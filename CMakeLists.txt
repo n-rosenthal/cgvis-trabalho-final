@@ -24,6 +24,7 @@ set(SOURCES
   engine/src/Loaders/ObjLoader.cpp
   engine/src/Loaders/TextureLoader.cpp
   engine/src/Renderer/ShaderLoader.cpp
+  engine/src/Game/AssetLoader.cpp
 
   # Callbacks de janela e entrada
   engine/src/Window/InputCallbacks.cpp

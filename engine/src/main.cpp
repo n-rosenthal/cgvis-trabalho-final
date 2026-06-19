@@ -55,6 +55,7 @@
 #include "Window/WindowCallbacks.hpp"
 #include "Window/InputCallbacks.hpp"
 #include "textrendering.hpp"
+#include "Game/AssetLoader.hpp"
 
 // ÁUDIO e gerenciador de áudio
 #include "audio/AudioManager.hpp"
