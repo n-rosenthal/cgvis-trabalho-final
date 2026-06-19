@@ -1,0 +1,14 @@
+# Blender 5.1.1 MTL File: 'None'
+# www.blender.org
+
+newmtl standardSurface2
+Ka 1.000000 1.000000 1.000000
+Kd 0.000000 0.000000 0.000000
+Ks 1.000000 1.000000 1.000000
+Ni 1.500000
+d 1.000000
+illum 3
+map_Ns /assets/textures/Buxus/Buxus_Roughness.png
+map_refl /assets/textures/Buxus/Buxus_Metallic.png
+map_Ke /assets/textures/Buxus/Buxus_Emissive.png
+map_Bump -bm 1.000000 /assets/textures/Buxus/Buxus_Normal.png

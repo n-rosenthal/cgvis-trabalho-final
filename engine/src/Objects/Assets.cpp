@@ -30,6 +30,49 @@ namespace Assets {
 
     TextureDefinition MAILBOX_COLOR;
 
+    //  Árvore BIRCH
+    //  sem textura?
+
+    //  Árvore PINE
+    TextureDefinition PINE_TEXTURE;
+
+    //  Árvore OAK
+    TextureDefinition OAK_TEXTURE;
+    TextureDefinition OAK_LEAVES_TEXTURE;
+
+    //  Arbusto BUSH
+    TextureDefinition BUSH_TEXTURE;
+
+    //  Arbusto BUXUS
+    TextureDefinition BUXUS_TEXTURE;
+
+    //  Arbusto SHRUB
+    TextureDefinition SHRUB_TEXTURE;
+
+    //  Arbusto STYLED_SHRUB
+    TextureDefinition STYLED_SHRUB_TEXTURE;
+
+    //  Planta MARINE
+    TextureDefinition MARINE_PLANT_TEXTURE;
+
+    //  Flor MARGARIDA
+    // TextureDefinition MARGARITE_TEXTURE;
+
+    //  ROCHAS (1-6, HUGE_ROCK)
+    TextureDefinition ROCK_1_TEXTURE;
+    TextureDefinition ROCK_2_TEXTURE;
+    TextureDefinition ROCK_3_TEXTURE;
+    TextureDefinition ROCK_4_TEXTURE;
+    TextureDefinition ROCK_5_TEXTURE;
+    // TextureDefinition ROCK_6_TEXTURE;e
+    // TextureDefinition HUGE_ROCK_TEXTURE;
+
+    //  Pássaro voador (NPC)
+    TextureDefinition FLYING_BIRD_TEXTURE;
+
+    //  Pato (NPC)
+    TextureDefinition DUCK_TEXTURE;
+
     //  NPCs
     TextureDefinition BUTTERFLY_ALBEDO_TRANSPARENCY;
 
@@ -47,6 +90,48 @@ namespace Assets {
 
     ModelDefinition HOUSE;
     ModelDefinition MAILBOX;
+
+    //  Árvore BIRCH
+    ModelDefinition BIRCH;
+
+    //  Árvore PINE
+    ModelDefinition PINE;
+
+    //  Árvore OAK
+    ModelDefinition OAK;
+
+    //  Arbusto BUSH
+    ModelDefinition BUSH;
+
+    //  Arbusto BUXUS
+    ModelDefinition BUXUS;
+
+    //  Arbusto SHRUB
+    ModelDefinition SHRUB;
+
+    //  Arbusto STYLED_SHRUB
+    ModelDefinition STYLED_SHRUB;
+
+    //  Planta MARINE
+    ModelDefinition MARINE_PLANT;
+
+    //  Flor MARGARIDA
+    ModelDefinition MARGARITE;
+
+    //  ROCHAS (1-6, HUGE_ROCK)
+    ModelDefinition ROCK_1;
+    ModelDefinition ROCK_2;
+    ModelDefinition ROCK_3;
+    ModelDefinition ROCK_4;
+    ModelDefinition ROCK_5;
+    // ModelDefinition ROCK_6;
+    ModelDefinition HUGE_ROCK;
+
+    //  Pássaro voador (NPC)
+    ModelDefinition FLYING_BIRD;
+
+    //  Pato (NPC)
+    ModelDefinition DUCK;
 
     //  NPCs
     ModelDefinition BUTTERFLY;
@@ -166,6 +251,213 @@ void Assets::LoadTextures() {
             true
         );
 
+    //  =====================================================
+    //  Árvore BIRCH
+    //  =====================================================
+    //  sem textura?
+
+    //  =====================================================
+    //  Árvore PINE
+    //  =====================================================
+    PINE_TEXTURE.file =
+        asset_path(
+            "textures/pine_low_poly/Pine_s_1_Material_Base_Color.png"
+        );
+
+    PINE_TEXTURE.id =
+        LoadTextureImage(
+            PINE_TEXTURE.file.c_str(),
+            true
+        );
+
+    //  =====================================================
+    //  Árvore OAK
+    //  =====================================================
+    OAK_TEXTURE.file =
+        asset_path(
+            "textures/tree_oak/Cube_001_diffuse.png"
+        );
+
+    OAK_TEXTURE.id =
+        LoadTextureImage(
+            OAK_TEXTURE.file.c_str(),
+            true
+        );
+
+    OAK_LEAVES_TEXTURE.file =
+        asset_path(
+            "textures/tree_oak/Plane_067_diffuse.png"
+        );
+
+    OAK_LEAVES_TEXTURE.id =
+        LoadTextureImage(
+            OAK_LEAVES_TEXTURE.file.c_str(),
+            true
+    );
+
+    //  =====================================================
+    //  Arbusto BUSH
+    //  =====================================================
+    BUSH_TEXTURE.file =
+        asset_path(
+            "textures/bush/vetka_kusta_0.png"
+        );
+
+    BUSH_TEXTURE.id =
+        LoadTextureImage(
+            BUSH_TEXTURE.file.c_str(),
+            false
+        );
+
+    //  =====================================================
+    //  Arbusto BUXUS
+    //  =====================================================
+    BUXUS_TEXTURE.file =
+        asset_path(
+            "textures/buxus/Buxus_Base_color.png"
+        );
+
+    BUXUS_TEXTURE.id =
+        LoadTextureImage(
+            BUXUS_TEXTURE.file.c_str(),
+            true
+        );
+
+    //  =====================================================
+    //  Arbusto SHRUB
+    //  =====================================================
+    SHRUB_TEXTURE.file =
+        asset_path(
+            "textures/low_poly_shrub/bush_PNG7214.png"
+        );
+
+    SHRUB_TEXTURE.id =
+        LoadTextureImage(
+            SHRUB_TEXTURE.file.c_str(),
+            true
+        );
+
+    //  =====================================================
+    //  Arbusto STYLED_SHRUB
+    //  =====================================================
+    STYLED_SHRUB_TEXTURE.file =
+        asset_path(
+            "textures/styled_bush/9.png"
+        );
+
+    STYLED_SHRUB_TEXTURE.id =
+        LoadTextureImage(
+            STYLED_SHRUB_TEXTURE.file.c_str(),
+            true
+        );
+    
+    //  =====================================================
+    //  Planta MARINE
+    //  =====================================================
+    MARINE_PLANT_TEXTURE.file =
+        asset_path(
+            "textures/marine_plant/plant_1_diffuse.jpeg"
+        );
+
+    MARINE_PLANT_TEXTURE.id =
+        LoadTextureImage(
+            MARINE_PLANT_TEXTURE.file.c_str(),
+            true
+        );
+    
+
+    // =====================================================
+    //  Flor MARGARIDA
+    // =====================================================
+    //  sem textura?
+
+    // =====================================================
+    //  ROCHAS (1-6, HUGE_ROCK)
+    // =====================================================
+    ROCK_1_TEXTURE.file =
+        asset_path(
+            "textures/rocks/rock1_lp_1001_BaseColor.png"
+        );
+
+    ROCK_1_TEXTURE.id =
+        LoadTextureImage(
+            ROCK_1_TEXTURE.file.c_str(),
+            true
+        );
+
+    ROCK_2_TEXTURE.file =
+        asset_path(
+            "textures/rocks/rock3_lp_1001_BaseColor.png"
+        );
+
+    ROCK_2_TEXTURE.id =
+        LoadTextureImage(
+            ROCK_2_TEXTURE.file.c_str(),
+            true
+        );
+    
+    ROCK_3_TEXTURE.file =
+        asset_path(
+            "textures/rocks/rock4_lp_1001_BaseColor.png"
+        );
+
+    ROCK_3_TEXTURE.id =
+        LoadTextureImage(
+            ROCK_3_TEXTURE.file.c_str(),
+            true
+        );
+
+    ROCK_4_TEXTURE.file =
+        asset_path(
+            "textures/rocks/rock5_lp_1001_BaseColor.png"
+        );
+
+    ROCK_4_TEXTURE.id =
+        LoadTextureImage(
+            ROCK_4_TEXTURE.file.c_str(),
+            true
+        );
+
+    ROCK_5_TEXTURE.file =
+        asset_path(
+            "textures/rocks/rock6_lp_1001_BaseColor.png"
+        );
+
+    ROCK_5_TEXTURE.id =
+        LoadTextureImage(
+            ROCK_5_TEXTURE.file.c_str(),
+            true
+        );
+
+    // =====================================================
+    //  Pássaro voador (NPC)
+    // =====================================================
+    FLYING_BIRD_TEXTURE.file =
+        asset_path(
+            "textures/flying_bird/BirdUVTexture.jpeg"
+        );
+    
+    FLYING_BIRD_TEXTURE.id =
+        LoadTextureImage(
+            FLYING_BIRD_TEXTURE.file.c_str(),
+            true
+        );
+
+
+    // =====================================================
+    //  Pato (NPC)
+    // =====================================================
+    DUCK_TEXTURE.file =
+        asset_path(
+            "textures/low_poly_duck/duck skin _0.png"
+        );
+    
+    DUCK_TEXTURE.id =
+        LoadTextureImage(
+            DUCK_TEXTURE.file.c_str(),
+            true
+        );
+    
     // =====================================================
     // BUTTERFLY
     // =====================================================
@@ -321,6 +613,339 @@ void Assets::BuildModels() {
 
     MAILBOX.useTexture = true;
 
+    //  =====================================================
+    //  Árvore BIRCH
+    //  =====================================================
+    BIRCH.objFile =
+        asset_path(
+            "models/birch/birch.obj"
+        );
+
+    BIRCH.meshes =
+    {
+        "birchTrunk01",
+        "birchTrunk02",
+        "birchTrunk03",
+        "birchTrunk04",
+        "pineTreeColor05",
+        "pineTreeColor06"
+    };
+
+    BIRCH.textures =
+    {
+        nullptr
+    };
+
+    BIRCH.useTexture = false;
+
+    // =====================================================
+    //  Árvore PINE
+    //  =====================================================
+    PINE.objFile =
+        asset_path(
+            "models/pine_low_poly/pine.obj"
+        );
+
+    PINE.meshes =
+    {
+        "Pine_s_1_Material"
+    };
+
+    PINE.textures =
+    {
+        &PINE_TEXTURE
+    };
+
+    PINE.useTexture = true;
+
+
+    // =====================================================
+    //  Árvore OAK
+    //  =====================================================
+    OAK.objFile =
+        asset_path(
+            "models/tree_oak/tree_oak.obj"
+        );
+
+    OAK.meshes =
+    {
+        "Cube_001",
+        "Plane_067"
+    };
+
+    OAK.textures =
+    {
+        &OAK_TEXTURE,
+        &OAK_LEAVES_TEXTURE
+    };
+
+    OAK.useTexture = true;
+    // =====================================================
+    //  Arbusto BUSH
+    //  =====================================================
+    BUSH.objFile =
+        asset_path(
+            "models/bush/bush.obj"
+        );
+
+    BUSH.meshes =
+    {
+        "vetka_kusta"
+    };
+
+    BUSH.textures =
+    {
+        &BUSH_TEXTURE
+    };
+
+    BUSH.useTexture = true;
+
+    // =====================================================
+    //  Arbusto BUXUS
+    //  =====================================================
+    BUXUS.objFile =
+        asset_path(
+            "models/buxus/buxus.obj"
+        );
+
+    BUXUS.meshes =
+    {
+        "standardSurface2"
+    };
+
+    BUXUS.textures =
+    {
+        &BUXUS_TEXTURE
+    };
+
+    BUXUS.useTexture = true;
+
+    // =====================================================
+    //  Arbusto SHRUB
+    //  =====================================================
+    SHRUB.objFile =
+        asset_path(
+            "models/shrub/low_poly_shrub.obj"
+        );
+
+    SHRUB.meshes =
+    {
+        "lambert2"
+    };
+
+    SHRUB.textures =
+    {
+        &SHRUB_TEXTURE
+    };
+
+    SHRUB.useTexture = true;
+
+    // =====================================================
+    //  Arbusto STYLED_SHRUB
+    //  =====================================================
+    STYLED_SHRUB.objFile =
+        asset_path(
+            "models/styled_shrub/styled_shrub.obj"
+        );
+
+    STYLED_SHRUB.meshes =
+    {
+        "stylized_bush"
+    };
+
+    STYLED_SHRUB.textures =
+    {
+        &STYLED_SHRUB_TEXTURE
+    };
+
+    STYLED_SHRUB.useTexture = true;
+
+    // =====================================================
+    //  Planta MARINE
+    //  =====================================================
+    MARINE_PLANT.objFile =
+        asset_path(
+            "models/marine_plant/marine_plant.obj"
+        );
+
+    MARINE_PLANT.meshes =
+    {
+        "blade"
+    };
+
+    MARINE_PLANT.textures =
+    {
+        &MARINE_PLANT_TEXTURE
+    };
+
+    MARINE_PLANT.useTexture = true;
+
+    // =====================================================
+    //  Flor MARGARIDA
+    //  =====================================================
+    MARGARITE.objFile =
+        asset_path(
+            "models/margarite/margarita_flower_bush.obj"
+        );
+    
+    MARGARITE.meshes =
+    {
+        "green",
+        "white",
+        "yellow"
+    };
+    
+    MARGARITE.textures =
+    {
+        nullptr
+    };
+
+    MARGARITE.useTexture = false;
+
+    // =====================================================
+    //  ROCHAS (1-5, HUGE_ROCK)
+    //  =====================================================
+    ROCK_1.objFile =
+        asset_path(
+            "models/rocks/rock1.obj"
+        );
+
+    ROCK_1.meshes =
+    {
+        "Rock_lp_1"
+    };
+
+    ROCK_1.textures =
+    {
+        &ROCK_1_TEXTURE
+    };
+
+    ROCK_1.useTexture = true;
+
+    ROCK_2.objFile =
+        asset_path(
+            "models/rocks/rock3.obj"
+        );
+
+    ROCK_2.meshes =
+    {
+        "Rock_lp_3"
+    };
+
+    ROCK_2.textures =
+    {
+        &ROCK_2_TEXTURE
+    };
+
+    ROCK_2.useTexture = true;
+
+    ROCK_3.objFile =
+        asset_path(
+            "models/rocks/rock4.obj"
+        );
+
+    ROCK_3.meshes =
+    {
+        "Rock_lp_4"
+    };
+
+    ROCK_3.textures =
+    {
+        &ROCK_3_TEXTURE
+    };
+
+    ROCK_3.useTexture = true;
+
+    ROCK_4.objFile =
+        asset_path(
+            "models/rocks/rock5.obj"
+        );
+
+    ROCK_4.meshes =
+    {
+        "Rock_lp_5"
+    };
+
+    ROCK_4.textures =
+    {
+        &ROCK_4_TEXTURE
+    };
+
+    ROCK_4.useTexture = true;
+
+    ROCK_5.objFile =
+        asset_path(
+            "models/rocks/rock6.obj"
+        );
+
+    ROCK_5.meshes =
+    {
+        "Rock_lp_6"
+    };
+
+    ROCK_5.textures =
+    {
+        &ROCK_5_TEXTURE
+    };
+
+    ROCK_5.useTexture = true;
+
+    HUGE_ROCK.objFile =
+        asset_path(
+            "models/rocks/huge_rock.obj"
+        );
+
+    HUGE_ROCK.meshes =
+    {
+        "Plane.005"
+    };
+
+    HUGE_ROCK.textures =
+    {
+        nullptr
+    };
+
+    HUGE_ROCK.useTexture = false;
+
+    // =====================================================
+    //  Pássaro voador (NPC)
+    //  =====================================================
+    FLYING_BIRD.objFile =
+        asset_path(
+            "models/flying_bird/flying_bird.obj"
+        );
+    
+    FLYING_BIRD.meshes =
+    {
+        "blinn2"
+    };
+    
+    FLYING_BIRD.textures =
+    {
+        &FLYING_BIRD_TEXTURE
+    };
+
+    FLYING_BIRD.useTexture = true;
+
+    // =====================================================
+    //  Pato (NPC)
+    //  =====================================================
+    DUCK.objFile =
+        asset_path(
+            "models/duck/low_poly_duck.obj"
+        );
+    
+    DUCK.meshes =
+    {
+        "Material.003"
+    };
+    
+    DUCK.textures =
+    {
+        &DUCK_TEXTURE
+    };
+
+    DUCK.useTexture = true;
     // =====================================================
     //  Butterfly
     // =====================================================

@@ -71,12 +71,12 @@ public:
 
     //  Métodos de construção dos objetos
     void buildTerrain();
-    void buildTrees();
-    void buildHouse();
-    void buildRocks();
     void buildRings();
     void buildLetter();
     void buildMailbox();
+
+    //  Constrói os objetos estáticos do jogo
+    void buildStaticObjects();
 
     void buildButterflyNPCs();
     void buildCarpNPCs();

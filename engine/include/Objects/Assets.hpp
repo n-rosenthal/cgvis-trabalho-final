@@ -39,14 +39,9 @@ namespace Assets {
     // =====================================================
     // TEXTURAS
     // =====================================================
-
     extern TextureDefinition TREE_1_TRUNK;
     extern TextureDefinition TREE_1_TWIGS;
     extern TextureDefinition TREE_1_LEAVES;
-
-    extern TextureDefinition TREE_2_TRUNK;
-    extern TextureDefinition TREE_2_TWIGS;
-    extern TextureDefinition TREE_2_LEAVES;
 
     extern TextureDefinition BIRD;
     extern TextureDefinition BIRD_STANDING;
@@ -56,6 +51,49 @@ namespace Assets {
 
     extern TextureDefinition MAILBOX_COLOR;
 
+    //  Árvore BIRCH
+    //  sem textura?
+
+    //  Árvore PINE
+    extern TextureDefinition PINE_TEXTURE;
+
+    //  Árvore OAK
+    extern TextureDefinition OAK_TEXTURE;
+    extern TextureDefinition OAK_LEAVES_TEXTURE;
+
+    //  Arbusto BUSH
+    extern TextureDefinition BUSH_TEXTURE;
+
+    //  Arbusto BUXUS
+    extern TextureDefinition BUXUS_TEXTURE;
+
+    //  Arbusto SHRUB
+    extern TextureDefinition SHRUB_TEXTURE;
+
+    //  Arbusto STYLED_SHRUB
+    extern TextureDefinition STYLED_SHRUB_TEXTURE;
+
+    //  Planta MARINE
+    extern TextureDefinition MARINE_PLANT_TEXTURE;
+
+    //  Flor MARGARIDA
+    //  sem textura?
+
+    //  ROCHAS (1-5, HUGE_ROCK)
+    extern TextureDefinition ROCK_1_TEXTURE;
+    extern TextureDefinition ROCK_2_TEXTURE;
+    extern TextureDefinition ROCK_3_TEXTURE;
+    extern TextureDefinition ROCK_4_TEXTURE;
+    extern TextureDefinition ROCK_5_TEXTURE;
+    // extern TextureDefinition ROCK_6_TEXTURE;
+    // extern TextureDefinition HUGE_ROCK_TEXTURE;
+
+    //  Pássaro voador (NPC)
+    extern TextureDefinition FLYING_BIRD_TEXTURE;
+
+    //  Pato (NPC)
+    extern TextureDefinition DUCK_TEXTURE;
+
     //  NPCs
     extern TextureDefinition BUTTERFLY_ALBEDO_TRANSPARENCY;
 
@@ -64,7 +102,6 @@ namespace Assets {
     // =====================================================
 
     extern ModelDefinition TREE_1;
-    extern ModelDefinition TREE_2;
 
     extern ModelDefinition LETTER;
 
@@ -73,6 +110,48 @@ namespace Assets {
 
     extern ModelDefinition HOUSE;
     extern ModelDefinition MAILBOX;
+    
+    //  Árvore BIRCH
+    extern ModelDefinition BIRCH;
+
+    //  Árvore PINE
+    extern ModelDefinition PINE;
+
+    //  Árvore OAK
+    extern ModelDefinition OAK;
+
+    //  Arbusto BUSH
+    extern ModelDefinition BUSH;
+
+    //  Arbusto BUXUS
+    extern ModelDefinition BUXUS;
+
+    //  Arbusto SHRUB
+    extern ModelDefinition SHRUB;
+
+    //  Arbusto STYLED_SHRUB
+    extern ModelDefinition STYLED_SHRUB;
+
+    //  Planta MARINE
+    extern ModelDefinition MARINE_PLANT;
+
+    //  Flor MARGARIDA
+    extern ModelDefinition MARGARITE;
+
+    //  ROCHAS (1-5, HUGE_ROCK)
+    extern ModelDefinition ROCK_1;
+    extern ModelDefinition ROCK_2;
+    extern ModelDefinition ROCK_3;
+    extern ModelDefinition ROCK_4;
+    extern ModelDefinition ROCK_5;
+    // extern ModelDefinition ROCK_6;
+    extern ModelDefinition HUGE_ROCK;
+
+    //  Pássaro voador (NPC)
+    extern ModelDefinition FLYING_BIRD;
+
+    //  Pato (NPC)
+    extern ModelDefinition DUCK;
 
     //  NPCs
     extern ModelDefinition BUTTERFLY;

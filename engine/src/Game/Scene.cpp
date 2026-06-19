@@ -33,11 +33,8 @@ void Scene::build() {
     m_bird.emplace();
     m_bird->setPosition(glm::vec3(-180.0f, m_terrain->getHeight(-180.0f, -200.0f) + 20.0f, -200.0f));
 
-    //  Árvores
-    buildTrees();
-
-    //  Rochas
-    // buildRocks();
+    //  Objetos estáticos
+    buildStaticObjects();
 
     //  Anéis
     buildRings();
@@ -45,8 +42,6 @@ void Scene::build() {
     //  Carta
     buildLetter();
 
-    //  Casa
-    buildHouse();
 
     //  Mailbox
     buildMailbox();
@@ -342,102 +337,94 @@ void Scene::buildTerrain() {
     m_terrain->generate();
 }
 
+
 /**
- * @brief   Constrói as rochas do jogo
+ * @brief   Constrói os objetos estáticos do jogo
  */
-void Scene::buildRocks() {
-    //  semente de aleatoriedade para disposição das rochas
-    srand((unsigned int)time(nullptr));
-
-    //  quantidade de rochas e região de distribuição
-    const int   numRocks   = 40;
-    const float regionSize = 256.0f;
-
-    for (int i = 0; i < numRocks; ++i) {
-        float x     = 140 + (256 - ((float)rand() / RAND_MAX - 0.5f) * regionSize);
-        float z     = 140 + (256 - ((float)rand() / RAND_MAX - 0.5f) * regionSize);
-        float scale = 0.8f + ((float)rand() / RAND_MAX) * 3.5f;
-        float y     = m_terrain->getHeight(x, z);
-
-        m_rocks.push_back(std::make_shared<ProceduralRock>(glm::vec3(x, y, z), scale, 2));
+void Scene::buildStaticObjects() {
+    //  Limpa o vetor `m_staticObjects`
+    m_staticObjects.clear();
+    
+    //  ======================================================================
+    //  ROCHAS (ROCK_{1-5}, HUGE_ROCK)
+    //  ======================================================================
+    //  Posições das rochas (x, z)
+    const std::vector<glm::vec2> rock_positions = {
+        { 0.0f, -145.0f },
+        { 5.0f, -145.0f },
+        { 6.0f, -146.0f },
+        { 10.0f, -140.0f },
+        { 20.0f, -135.0f },
     };
+
+    //  Posições das huge rocks (x, z)
+    const std::vector<glm::vec2> huge_rocks_positions = {
+        { 10.0f, -140.0f },
+        { 15.0f, -135.0f },
+        { 20.0f, -130.0f },
+    };
+
+    //  Construção das rochas
+    for (int i = 0; i < rock_positions.size(); ++i) {
+        //  vetor de objetos estáticos
+        m_staticObjects.push_back(
+            //  ponteiro para objeto estático
+            std::make_shared<StaticObject>(
+                //  Modelo a ser utilizado
+                Assets::ROCK_3,
+
+                //  Posição do objeto
+                glm::vec3(
+                    rock_positions[i].x,
+                    m_terrain->getHeight(rock_positions[i].x, rock_positions[i].y) - 0.5f,
+                    rock_positions[i].y
+                ),
+
+                //  Rotação do objeto
+                glm::vec3(0.0f),
+
+                //  Escala
+                glm::vec3(0.05f)
+            )
+        );
+
+        std::cout
+            << "rock at "
+            << rock_positions[i].x
+            << ", "
+            << m_terrain->getHeight(rock_positions[i].x, rock_positions[i].y)
+            << ", "
+            << rock_positions[i].y
+            << '\n';
+    }
+
+    //  Construção das huge rocks
+    // for (int i = 0; i < huge_rocks_positions.size(); ++i) {
+    //     //  vetor de objetos estáticos
+    //     m_staticObjects.push_back(
+    //         //  ponteiro para objeto estático
+    //         std::make_shared<StaticObject>(
+    //             //  Modelo a ser utilizado
+    //             Assets::HUGE_ROCK,
+
+    //             //  Posição do objeto
+    //             glm::vec3(
+    //                 huge_rocks_positions[i].x,
+    //                 m_terrain->getHeight(huge_rocks_positions[i].x, huge_rocks_positions[i].y) - 0.5f,
+    //                 huge_rocks_positions[i].y
+    //             ),
+
+    //             //  Rotação do objeto
+    //             glm::vec3(0.0f),
+
+    //             //  Escala
+    //             glm::vec3(1.0f)
+    //         )
+    //     );
+    // };
 };
 
 
-/**
- * @brief       Constrói as árvores na cena virtual
- * @details     Existem N tipos de árvores distintas (TREE_[1..N])
- *              Para as árvores TREE_1, são definidas posições absolutas no terreno
- *                  estas árvores formam um =anel elíptico= ao redor do lago central
- *                  da cena virtual
- *              
- * 
- */
-void Scene::buildTrees()
-{
-    glm::vec3 lake_center(0.0f);
-    const float lake_radius = 140.0f;
-
-    const int numTrees = 20;
-    const float borderDistance = 10.0f;
-
-    srand((unsigned int)time(nullptr));
-
-    for (int i = 0; i < numTrees; ++i)
-    {
-        float angle =
-            ((float)rand() / RAND_MAX) *
-            2.0f * M_PI;
-
-        float radius =
-            lake_radius + borderDistance;
-
-        float x =
-            lake_center.x +
-            radius * cos(angle);
-
-        float z =
-            lake_center.z +
-            radius * sin(angle);
-
-        float height =
-            m_terrain->getHeight(x, z);
-
-        float yaw =
-            ((float)rand() / RAND_MAX) *
-            2.0f * M_PI;
-
-        float scale =
-            0.8f +
-            ((float)rand() / RAND_MAX) * 3.5f;
-
-        m_staticObjects.push_back(
-            std::make_shared<StaticObject>(
-                Assets::TREE_1,
-                glm::vec3(x, height, z),
-                glm::vec3(0.0f, yaw, 0.0f),
-                glm::vec3(scale)
-            )
-        );
-    }
-}
-
-
-/**
- * @brief   Constrói a casa principal do jogo
- */
-void Scene::buildHouse() {
-    float x = 120.0f, z = 120.0f;
-    auto house =
-    std::make_shared<StaticObject>(
-        Assets::HOUSE,
-        glm::vec3(x, m_terrain->getHeight(x, z), z),
-        glm::vec3(0.0f, 45.0f, 0.0f),
-        glm::vec3(0.08f)
-    );
-
-    m_staticObjects.push_back(house);
-}
 
 /**
  * @brief   Constrói a mailbox, objetivo

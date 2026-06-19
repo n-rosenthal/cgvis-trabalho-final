@@ -157,6 +157,17 @@ void Renderer::loadModels() const
 
     double totalStart = glfwGetTime();
 
+    printf("\n=================================\n");
+    printf("carregando OBJETOS ESTÁTICOS...\n");
+    printf("=================================\n");
+    load(Assets::ROCK_1);
+    load(Assets::ROCK_2);
+    load(Assets::ROCK_3);
+    load(Assets::ROCK_4);
+    load(Assets::ROCK_5);
+    load(Assets::HUGE_ROCK);
+    
+
     load(Assets::TREE_1);
     load(Assets::BIRD_MODEL);
     load(Assets::BIRD_STANDING_MODEL);
@@ -165,6 +176,8 @@ void Renderer::loadModels() const
     // load(Assets::CARP);
     load(Assets::HOUSE);
     load(Assets::MAILBOX);
+
+
 
     printf("\n=== VIRTUAL SCENE ===\n");
 

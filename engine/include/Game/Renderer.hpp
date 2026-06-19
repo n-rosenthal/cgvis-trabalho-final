@@ -83,6 +83,16 @@ public:
         OBJ_BUTTERFLY   = 13,
         OBJ_CARP        = 14,
 
+
+        //  Objetos estáticos
+        //  ROCHAS (1-5, HUGE_ROCK)
+        OBJ_ROCK_1      = 16,
+        OBJ_ROCK_2      = 17,
+        OBJ_ROCK_3      = 18,
+        OBJ_ROCK_4      = 19,
+        OBJ_ROCK_5      = 20,
+        OBJ_HUGE_ROCK   = 21,
+
     };
 
     //  Acessadores para matrizes de view e projeção
