@@ -17,6 +17,7 @@ void AssetLoader::loadNextStep()
         case LoadingStep::SHADERS:
             m_renderer.loadShaders();
             Assets::LoadAll();
+            m_renderer.initParticles();
             m_step = LoadingStep::TEXTURES;
             break;
 

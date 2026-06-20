@@ -252,7 +252,54 @@ void Renderer::init(GLFWwindow* window)
     initParticles();
 }
 
+GLuint LoadParticleProgram()
+{
+    printf("Loading particle shaders...\n");
+
+    GLuint vs =
+        LoadShader_Vertex(
+            "assets/shaders/particles_vertex.glsl"
+        );
+
+    printf("VS = %u\n", vs);
+
+    GLuint fs =
+        LoadShader_Fragment(
+            "assets/shaders/particles_fragment.glsl"
+        );
+
+    printf("FS = %u\n", fs);
+
+    GLuint prog =
+        CreateGpuProgram(vs, fs);
+
+    printf("Program = %u\n", prog);
+
+    GLint ok;
+
+    glGetShaderiv(vs, GL_COMPILE_STATUS, &ok);
+    printf("VS compiled = %d\n", ok);
+
+    glGetShaderiv(fs, GL_COMPILE_STATUS, &ok);
+    printf("FS compiled = %d\n", ok);
+
+    return prog;
+}
+
 void Renderer::initParticles() {
+        m_particleProgram =
+        LoadParticleProgram();
+
+    printf(
+        "Particle program = %u\n",
+        m_particleProgram
+    );
+
+    // Necessário para que gl_PointSize, definido no vertex shader de
+    // partículas, tenha efeito. Sem isso, pontos são desenhados com
+    // tamanho fixo (tipicamente 1px) — efetivamente invisíveis.
+    glEnable(GL_PROGRAM_POINT_SIZE);
+
     glGenVertexArrays(1, &m_particleVAO);
     glGenBuffers(1, &m_particleVBO);
 
@@ -293,6 +340,33 @@ void Renderer::initParticles() {
     glEnableVertexAttribArray(1);
 
     glBindVertexArray(0);
+
+    //  carregou?
+    printf("Particle program = %u\n", m_particleProgram);
+
+    GLint success;
+        glGetProgramiv(
+            m_particleProgram,
+            GL_LINK_STATUS,
+            &success
+        );
+
+        if(!success)
+        {
+            char info[1024];
+
+            glGetProgramInfoLog(
+                m_particleProgram,
+                sizeof(info),
+                nullptr,
+                info
+            );
+
+            printf(
+                "Particle shader link error:\n%s\n",
+                info
+            );
+        }
 }
 
 void Renderer::shutdown()
@@ -463,6 +537,10 @@ void Renderer::drawParticles(
     if(vertices.empty())
         return;
 
+    printf(
+        "Particle program = %u\n",
+        m_particleProgram
+    );
     glUseProgram(m_particleProgram);
 
     glUniformMatrix4fv(

@@ -114,6 +114,12 @@ public:
     glm::mat4 getViewMatrix() const { return m_view; }
     glm::mat4 getProjectionMatrix() const { return m_projection; }
 
+    //  Partículas
+    void initParticles();
+    GLuint createParticlesProgram();
+    GLuint m_particleProgram = 0;
+    GLuint m_particleVAO     = 0;
+    GLuint m_particleVBO     = 0;
 private:
     GLuint    m_program           = 0;
     GLuint    m_modelUniform      = 0;
@@ -135,9 +141,5 @@ private:
     void        setModel(const glm::mat4& model)       const;
     DrawContext makeContext(ObjectId id);
 
-    //  Partículas
-    void initParticles();
-    GLuint m_particleProgram = 0;
-    GLuint m_particleVAO     = 0;
-    GLuint m_particleVBO     = 0;
+
 };

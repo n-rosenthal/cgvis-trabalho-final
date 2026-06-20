@@ -10,17 +10,14 @@ namespace {
     static constexpr float BOB_AMPLITUDE = 0.15f;
     static constexpr float BOB_AMPLITUDE_LATERAL = 0.06f;   // balanço lateral
     static constexpr float BOB_FREQUENCY = 4.0f;            // Hz
-    static constexpr float kFlapImpulseForward = 2.5f;      // impulso para frente ao decolar
 
     static constexpr float FLAP_IMPULSE_VERTICAL = 12.0f;   // impulso para cima (era 9)
     static constexpr float FLAP_IMPULSE_FORWARD  = 3.0f;    // no standing
-    static constexpr float FLAP_SPEED_BOOST     = 3.0f;     // aumento de velocidade ao bater asas
     static constexpr float ACCELERATION         = 8.0f;     // aceleração com W/S
     static constexpr float SPEED_MIN           = 1.0f;
     static constexpr float SPEED_MAX           = 20.0f;
 
     constexpr float kYawSpeed   = 1.6f;
-    constexpr float kPitchSpeed = 1.4f;
 
     constexpr float kPitchMax =
         glm::radians(70.0f);
@@ -30,19 +27,11 @@ namespace {
 
     constexpr float kRollSmooth = 5.0f;
 
-    constexpr float kThrottle = 10.0f;
-    constexpr float kDrag     = 0.20f;
-
     constexpr float kLiftCoeff = 0.012f;
     constexpr float kGravity   = 12.0f;
 
-    constexpr float kFlapImpulse = 15.0f;
-
     constexpr float kVelBlendXZ = 5.0f;
     constexpr float kVelBlendY  = 2.5f;
-
-    constexpr float kSpeedMin = 5.0f;
-    constexpr float kSpeedMax = 42.0f;
 
     constexpr float kHeightMin = -2.0f;
     constexpr float kHeightMax = 120.0f;
@@ -105,6 +94,29 @@ glm::mat4 Bird::rotationMatrix() const {
 }
 
 /**
+ * @brief   Matriz de rotação do pássaro, sem o roll de bob do andar
+ * @details Enquanto pousado, m_roll é usado apenas para a animação
+ *          visual de balanço lateral do modelo (bob); como o roll
+ *          entra na composição da matriz (Rz * Rx * Ry), ele desvia
+ *          tanto o vetor "forward" quanto o "up" resultantes, não
+ *          apenas a orientação visual. Esta versão omite o roll
+ *          propositalmente para uso pela câmera, que não deve
+ *          tremer/balançar junto com essa animação cosmética.
+ *          Em voo, o roll faz parte da física real de curva e a
+ *          matriz completa (rotationMatrix()) é usada normalmente.
+ * @return  glm::mat4
+ */
+glm::mat4 Bird::rotationMatrixNoBob() const {
+    if (!standing)
+        return rotationMatrix();
+
+    glm::mat4 Ry = Matrix_Rotate_Y(m_yaw);
+    glm::mat4 Rx = Matrix_Rotate_X(m_pitch);
+    // roll omitido propositalmente (bob cosmético)
+    return Rx * Ry;
+}
+
+/**
  * @brief       Direção para frente
  * @details     u := (v, 0.0f) => u / |u|
  * 
@@ -115,12 +127,34 @@ glm::vec3 Bird::getForward() const {
 }
 
 /**
+ * @brief       Direção para frente, sem o roll de bob do andar
+ * @details     Ver rotationMatrixNoBob(). Usado pela câmera, já
+ *              que Camera::update() calcula a posição da câmera
+ *              a partir do forward — um roll oscilante aqui se
+ *              traduzia em tremor de posição da câmera inteira,
+ *              não só de inclinação.
+ * @return      glm::vec3
+ */
+glm::vec3 Bird::getForwardNoBob() const {
+    return norm3(glm::vec3(rotationMatrixNoBob() * glm::vec4(-1, 0, 0, 0)));
+}
+
+/**
  * @brief       Direção para cima
  * @details     u := (v, 0.0f) => u / |u|
  * @return      glm::vec3 
  */
 glm::vec3 Bird::getUp() const {
     return norm3(glm::vec3(rotationMatrix() * glm::vec4(0, 1, 0, 0)));
+}
+
+/**
+ * @brief       Direção para cima, sem o roll de bob do andar
+ * @details     Ver rotationMatrixNoBob().
+ * @return      glm::vec3
+ */
+glm::vec3 Bird::getUpNoBob() const {
+    return norm3(glm::vec3(rotationMatrixNoBob() * glm::vec4(0, 1, 0, 0)));
 }
 
 /**
@@ -183,7 +217,7 @@ bool Bird::onTerrainCollision(float terrainHeight, glm::vec3 terrainNormal) {
  * 
  * @param obstaclePos 
  */
-void Bird::onCollision(glm::vec3 obstaclePos) {};
+void Bird::onCollision(glm::vec3 obstaclePos) {}
 
 /**
  * @brief   Atualizador dinâmico para o pássaro
@@ -236,17 +270,14 @@ void Bird::update(float dt, GLFWwindow* window, float terrainHeight, glm::vec3 t
         // Zera velocidade (evita acúmulo de inércia do voo)
         m_velocity = glm::vec3(0.0f);
 
-        // Pitch zerado no chão
-        m_pitch = 0.0f;
-
         // --- Decolar com ESPAÇO ---
         bool flapPressed = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
         if (flapPressed && !m_flapHeld) {
             standing = false;
             m_velocity.y = FLAP_IMPULSE_VERTICAL;
             m_velocity += forward * FLAP_IMPULSE_FORWARD;
-            m_flapHeld = true;
         }
+        m_flapHeld = flapPressed;
 
         // --- Aplica rotação final (com offset para alinhar o modelo) ---
         const float MODEL_OFFSET = -M_PI / 2.0f;   // como estava antes
@@ -266,7 +297,6 @@ void Bird::update(float dt, GLFWwindow* window, float terrainHeight, glm::vec3 t
     if (flapPressed && !m_flapHeld) {
         m_velocity.y += FLAP_IMPULSE_VERTICAL;
         m_speed += 2.0f;  // acelera um pouco
-        m_flapHeld = true;
     }
     m_flapHeld = flapPressed;
 
@@ -322,7 +352,7 @@ void Bird::update(float dt, GLFWwindow* window, float terrainHeight, glm::vec3 t
 
     updateDrawable();
     updateColliders();
-};
+}
 
 /**
  * @brief   Atualizador dinâmico para os colisores
@@ -336,7 +366,7 @@ void Bird::updateColliders(){
     m_collider.p1 = m_position
                     +   fwd
                     *   1.5f;
-};
+}
 
 /**
  * @brief   Limites de altura para o pássaro
@@ -344,8 +374,8 @@ void Bird::updateColliders(){
  */
 void Bird::clampPosition() {
     //  Limite inferior
-    if(m_position.y < kHeightMin) { m_position.y = kHeightMin; };
+    if(m_position.y < kHeightMin) { m_position.y = kHeightMin; }
 
     //  Limite superior
-    if(m_position.y > kHeightMax) { m_position.y = kHeightMax; };
-};
+    if(m_position.y > kHeightMax) { m_position.y = kHeightMax; }
+}

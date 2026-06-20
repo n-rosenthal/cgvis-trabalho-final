@@ -17,5 +17,5 @@ void main()
         view *
         vec4(position, 1.0);
 
-    gl_PointSize = 8.0;
+    gl_PointSize = 10.0;
 }

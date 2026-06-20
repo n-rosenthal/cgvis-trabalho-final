@@ -141,6 +141,29 @@ public:
     float getBaseHeight() const {return m_baseY; }
 
     /**
+     * @brief   Direção para frente, ignorando o roll de
+     *          balanço lateral (bob) usado na animação
+     *          de caminhar. Usado pela câmera: como o roll
+     *          entra na composição da matriz de rotação
+     *          (Rz * Rx * Ry), ele também desvia o vetor
+     *          forward, não só o up — por isso a câmera
+     *          precisa desta versão "limpa".
+     * 
+     * @return  glm::vec3
+     */
+    glm::vec3 getForwardNoBob() const;
+
+    /**
+     * @brief   Direção para cima, ignorando o roll de
+     *          balanço lateral (bob) usado na animação
+     *          de caminhar. Usado pela câmera para evitar
+     *          que ela incline junto com a animação.
+     * 
+     * @return  glm::vec3
+     */
+    glm::vec3 getUpNoBob() const;
+
+    /**
      * @brief   Posição sem bob de `Bird` ao caminhar
      * 
      * @return glm::vec3 
@@ -181,6 +204,15 @@ private:
      *              matriz de rotação
      */
     glm::mat4 rotationMatrix() const;
+
+    /**
+     * @brief   Obtém a matriz de rotação de `Bird`, sem o
+     *          roll de bob do andar. Ver rotationMatrixNoBob()
+     *          em Bird.cpp para detalhes.
+     * 
+     * @return  glm::mat4 
+     */
+    glm::mat4 rotationMatrixNoBob() const;
 
     /**
      * @brief   Limita a posição de `Bird` ao chão

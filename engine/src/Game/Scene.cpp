@@ -38,6 +38,11 @@ void Scene::build() {
 
     //  Pássaro
     spawnBird();
+    
+    //  Mailbox
+    buildMailbox();
+    printf("x=%lf, y=%lf, z=%lf\n", m_mailbox->getPosition().x, m_mailbox->getPosition().y, m_mailbox->getPosition().z);
+
 
     //  Objetos estáticos
     buildStaticObjects();
@@ -48,9 +53,6 @@ void Scene::build() {
     //  Carta
     buildLetter();
 
-
-    //  Mailbox
-    buildMailbox();
 
     //  NPCs
     buildButterflyNPCs();
@@ -164,15 +166,17 @@ void Scene::update(float dt, GLFWwindow* w) {
 
     m_camera.update(
         m_bird->getPositionNoBob(),   // posição base
-        m_bird->getForward(),         // direção para onde o pássaro olha
-        m_bird->getUp(),              // vetor "para cima"
+        m_bird->getForwardNoBob(),    // direção para onde o pássaro olha, sem o roll de bob
+        m_bird->getUpNoBob(),         // vetor "para cima", sem o roll de bob (não usado por Camera::update, mantido por clareza)
         dt
     );
+
 
     for(auto& ring : m_rings) {
         ring->update(dt);
 
         if (ring->collected()) {
+            printf("Ring collected!\n");
             spawnBurst(
                 ring->getPosition(),
                 60,
@@ -181,6 +185,9 @@ void Scene::update(float dt, GLFWwindow* w) {
             );
         }
     }
+
+    if (m_mailbox)
+        m_mailbox->update(dt);
 
 
     // NPCs
@@ -388,6 +395,68 @@ void Scene::resolveCollisions() {
         }
     }
 
+    // --------------------------------------------------
+    // Carta arremessada → acerta a mailbox?
+    // --------------------------------------------------
+
+    if(
+        m_letter &&
+        m_mailbox &&
+        m_letterState == LetterState::Thrown
+    )
+    {
+        constexpr float kMailboxHitRadius = 4.0f;
+
+        float d =
+            glm::length(
+                m_letter->getPosition()
+                -
+                m_mailbox->getPosition()
+            );
+
+        if(d < kMailboxHitRadius)
+        {
+            // Entrega bem-sucedida: trava a carta na mailbox
+            m_letterState =
+                LetterState::OnGround;
+
+            m_letter->setPosition(
+                m_mailbox->getPosition()
+                +
+                glm::vec3(0.0f, 2.0f, 0.0f)
+            );
+
+            m_letter->setGroundPos(
+                glm::vec2(
+                    m_mailbox->getPosition().x,
+                    m_mailbox->getPosition().z
+                )
+            );
+
+            m_letterVelocity =
+                glm::vec3(0.0f);
+
+            m_throwProgress = 0.0f;
+
+            m_mailbox->activate();
+
+            g_Sound.play(
+                "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
+            );
+
+            spawnBurst(
+                m_mailbox->getPosition()
+                +
+                glm::vec3(0.0f, 2.0f, 0.0f),
+                80,
+                5.0f,
+                1.2f
+            );
+
+            printf("Carta entregue! Jogo vencido.\n");
+        }
+    }
+
     // Anéis — coleta e remove os mortos
     for (auto& ring : m_rings)
         ring->checkCollision(birdPos);
@@ -416,6 +485,7 @@ void Scene::draw(Renderer& r) {
 
     r.drawTerrain(*m_terrain);
     r.drawRings(m_rings);
+
     if (m_letter) r.drawLetter(*m_letter);
     r.drawMailbox(*m_mailbox);
     r.drawObjects(m_staticObjects);
@@ -425,13 +495,27 @@ void Scene::draw(Renderer& r) {
         r.drawButterflyNPC(*npc);
     }
 
+    r.drawMailbox(*m_mailbox);
+
     // --- Desenha a parábola da carta ---
     r.drawParabola(m_parabolaPoints, m_parabolaActive);
 
     // Partículas
+    GLint currentProgram;
+
+    glGetIntegerv(
+        GL_CURRENT_PROGRAM,
+        &currentProgram
+    );
+
+    printf(
+        "Current shader = %d\n",
+        currentProgram
+    );
     r.drawParticles(
         m_particleBursts
     );
+    
 }
 
 void Scene::spawnBurst(
@@ -730,9 +814,24 @@ void Scene::buildStaticObjects() {
         );
 
         // Mantém a janela responsiva durante a construção dos ~225 objetos
-        if (i % 20 == 0)
+        if (i % 5 == 0)
             glfwPollEvents();
     }
+
+    glfwPollEvents();
+    //  Casa
+    m_staticObjects.push_back(
+        std::make_shared<StaticObject>(
+            Assets::HOUSE,
+            glm::vec3(
+                245.0f,
+                m_terrain->getHeight(245.0f, -5.0f) - 1.5f,
+                -5.0f
+            ),
+            glm::vec3(0.0f, 1.0f, glm::radians(90.0f)),
+            glm::vec3(0.2f)
+        )
+    );
 }
 
 
@@ -741,11 +840,11 @@ void Scene::buildStaticObjects() {
  * @brief   Constrói a mailbox, objetivo
  */
 void Scene::buildMailbox() {
-    float x = 155.0f, z = 135.0f;
+    float x = 235.0f, z = -20.0f;
     m_mailbox = std::make_shared<Mailbox>(
         glm::vec3(x, m_terrain->getHeight(x, z), z),
-        glm::vec3(0.0f),
-        glm::vec3(3.0f)
+        glm::vec3(0.0f, 1.0f, glm::radians(90.0f)),
+        glm::vec3(2.0f)
     );
 }
 
@@ -776,7 +875,7 @@ void Scene::buildRings() {
  *  @brief  construtor para a letter
  */
 void Scene::buildLetter() {
-    float x = -180.0f, z = -200.0f;
+    float x = -250.0f, z = 2.0f;
     float terrainY = m_terrain->getHeight(x, z);
     m_letter = std::make_shared<Letter>(glm::vec3(x, terrainY + 2.0f, z));
     m_letter->setGroundPos(glm::vec2(x, z));
