@@ -156,6 +156,23 @@ inline float norm(glm::vec4 v)
     return sqrt( vx*vx + vy*vy + vz*vz );
 }
 
+inline float norm(glm::vec3 v)
+{
+    float vx = v.x;
+    float vy = v.y;
+    float vz = v.z;
+
+    return sqrt( vx*vx + vy*vy + vz*vz );
+}
+
+// Função de normalização usando a sobrecarga
+inline glm::vec3 norm3(const glm::vec3& v) {
+    glm::vec4 v4(v, 0.0f);
+    float len = norm(v4);
+    if (len > 0.0f) return v / len;
+    return v;
+}
+
 // Matriz R de "rotação de um ponto" em relação à origem do sistema de
 // coordenadas e em torno do eixo definido pelo vetor 'axis'. Esta matriz pode
 // ser definida pela fórmula de Rodrigues. Lembre-se que o vetor que define o

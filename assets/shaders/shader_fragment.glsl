@@ -9,6 +9,7 @@ uniform mat4 view;
 uniform int  object_id;
 uniform vec4 bbox_min;
 uniform vec4 bbox_max;
+uniform vec4 uColor;
 uniform sampler2D diffuseTexture;
 uniform sampler2D texSand;
 uniform sampler2D texGrass;
@@ -38,6 +39,12 @@ void main()
     float lambert = max(dot(N, L), 0.0);
     float ambient = 0.10;
     vec3  Kd0;
+
+    // --- Parábola (linha amarela) ---
+    if (object_id == 99) {
+        color = vec4(1.0, 0.8, 0.0, 1.0);
+        return;
+    }
 
     // =========================================================
     // Terreno

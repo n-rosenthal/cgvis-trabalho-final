@@ -59,5 +59,6 @@ private:
 enum class LetterState {
     OnGround,
     Carried,
-    Falling
+    Falling,
+    Thrown
 };

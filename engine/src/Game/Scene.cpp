@@ -63,7 +63,46 @@ void Scene::build() {
  */
 void Scene::spawnBird() {
     m_bird.emplace();
-    m_bird->setPosition(glm::vec3(-180.0f, m_terrain->getHeight(-180.0f, -200.0f) + 20.0f, -200.0f));
+    m_bird->setPosition(glm::vec3(-345.0f, m_terrain->getHeight(-345.0f, -5.0f) + 0.5f, -5.0f));
+}
+
+void Scene::computeParabola() {
+    if (!m_bird || !m_letter) return;
+
+    // Ponto inicial: posição atual da carta (junto ao pássaro)
+    glm::vec3 start = m_letter->getPosition();
+
+    // Direção para a frente do pássaro (no plano horizontal)
+    glm::vec3 forward = m_bird->getForward();
+    forward.y = 0.0f;
+    if (glm::length(forward) < 0.001f) forward = glm::vec3(0.0f, 0.0f, -1.0f);
+    forward = glm::normalize(forward);
+
+    // Distância de lançamento (ajustável)
+    float throwDistance = 12.0f;
+
+    // Ponto final: projeta para frente e ajusta à altura do terreno
+    glm::vec3 end = start + forward * throwDistance;
+    end.y = m_terrain->getHeight(end.x, end.z);
+
+    // Ponto de controle: pico do arco (acima do ponto médio)
+    glm::vec3 mid = (start + end) * 0.5f;
+    float arcHeight = 5.0f;   // altura máxima do arco
+    glm::vec3 control = mid + glm::vec3(0.0f, arcHeight, 0.0f);
+
+    m_parabolaStart = start;
+    m_parabolaControl = control;
+    m_parabolaEnd = end;
+
+    // Gera pontos para visualização (ex: 30 pontos)
+    m_parabolaPoints.clear();
+    const int segments = 30;
+    for (int i = 0; i <= segments; ++i) {
+        float t = (float)i / segments;
+        // Curva de Bézier quadrática: B(t) = (1-t)^2*P0 + 2*(1-t)*t*P1 + t^2*P2
+        glm::vec3 p = (1-t)*(1-t)*start + 2*(1-t)*t*control + t*t*end;
+        m_parabolaPoints.push_back(p);
+    }
 }
 
 /**
@@ -75,56 +114,72 @@ void Scene::spawnBird() {
  *              ponteiro para a janela 
  */
 void Scene::update(float dt, GLFWwindow* w) {
-    m_bird->update(dt, w);
+    m_bird->update(dt,
+                    w, 
+                    m_terrain->getHeight(m_bird->getPosition().x, m_bird->getPosition().z),
+                    m_terrain->getNormal(m_bird->getPosition().x, m_bird->getPosition().z));
     
     //  depuração de LETTER
     g_DebugLetterPosition = m_letter->getPosition();
     g_DebugLetterRotation = m_letter->getRotation();
     
+       // --------------------------------------------------
+    // Sistema de parábola da carta (tecla G)
     // --------------------------------------------------
-    // Soltar carta (tecla G)
-    // --------------------------------------------------
-
     static bool gHeld = false;
+    bool gPressed = glfwGetKey(w, GLFW_KEY_G) == GLFW_PRESS;
 
-    bool gPressed =
-        glfwGetKey(
-            w,
-            GLFW_KEY_G
-        ) == GLFW_PRESS;
-
-    if(gPressed && !gHeld) {
-        if(m_letterState == LetterState::Carried) {
-            m_letterState =
-                LetterState::Falling;
-
-            glm::vec3 dropPos =
-                m_bird->getPosition()
-                -
-                m_bird->getForward() * 2.0f;
-
-            m_letter->setPosition(dropPos);
-
-            m_letterVelocity =
-                m_bird->getForward() * 5.0f;
+    if (m_letterState == LetterState::Carried) {
+        if (gPressed && !gHeld) {
+            // --- Início do pressionamento: calcular parábola ---
+            m_parabolaActive = true;
+            computeParabola();
+            m_throwProgress = 0.0f;
         }
+
+        if (gPressed) {
+            computeParabola();
+        }
+
+        if (!gPressed && gHeld) {
+            // --- Soltar G: iniciar o lançamento ---
+            if (m_parabolaActive) {
+                m_letterState = LetterState::Thrown;
+                m_parabolaActive = false;
+                m_throwProgress = 0.0f;
+            }
+        }
+    } else {
+        // Se a carta não estiver carregada, não faz nada
+        m_parabolaActive = false;
+        m_parabolaPoints.clear();
     }
 
     gHeld = gPressed;
 
     // --------------------------------------------------
-
+    // Atualiza a carta (inclui novo estado Thrown)
+    // --------------------------------------------------
     updateLetter(dt, w);
 
     m_camera.update(
-        m_bird->getPosition(),
-        m_bird->getForward(),
-        m_bird->getUp(),
+        m_bird->getPositionNoBob(),   // posição base
+        m_bird->getForward(),         // direção para onde o pássaro olha
+        m_bird->getUp(),              // vetor "para cima"
         dt
     );
 
     for(auto& ring : m_rings) {
         ring->update(dt);
+
+        if (ring->collected()) {
+            spawnBurst(
+                ring->getPosition(),
+                60,
+                4.0f,
+                1.0f
+            );
+        }
     }
 
 
@@ -133,14 +188,26 @@ void Scene::update(float dt, GLFWwindow* w) {
     for(auto& npc : m_butterflyNPCs) {
         npc->update(dt);
     }
-
-    for(auto& carp : m_carpNPCs) {
-        carp->update(dt);
+    
+    for(auto& burst : m_particleBursts)
+    {
+        burst->update(dt);
     }
+
+    m_particleBursts.erase(
+        std::remove_if(
+            m_particleBursts.begin(),
+            m_particleBursts.end(),
+            [](const auto& b)
+            {
+                return b->finished();
+            }
+        ),
+        m_particleBursts.end()
+    );
 }
 
-void Scene::updateLetter(float dt, GLFWwindow* window)
-{
+void Scene::updateLetter(float dt, GLFWwindow* window) {
     if (!m_letter) return;
 
     switch (m_letterState) {
@@ -158,6 +225,34 @@ void Scene::updateLetter(float dt, GLFWwindow* window)
             glm::vec3 p = m_letter->getPosition();
             p += m_letterVelocity * dt;
             m_letter->setPosition(p);
+            break;
+        }
+
+        case LetterState::Thrown: {
+            // Avança o progresso
+            m_throwProgress += m_throwSpeed * dt;
+            if (m_throwProgress >= 1.0f) {
+                m_throwProgress = 1.0f;
+                m_letterState = LetterState::OnGround;
+                // Define a posição final (garantindo que fique no chão)
+                glm::vec3 finalPos = m_parabolaEnd;
+                m_letter->setPosition(finalPos);
+                m_letter->setGroundPos(glm::vec2(finalPos.x, finalPos.z));
+                // Reseta a oscilação
+                m_letterOscillationTime = 0.0f;
+                break;
+            }
+
+            // Interpola na curva de Bézier
+            float t = m_throwProgress;
+            glm::vec3 p = (1-t)*(1-t)*m_parabolaStart 
+                        + 2*(1-t)*t*m_parabolaControl 
+                        + t*t*m_parabolaEnd;
+            m_letter->setPosition(p);
+
+            // Rotação: orienta ao longo da curva (opcional)
+            // Pode-se calcular a derivada para orientar, mas deixaremos fixa.
+
             break;
         }
 
@@ -194,8 +289,8 @@ void Scene::updateLetter(float dt, GLFWwindow* window)
 
             break;
         }
-    }
-}
+    };
+};
 
 
 /**
@@ -313,32 +408,48 @@ void Scene::resolveCollisions() {
  *  
  */
 void Scene::draw(Renderer& r) {
-
     if (m_bird->getStanding()) {
-        r.drawBird(*m_bird, true);  // Passa true para usar modelo standing
-    }   else {
-        r.drawBird(*m_bird, false); // Passa false para usar modelo voando
+        r.drawBird(*m_bird, true);
+    } else {
+        r.drawBird(*m_bird, false);
     }
 
     r.drawTerrain(*m_terrain);
-    // r.drawRocks(m_rocks);
     r.drawRings(m_rings);
     if (m_letter) r.drawLetter(*m_letter);
-
     r.drawMailbox(*m_mailbox);
-
     r.drawObjects(m_staticObjects);
 
-    // npcs
-    for(auto& npc : m_butterflyNPCs) {
+    // NPCs
+    for (auto& npc : m_butterflyNPCs) {
         r.drawButterflyNPC(*npc);
     }
 
-    // for(auto& npc : m_carpNPCs) {
-    //     r.drawCarpNPC(*npc);
-    // }
+    // --- Desenha a parábola da carta ---
+    r.drawParabola(m_parabolaPoints, m_parabolaActive);
+
+    // Partículas
+    r.drawParticles(
+        m_particleBursts
+    );
 }
 
+void Scene::spawnBurst(
+    const glm::vec3& position,
+    int count,
+    float speed,
+    float lifetime
+)
+{
+    m_particleBursts.push_back(
+        std::make_unique<ParticleBurst>(
+            position,
+            count,
+            speed,
+            lifetime
+        )
+    );
+}
 
 //  ======================================================================
 //  Métodos `build*()` para construção dos objetos da cena virtual
@@ -664,26 +775,18 @@ void Scene::buildRings() {
 /**
  *  @brief  construtor para a letter
  */
-void Scene::buildLetter()
-{
+void Scene::buildLetter() {
     float x = -180.0f, z = -200.0f;
     float terrainY = m_terrain->getHeight(x, z);
-
-    m_letter = std::make_shared<Letter>(
-        glm::vec3(x, terrainY + 2.0f, z)  // start at float height
-    );
-
-    // Set floating parameters
+    m_letter = std::make_shared<Letter>(glm::vec3(x, terrainY + 2.0f, z));
     m_letter->setGroundPos(glm::vec2(x, z));
-    m_letter->setFloatHeight(2.0f);   // h
-    m_letter->setAmplitude(0.8f);     // d
-    m_letter->setPhase(0.0f);         // initial phase (optional)
-
+    m_letter->setFloatHeight(2.0f);
+    m_letter->setAmplitude(0.8f);
+    m_letter->setPhase(0.0f);
     m_letterState = LetterState::OnGround;
     m_letterVelocity = glm::vec3(0.0f);
-    m_letterOscillationTime = 0.0f;   // reset timer
+    m_letterOscillationTime = 0.0f;
 }
-
 
 void Scene::buildButterflyNPCs()
 {

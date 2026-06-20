@@ -20,6 +20,9 @@ public:
     // Render override: injeta view e estado de animação antes de delegar
     void render(const DrawContext& ctx, const glm::mat4& view);
 
+    glm::vec3 getPosition() const { return m_position; }
+    bool collected() const { return m_collected; }
+
 private:
     float m_radius;
     float m_pulseTime   = 0.0f;

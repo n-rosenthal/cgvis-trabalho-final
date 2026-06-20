@@ -21,6 +21,8 @@
 #include "Objects/Letter.hpp"
 #include "Objects/Mailbox.hpp"
 
+#include "Particles/ParticleBurst.hpp"
+
 #include "Bezier/Butterfly/ButterflyNPC.hpp"
 #include "Bezier/Carp/CarpNPC.hpp"
 
@@ -33,6 +35,13 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cstddef> // offsetof
+
+struct ParticleVertex
+{
+    glm::vec3 position;
+    glm::vec4 color;
+};
 
 namespace
 {
@@ -45,7 +54,7 @@ namespace
 // INITIALIZATION
 // ============================================================================
 
-void Renderer::initMinimal(GLFWwindow* window)
+void Renderer:: initMinimal(GLFWwindow* window)
 {
     glfwPollEvents();
 
@@ -240,10 +249,62 @@ void Renderer::init(GLFWwindow* window)
 
     loadTextures();
     loadModels();
+    initParticles();
+}
+
+void Renderer::initParticles() {
+    glGenVertexArrays(1, &m_particleVAO);
+    glGenBuffers(1, &m_particleVBO);
+
+    glBindVertexArray(m_particleVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, m_particleVBO);
+
+    // reserva espaço para até 10000 partículas
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        sizeof(ParticleVertex) * 10000,
+        nullptr,
+        GL_DYNAMIC_DRAW
+    );
+
+    // posição
+    glVertexAttribPointer(
+        0,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(ParticleVertex),
+        (void*)0
+    );
+
+    glEnableVertexAttribArray(0);
+
+    // cor
+    glVertexAttribPointer(
+        1,
+        4,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(ParticleVertex),
+        (void*)offsetof(ParticleVertex, color)
+    );
+
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
 }
 
 void Renderer::shutdown()
 {
+    if(m_particleVBO)
+    glDeleteBuffers(1, &m_particleVBO);
+
+    if(m_particleVAO)
+        glDeleteVertexArrays(1, &m_particleVAO);
+
+    if(m_particleProgram)
+        glDeleteProgram(m_particleProgram);
 }
 
 // ============================================================================
@@ -331,6 +392,125 @@ void Renderer::endFrame(GLFWwindow* window)
 // ============================================================================
 // DRAW CALLS
 // ============================================================================
+void Renderer::drawParabola(const std::vector<glm::vec3>& points, bool active) {
+    if (!active || points.empty()) return;
+
+    // Verifica se há um shader ativo
+    GLuint currentProgram = 0;
+    glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)&currentProgram);
+    if (currentProgram == 0) {
+        // Nenhum shader ativo – não desenhamos
+        return;
+    }
+
+    // Obtém os uniforms do programa atual
+    GLint locModel = glGetUniformLocation(currentProgram, "model");
+    GLint locView  = glGetUniformLocation(currentProgram, "view");
+    GLint locProj  = glGetUniformLocation(currentProgram, "projection");
+    GLint locObjId = glGetUniformLocation(currentProgram, "object_id");
+
+    // Define a matriz modelo como identidade (pontos já em world space)
+    glm::mat4 model = glm::mat4(1.0f);
+    if (locModel >= 0) glUniformMatrix4fv(locModel, 1, GL_FALSE, glm::value_ptr(model));
+
+    // view e projection presumimos que já estão configurados (pelo chamador)
+    // Se necessário, configure‑os também (mas normalmente já estão)
+    if (locObjId >= 0) glUniform1i(locObjId, 99);
+
+    // Cria/usa VAO/VBO para a linha
+    static GLuint vao = 0, vbo = 0;
+    if (vao == 0) {
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
+    }
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(glm::vec3), points.data(), GL_DYNAMIC_DRAW);
+
+    // Atributo de posição (layout 0)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glLineWidth(3.0f);
+    glDrawArrays(GL_LINE_STRIP, 0, (GLsizei)points.size());
+
+    // Restaura estado (opcional)
+    glBindVertexArray(0);
+}
+
+
+void Renderer::drawParticles(
+    const std::vector<std::unique_ptr<ParticleBurst>>& bursts
+)
+{
+    std::vector<ParticleVertex> vertices;
+
+    for(const auto& burst : bursts)
+    {
+        for(const auto& p : burst->particles())
+        {
+            if(p.life <= 0.0f)
+                continue;
+
+            vertices.push_back({
+                p.position,
+                p.color
+            });
+        }
+    }
+
+    if(vertices.empty())
+        return;
+
+    glUseProgram(m_particleProgram);
+
+    glUniformMatrix4fv(
+        glGetUniformLocation(m_particleProgram, "view"),
+        1,
+        GL_FALSE,
+        glm::value_ptr(m_view)
+    );
+
+    glUniformMatrix4fv(
+        glGetUniformLocation(m_particleProgram, "projection"),
+        1,
+        GL_FALSE,
+        glm::value_ptr(m_projection)
+    );
+
+    glBindVertexArray(m_particleVAO);
+
+    glBindBuffer(
+        GL_ARRAY_BUFFER,
+        m_particleVBO
+    );
+
+    glBufferSubData(
+        GL_ARRAY_BUFFER,
+        0,
+        vertices.size() * sizeof(ParticleVertex),
+        vertices.data()
+    );
+
+    glEnable(GL_BLEND);
+    glBlendFunc(
+        GL_SRC_ALPHA,
+        GL_ONE_MINUS_SRC_ALPHA
+    );
+
+    glDrawArrays(
+        GL_POINTS,
+        0,
+        static_cast<GLsizei>(vertices.size())
+    );
+
+    glDisable(GL_BLEND);
+
+    glBindVertexArray(0);
+
+    glUseProgram(m_program);
+}
 
 void Renderer::drawObjects(
     std::vector<std::shared_ptr<StaticObject>>& objects

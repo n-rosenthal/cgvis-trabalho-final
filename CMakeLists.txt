@@ -30,6 +30,10 @@ set(SOURCES
   engine/src/Window/InputCallbacks.cpp
   engine/src/Window/WindowCallbacks.cpp
 
+  # Sistema de párticulas
+  engine/src/Particles/ParticleBurst.cpp
+
+
   # Core
   engine/src/Game/Application.cpp
   engine/src/Game/Camera.cpp

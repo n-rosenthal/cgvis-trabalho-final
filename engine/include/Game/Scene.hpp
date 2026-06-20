@@ -37,6 +37,9 @@
 #include "Bezier/Butterfly/ButterflyNPC.hpp"
 #include "Bezier/Carp/CarpNPC.hpp"
 
+//  Partículas
+#include "Particles/ParticleBurst.hpp"
+
 class Renderer;  // forward
 
 
@@ -63,9 +66,19 @@ public:
 
     //  Atualização do estado da carta
     void updateLetter(float dt, GLFWwindow* w);
+    void computeParabola();
 
     void resolveCollisions();
     void draw(Renderer& r);
+
+    //  Partículas
+    void spawnBurst(
+        const glm::vec3& position,
+        int count,
+        float speed = 8.0f,
+        float lifetime = 1.5f
+    );
+    
 
     //  Métodos de construção dos objetos
     void buildTerrain();
@@ -98,6 +111,8 @@ public:
 
 
 private:
+    std::vector<std::unique_ptr<ParticleBurst>>     m_particleBursts;
+
     // optional evita exigir construtor padrão de Terrain e Bird
     std::optional<Bird>                             m_bird;
     std::unique_ptr<Terrain>                        m_terrain;
@@ -112,6 +127,7 @@ private:
 
     std::shared_ptr<Mailbox>                        m_mailbox;
 
+    //  CARTA, PARÁBOLA
     //  Estado atual da carta
     LetterState m_letterState   = LetterState::OnGround;
 
@@ -120,6 +136,14 @@ private:
 
     //  Animação da carta
     float m_letterOscillationTime = 0.0f;
+
+    bool m_parabolaActive = false;          // true enquanto G está pressionado
+    std::vector<glm::vec3> m_parabolaPoints; // pontos para desenhar a curva
+    glm::vec3 m_parabolaStart;              // ponto de partida (junto ao pássaro)
+    glm::vec3 m_parabolaControl;            // ponto de controle (pico do arco)
+    glm::vec3 m_parabolaEnd;                // ponto de impacto no chão
+    float m_throwProgress = 0.0f;           // 0..1 progresso da animação
+    float m_throwSpeed = 2.0f;              // velocidade de progresso (1/s)
 
 
     //  NPCs

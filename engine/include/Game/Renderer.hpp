@@ -28,6 +28,10 @@ class Mailbox;
 class ButterflyNPC;
 class CarpNPC;
 
+//  Partículas
+class ParticleBurst;
+
+
 class Renderer {
 public:
     // Ciclo de vida
@@ -53,9 +57,11 @@ public:
     void drawRings  (std::vector<std::shared_ptr<Ring>>& rings);
     void drawLetter (Letter& letter);
     void drawMailbox(Mailbox& mailbox);
+    void drawParticles(const std::vector<std::unique_ptr<ParticleBurst>>& bursts);
 
     void drawObjects(std::vector<std::shared_ptr<StaticObject>>& objects);
 
+    void drawParabola(const std::vector<glm::vec3>& points, bool active);
 
     //  NPCs
     void drawButterflyNPC(ButterflyNPC& npc);
@@ -101,6 +107,7 @@ public:
         OBJ_ROCK_5      = 20,
         OBJ_HUGE_ROCK   = 21,
 
+        OBJ_LINE        = 99
     };
 
     //  Acessadores para matrizes de view e projeção
@@ -127,4 +134,10 @@ private:
     void        setObjectId(ObjectId id)               const;
     void        setModel(const glm::mat4& model)       const;
     DrawContext makeContext(ObjectId id);
+
+    //  Partículas
+    void initParticles();
+    GLuint m_particleProgram = 0;
+    GLuint m_particleVAO     = 0;
+    GLuint m_particleVBO     = 0;
 };

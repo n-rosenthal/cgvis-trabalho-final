@@ -91,7 +91,9 @@ struct DrawContext {
     GLint  projection_uniform;
     GLint  object_id_uniform;
     GLint  diffuse_texture_uniform;
+    GLint  color_uniform;           // <-- novo
     int    object_id;
+    glm::vec4 color;                // <-- novo, para cor sólida (opcional)
 };
 
 // ============================================================================
