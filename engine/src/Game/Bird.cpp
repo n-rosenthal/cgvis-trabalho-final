@@ -33,7 +33,7 @@ namespace {
     constexpr float kVelBlendXZ = 5.0f;
     constexpr float kVelBlendY  = 2.5f;
 
-    constexpr float kHeightMin = -2.0f;
+    constexpr float kHeightMin = -2.5f;
     constexpr float kHeightMax = 120.0f;
 }
 
@@ -169,7 +169,7 @@ const CapsuleCollider& Bird::getCollider() const { return m_collider; };
  * 
  * @return std::vector<std::shared_ptr<Collider>> 
  */
-std::vector<std::shared_ptr<Collider>> Bird::getColliders() {
+std::vector<std::shared_ptr<Collider>> Bird::getColliders() const {
     return {std::make_shared<CapsuleCollider>(m_collider)};
 }
 
@@ -218,6 +218,35 @@ bool Bird::onTerrainCollision(float terrainHeight, glm::vec3 terrainNormal) {
  * @param obstaclePos 
  */
 void Bird::onCollision(glm::vec3 obstaclePos) {}
+
+/**
+ * @brief   Resposta "suave" de colisão, usada por obstáculos
+ *          atravessáveis (ex: arbustos): em vez de barrar o
+ *          movimento como onCollision(), desacelera o pássaro
+ *          e o empurra lateralmente, simulando atrito/atravessar
+ *          a vegetação. O som correspondente é tocado por quem
+ *          chama este método (ver Scene::resolveCollisions()).
+ * 
+ * @param   obstaclePos (glm::vec3)
+ *          posição do obstáculo atravessável
+ */
+void Bird::onBushCollision(glm::vec3 obstaclePos) {
+    constexpr float kSlowFactor   = 0.5f;  // reduz a velocidade pela metade
+    constexpr float kPushStrength = 2.0f;  // intensidade do empurrão lateral
+
+    // Desacelera
+    m_speed     *= kSlowFactor;
+    m_velocity  *= kSlowFactor;
+
+    // Empurra para longe do arbusto, no plano horizontal
+    glm::vec3 away = m_position - obstaclePos;
+    away.y = 0.0f;
+
+    if (glm::length(away) > 0.0001f) {
+        away = glm::normalize(away);
+        m_position += away * kPushStrength * 0.1f;
+    }
+}
 
 /**
  * @brief   Atualizador dinâmico para o pássaro

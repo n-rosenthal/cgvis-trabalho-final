@@ -26,30 +26,10 @@
  *  Necessita de um vetor de colisores e da implementação de `onCollision()`
  */
 class Collidable {
-    public:
-        /**
-        *   @brief      Retorna o vetor de colisores do objeto
-        *   @returns    (std::shared_ptr<Collider>)
-        */
-        virtual std::vector<std::shared_ptr<Collider>> getColliders() = 0;
+public:
+    virtual std::vector<std::shared_ptr<Collider>> getColliders() const = 0;
 
-        /**
-         *  @brief      Atualiza os colisores do objeto a depender
-         *              de sua posição atual e outros parâmetros
-         */
-        virtual void updateColliders() = 0;
-
-        /**
-        *   @brief      Implementação das consequências de uma colisão
-        *               contra outro objeto
-        *
-        *   @param      (glm::vec3)
-        *               Posição do outro objeto
-        */
-        virtual void onCollision(glm::vec3 objectPosition) = 0;
-
-        /**
-        *   @brief      Destruidor padrão
-        */
-        virtual ~Collidable() = default;
+    virtual void updateColliders() = 0;
+    virtual void onCollision(glm::vec3 objectPosition) = 0;
+    virtual ~Collidable() = default;
 };

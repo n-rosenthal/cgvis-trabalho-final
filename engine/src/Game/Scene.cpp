@@ -30,33 +30,24 @@ static float distancePointSegment(glm::vec3 p, glm::vec3 a, glm::vec3 b) {
 
 
 /**
- * @brief   Cria os objetos do jogo
+ * @brief   Cria os bursts persistentes usados pelos trails de
+ *          partícula (pássaro em voo, carta arremessada) e os
+ *          insere em m_particleBursts, para que sejam desenhados
+ *          e atualizados junto com os demais efeitos de partícula
+ *          já existentes (anéis, entrega da carta). Guarda
+ *          ponteiros observadores (não donos) para alimentá-los
+ *          aos poucos em Scene::update().
  */
-void Scene::build() {
-    //  Terreno
-    buildTerrain();
+void Scene::buildTrails() {
+    auto birdBurst = std::make_unique<ParticleBurst>();
+    birdBurst->setPersistent(true);
+    m_birdTrailBurst = birdBurst.get();
+    m_particleBursts.push_back(std::move(birdBurst));
 
-    //  Pássaro
-    spawnBird();
-    
-    //  Mailbox
-    buildMailbox();
-    printf("x=%lf, y=%lf, z=%lf\n", m_mailbox->getPosition().x, m_mailbox->getPosition().y, m_mailbox->getPosition().z);
-
-
-    //  Objetos estáticos
-    buildStaticObjects();
-
-    //  Anéis
-    buildRings();
-
-    //  Carta
-    buildLetter();
-
-
-    //  NPCs
-    buildButterflyNPCs();
-    buildCarpNPCs();
+    auto letterBurst = std::make_unique<ParticleBurst>();
+    letterBurst->setPersistent(true);
+    m_letterTrailBurst = letterBurst.get();
+    m_particleBursts.push_back(std::move(letterBurst));
 }
 
 /**
@@ -171,6 +162,30 @@ void Scene::update(float dt, GLFWwindow* w) {
         dt
     );
 
+
+    // --------------------------------------------------
+    // Trails de partícula
+    // --------------------------------------------------
+    m_birdTrailEmitter.update(dt);
+    m_letterTrailEmitter.update(dt);
+
+    if (!m_bird->getStanding() && m_birdTrailBurst)
+    {
+        m_birdTrailEmitter.emitAt(
+            *m_birdTrailBurst,
+            m_bird->getPositionNoBob(),
+            0.4f
+        );
+    }
+
+    if (m_letterState == LetterState::Thrown && m_letterTrailBurst)
+    {
+        m_letterTrailEmitter.emitAt(
+            *m_letterTrailBurst,
+            m_letter->getPosition(),
+            0.3f
+        );
+    }
 
     for(auto& ring : m_rings) {
         ring->update(dt);
@@ -575,161 +590,324 @@ float Scene::lakeDistance(float x, float z) const {
 }
 
 
+/**
+ * @brief   Constrói, em posições, rotação e escala aleatórias,
+ *          os objetos estáticos interiores ao lago, na cena virtual
+ * 
+ * @details Atualmente, existe somente
+ *              Assets::MARINE_PLANT
+ * 
+ *          enquanto `lakeObject`
+ * 
+ * @param   count   (int)
+ *                  quantidade de objetos a serem construídos
+ * 
+ * @return  std::vector<StaticObjectDef> 
+ *                  lista de objetos construídos
+ */
 std::vector<StaticObjectDef> Scene::generateLakeObjects(int count) {
+    //  inicializa vetor de resposta
     std::vector<StaticObjectDef> out;
 
+    //  cria gerador aleatório
     std::mt19937 rng(42);
 
+    //  cria distribuições aleatórias
     std::uniform_real_distribution<float>
         px(-300.f,300.f),
         pz(-300.f,300.f),
         rot(0.f,360.f),
         scale(0.2f,0.8f);
 
-    const ModelDefinition* lakeModels[] =
-    {
+    //  considerando cada modelo (= 1, atualmente) de `lakeObjects`,...
+    const ModelDefinition* lakeModels[] = {
         &Assets::MARINE_PLANT
     };
 
-    while (out.size() < count)
-    {
+    //  para [0, size - 1], faça...
+    while (out.size() < count) {
+        //  gera posições aleatórias
         float x = px(rng);
         float z = pz(rng);
+        float y = m_terrain->getHeight(x,z);
 
-        float y =
-            m_terrain->getHeight(x,z);
+        //  gera rotação aleatória
+        float r = rot(rng);
+        glm::vec3 rot = glm::vec3(0.0f, r, 0.0f);
 
-        float lake =
-            lakeDistance(x,z);
+        //  escala
+        float s = scale(rng);
 
-        if(lake > 1.1f || lake < 0.6f)
-            continue;
+        //  distância ao centro do lago determina
+        //  se prosseguiremos ou não com o objeto atual
+        float lake = lakeDistance(x,z);
+        if(lake > 1.1f || lake < 0.6f) continue;
         
+        //  "escolhe" (1/1) modelo atual
         auto model = lakeModels[0];
 
+        //  constrói estrutura e adiciona ao vetor
         out.emplace_back(
-            model,
-            glm::vec3(x,y,z),
-            glm::vec3(0.0f),
-            scale(rng)
+            StaticObjectDef{
+                .model      = model,
+                .position   = glm::vec3(x,y,z),
+                .rotation   = rot,
+                .scale      = glm::vec3(s,s,s),
+                .colliders  = {
+                    //  usa colisor esférico para `Assets::MARINE_PLANT`
+                    std::make_shared<SphereCollider>(
+                        glm::vec3(0.0f,0.0f,0.0f),      //  centro do colisor essférico
+                        s/2.0f                          //  raio do colisor essférico
+                    )
+                }
+            }
         );
     }
 
     return out;
 }
 
+
+/**
+ * @brief       Constrói, em posições, rotação e escala aleatórias,
+ *              os objetos estáticos do tipo `treeObjects`, na cena virtual
+ * 
+ * @details     Atualmente, existe somente
+ *                  Assets::OAK
+ * 
+ *              enquanto `treeObjects`
+ *
+ * 
+ * @param       count   (int)
+ *                      quantidade de objetos a serem construídos
+ * @return      std::vector<StaticObjectDef> 
+ *                      lista de objetos construídos
+ */
 std::vector<StaticObjectDef> Scene::generateTrees(int count) {
+    //  inicializa vetor de resposta
     std::vector<StaticObjectDef> out;
 
+    //  cria gerador aleatório
     std::mt19937 rng(42);
 
+    //  cria distribuições aleatórias
     std::uniform_real_distribution<float>
         px(-300.f,300.f),
         pz(-300.f,300.f),
         rot(0.f,360.f),
         scale(2.5f,6.0f);
 
-    const ModelDefinition* treeModels[] =
-    {
+    //  considerando cada modelo (= 1, atualmente) de `treeObjects`,...
+    const ModelDefinition* treeModels[] = {
         &Assets::OAK
     };
 
-    while(out.size() < count)
-    {
+    //  para [0, size - 1], faça...
+    while(out.size() < count) {
+        //  gera posições aleatórias
         float x = px(rng);
         float z = pz(rng);
+        float y = m_terrain->getHeight(x,z);
 
-        float y =
-            m_terrain->getHeight(x,z);
+        //  gera rotação aleatória
+        float r = rot(rng);
+        glm::vec3 rot = glm::vec3(0.0f, r, 0.0f);
 
-        float slope =
-            terrainSlope(x,z);
+        //  escala
+        float s = scale(rng);
 
-        float lake =
-            lakeDistance(x,z);
+        //  definir os colisores da árvore
+        //  colisor da copa
+        auto canopy =
+            //  a copa recebe um colisor esférico
+            std::make_shared<SphereCollider>(
+                //  centro: (h(x,z) * 1.1))
+                glm::vec3(0.0f, s*1.1f, 0.0f),
 
-        if(slope > 0.6f)
-            continue;
+                //  raio: (s * 0.55f)
+                s * 0.55f
+            );
+        
+        //  tag: define a consequência da colisão
+        //  TreeCanopy: redução da velocidade, colisão "falsa"
+        canopy->tag = ColliderTag::TreeCanopy;
 
-        if(lake < 1.2f)
-            continue;
+        //  colisor do tronco
+        auto trunk =
+            //  o tronco recebe um colisor cilíndrico
+            std::make_shared<CylindricalCollider>(
+                //  centro: (h(x,z) * 0.5f))
+                glm::vec3(0.0f, s*0.5f, 0.0f),
 
-        if(lake > 2.3f)
-            continue;
+                //  raio: (s * 0.12f)
+                s*0.12f,
 
+                //  altura: s
+                s
+            );
+
+        //  tag: define a consequência da colisão
+        //  TreeTrunk: redução da velocidade, colisão verdadeira
+        trunk->tag = ColliderTag::TreeTrunk;
+
+
+        //  utiliza distância ao lago e inclinação das montanhas
+        //  para decidir se prosseguiremos ou não com o objeto atual
+        float slope = terrainSlope(x,z);
+        float lake  = lakeDistance(x,z);
+        if (
+            slope > 0.6f ||
+            lake < 1.2f ||
+            lake > 2.3f
+        )   continue;
+
+        //  "escolhe" (1/1) modelo atual
         auto model = treeModels[0];
 
         out.emplace_back(
-            model,
-            glm::vec3(x, m_terrain->getHeight(x,z) - 0.2f, z),
-            glm::vec3(
-                0.f,
-                rot(rng),
-                0.f
-            ),
-            scale(rng)
+            StaticObjectDef{
+                .model      = model,
+                .position   = glm::vec3(x,y,z),
+                .rotation   = rot,
+                .scale      = glm::vec3(s, s, s),
+                .colliders  = {
+                    canopy,
+                    trunk
+                }
+            }
         );
     }
 
     return out;
 }
 
+
+/**
+ * @brief   Constrói, em posições, rotação e escala aleatórias,
+ *          os objetos estático de arbustos, na cena virtual
+ * 
+ * @details Atualmente, existem somente
+ *              Assets::STYLED_SHRUB
+ *              Assets::SHRUB
+ *              Assets::BUSH
+ * 
+ *          enquanto `busheObject`s
+ * 
+ * @param   count (int)
+ *                  quantidade de objetos a serem construídos
+ * @return  std::vector<StaticObjectDef> 
+ *                  lista de objetos construídos
+ */
 std::vector<StaticObjectDef>
-Scene::generateBushes(int count)
-{
+Scene::generateBushes(int count) {
+    //  inicializa vetor de resposta
     std::vector<StaticObjectDef> out;
 
+    //  cria gerador aleatório
     std::mt19937 rng(43);
 
-    std::uniform_real_distribution<float>
-        px(-300.f,300.f),
-        pz(-300.f,300.f);
-
-    while(out.size() < count)
-    {
-        float x = px(rng);
-        float z = pz(rng);
-
-        float y =
-            m_terrain->getHeight(x,z);
-
-        float lake =
-            lakeDistance(x,z);
-
-        if(lake < 1.1f)
-            continue;
-
-        if(lake > 1.9f)
-            continue;
-
-        if(terrainSlope(x,z) > 0.4f)
-            continue;
-
-        out.emplace_back(
-            &Assets::STYLED_SHRUB,
-            glm::vec3(x,m_terrain->getHeight(x,z) - 0.2f, z),
-            glm::vec3(0.f),
-            2.0f + (rng()%100)/200.f
-        );
-    }
-
-    return out;
-}
-
-std::vector<StaticObjectDef>
-Scene::generateRocks(int count)
-{
-    std::vector<StaticObjectDef> out;
-
-    std::mt19937 rng(44);
-
+    //  cria distribuições aleatórias
     std::uniform_real_distribution<float>
         px(-300.f,300.f),
         pz(-300.f,300.f),
+        rot(0.f,360.f),
+        scale(0.2f,0.8f);
+
+
+    //  modelos possíveis
+    const ModelDefinition* bushObjects[] =
+    {
+        &Assets::STYLED_SHRUB,
+        &Assets::SHRUB,
+        &Assets::BUSH
+    };
+    
+
+    //  considerando cada modelo de `bushObjects`, em [0..size-1]
+    while(out.size() < count) {
+        //  gera posições aleatórias
+        float x = px(rng);
+        float z = pz(rng);
+        float y = m_terrain->getHeight(x,z);
+
+        //  rotação aleatória
+        float r = rot(rng);
+
+        //  escala aleatória
+        float s = scale(rng);
+
+        //  utiliza distância ao lago e inclinação das montanhas
+        //  para decidir se prosseguiremos ou não com o objeto atual
+        float lake = lakeDistance(x,z);
+        float slope = terrainSlope(x,z);
+
+        //  colisor para arbustos
+        //  sempre colisor esférico com tag `ColliderTag::Shrub`
+        //      colisão "falsa" (redução da velocidade)
+        auto collider = std::make_shared<SphereCollider>(
+            glm::vec3(0.0f, s/2.0f, 0.0f),
+            s/2.0f
+        );
+        collider->tag = ColliderTag::Shrub;
+
+        if (
+            slope > 0.5f    ||
+            lake < 1.1f     ||
+            lake > 1.9f
+        )   continue;
+
+        //  seleciona o modelo
+        auto model = bushObjects[rng()%3];
+
+        //  adiciona ao vetor de resposta
+        out.emplace_back(
+            StaticObjectDef{
+                .model      = model,
+                .position   = glm::vec3(x,y,z),
+                .rotation   = glm::vec3(0.0f,r,0.0f),
+                .scale      = glm::vec3(s, s, s),
+                .colliders  = { collider }
+            }
+        );
+    }
+
+    return out;
+}
+
+
+/**
+ * @brief   Constrói, em posições, rotação e escala aleatórias,
+ *          os objetos estático de rochas, na cena virtual
+ * 
+ * @details Atualmente, existem somente
+ *              Assets::ROCK_2
+ *              Assets::ROCK_4
+ *              Assets::ROCK_5
+ * 
+ *          enquanto `rockObject`s
+ * 
+ * @param   count   (int)
+ *                  quantidade de objetos a serem construídos
+ * @return  std::vector<StaticObjectDef> 
+ *                  lista de objetos construídos
+ */
+std::vector<StaticObjectDef>
+Scene::generateRocks(int count) {
+    //  inicializa vetor de resposta
+    std::vector<StaticObjectDef> out;
+
+    //  cria gerador aleatório
+    std::mt19937 rng(44);
+
+    //  cria distribuições aleatórias
+    std::uniform_real_distribution<float>
+        px(-300.f,300.f),
+        pz(-300.f,300.f),
+        rot(0.f,360.f),
         scale(0.05f, 0.1f);
 
-    const ModelDefinition* rocks[] =
-    {
+    //  modelos possíveis
+    const ModelDefinition* rocks[] = {
         // &Assets::ROCK_1,
         &Assets::ROCK_2,
         // &Assets::ROCK_3,
@@ -737,35 +915,43 @@ Scene::generateRocks(int count)
         &Assets::ROCK_5
     };
 
-    while(out.size() < count)
-    {
+    //  considerando cada modelo de `rocks`, em [0..size-1]
+    while(out.size() < count) {
+        //  gera posições aleatórias
         float x = px(rng);
         float z = pz(rng);
+        float y = m_terrain->getHeight(x,z);
+
+        //  rotação aleatória
+        float r = rot(rng);
+
+        //  escala aleatória
         float s = scale(rng);
         
-        float lake =
-            lakeDistance(x,z);
-        
-        if(lake < 1.5f || lake > 2.0f)
-            continue;
+        //  colisor para rochas: AABB
+        //  sempre colisor esférico com tag `ColliderTag::Rock`
+        //      colisão "falsa" (redução da velocidade)
+        auto collider = std::make_shared<AABBCollider>(
+            glm::vec3(-s/2.0f, -s/2.0f, -s/2.0f),
+            glm::vec3(s/2.0f, s/2.0f, s/2.0f)
+        );
+        collider->tag = ColliderTag::Rock;
 
+        //  utiliza distância ao lago para decidir se prosseguiremos ou não com o objeto atual
+        float lake = lakeDistance(x,z);        
+        if(lake < 1.5f || lake > 2.0f) continue;
 
         out.emplace_back(
-            rocks[rng()%3],
-            glm::vec3(x, m_terrain->getHeight(x,z) - 1.5f , z),
-            m_terrain->getNormal(x,z),
-            s
+            StaticObjectDef{
+                .model      = rocks[rng() % 3], // 3 modelos
+                .position   = glm::vec3(x,y,z),
+                .rotation   = glm::vec3(0.0f,r,0.0f),
+                .scale      = glm::vec3(s,s,s),
+                .colliders  = { collider }
+            }
         );
-
-        float h = m_terrain->getHeight(x,z);
-
-        std::cout
-            << "rock "
-            << x << " "
-            << z << " "
-            << "height=" << h
-            << "\n";
     }
+
 
     return out;
 }
@@ -774,62 +960,75 @@ Scene::generateRocks(int count)
  * @brief   Constrói os objetos estáticos do jogo
  */
 void Scene::buildStaticObjects() {
+    //  limpa objetos anteriores
     m_staticObjects.clear();
 
+    //  inicializa vetor de objetos
     std::vector<StaticObjectDef> objs;
 
-    auto trees  = generateTrees(30);
-    glfwPollEvents();
+    //  invocações às funções de geração de objetos
+    //      interwoven by chamadas à glfwPollEvents()
+    auto trees      = generateTrees(30);        glfwPollEvents();
+    auto bushes     = generateBushes(50);       glfwPollEvents();
+    auto rocks      = generateRocks(45);        glfwPollEvents();
+    auto lake_objs  = generateLakeObjects(100); glfwPollEvents();
 
-    auto bushes = generateBushes(50);
-    glfwPollEvents();
-
-    auto rocks  = generateRocks(45);
-    glfwPollEvents();
-
-    auto lake_objs = generateLakeObjects(100);
-    glfwPollEvents();
-
+    //  adiciona objetos ao vetor
     objs.insert(objs.end(), trees.begin(), trees.end());
     objs.insert(objs.end(), bushes.begin(), bushes.end());
     objs.insert(objs.end(), rocks.begin(), rocks.end());
     objs.insert(objs.end(), lake_objs.begin(), lake_objs.end());
 
-    for (size_t i = 0; i < objs.size(); ++i)
-    {
-        const auto& def = objs[i];
+    //  adiciona agora ao vetor de objetos da cena
+    for (size_t i = 0; i < objs.size(); ++i) {
+        //  extrai dados do definição
+        const auto& [model, position, rotation, scale, colliders] = objs[i];
 
-        const ModelDefinition* model = std::get<0>(def);
-        glm::vec3 pos              = std::get<1>(def);
-        glm::vec3 rot              = std::get<2>(def);
-        float scale                = std::get<3>(def);
-
+        //  cria objeto
         m_staticObjects.push_back(
             std::make_shared<StaticObject>(
                 *model,
-                pos,
-                rot,
-                glm::vec3(scale)
+                position,
+                rotation,
+                scale,
+                colliders
             )
         );
 
-        // Mantém a janela responsiva durante a construção dos ~225 objetos
+        // Mantém a janela responsiva durante a construção dos objetos
         if (i % 5 == 0)
             glfwPollEvents();
     }
 
     glfwPollEvents();
+
+    //  Construção de outros objetos únicos
     //  Casa
+    ModelDefinition* house_model = &Assets::HOUSE;
+    glm::vec3 house_position = glm::vec3(245.0f, m_terrain->getHeight(245.0f, -5.0f) - 1.5f, -5.0f);
+    glm::vec3 house_rotation = glm::vec3(0.0f, glm::radians(90.0f), 0.0f);
+    glm::vec3 house_scale = glm::vec3(1.0f);
+
+    //  colisor para casa : AABB
+    //  sempre colisor esférico com tag `ColliderTag::House`
+    //      colisão verdadeira
+    auto house_collider = std::make_shared<AABBCollider>(
+        glm::vec3(-4.0f, 0.0f, -4.0f),
+        glm::vec3( 4.0f, 5.0f,  4.0f)
+    );
+    house_collider->tag = ColliderTag::House;
+
+    //  cria objeto
     m_staticObjects.push_back(
         std::make_shared<StaticObject>(
-            Assets::HOUSE,
-            glm::vec3(
-                245.0f,
-                m_terrain->getHeight(245.0f, -5.0f) - 1.5f,
-                -5.0f
-            ),
-            glm::vec3(0.0f, 1.0f, glm::radians(90.0f)),
-            glm::vec3(0.2f)
+            *house_model,
+            house_position,
+            house_rotation,
+            house_scale,
+            std::vector<std::shared_ptr<Collider>>
+            {
+                house_collider
+            }
         )
     );
 }

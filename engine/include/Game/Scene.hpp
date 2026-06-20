@@ -20,6 +20,13 @@
 //  Objetos estáticos da cena virtual
 #include "Objects/StaticObject.hpp"
 
+//  Colisores
+#include "Objects/Interfaces/Collidable.hpp"
+#include "Collision/SphereCollider.hpp"
+#include "Collision/AABBCollider.hpp"
+#include "Collision/CapsuleCollider.hpp"
+#include "Collision/CylindricalCollider.hpp"
+
 #include "Game/Camera.hpp"
 #include "Game/Bird.hpp"
 #include "Objects/Letter.hpp"
@@ -39,27 +46,32 @@
 
 //  Partículas
 #include "Particles/ParticleBurst.hpp"
+#include "Particles/TrailEmitter.hpp"
 
 class Renderer;  // forward
 
 
-using StaticObjectDef =
-    std::tuple<
-        const ModelDefinition*, // modelo
-        glm::vec3,              // posição (x,y,z)
-        glm::vec3,              // rotação
-        float                   // escala
-    >;
+//  Definição de um modelo estático na cena virtual
+struct StaticObjectDef {
+    //  Modelo per se (objFile, meshes, texturas etc.)
+    const ModelDefinition* model;
+
+    //  Vetores posição, rotação, escala
+    glm::vec3 position;
+    glm::vec3 rotation;
+    glm::vec3 scale;
+
+    //  Vetor de colisores  
+    std::vector<std::shared_ptr<Collider>> colliders = {};
+};
 
 class Scene {
 public:
     //  Aceleração da gravidade
     static constexpr float GRAVITY = 9.81f;
 
+    //  Inicializador de `Bird` na cena virtual
     void spawnBird();
-
-    //  `build` invoca todos os métodos de construção dos objetos
-    void build();
 
     //  Atualização geral
     void update(float dt, GLFWwindow* w);
@@ -78,6 +90,9 @@ public:
         float speed = 8.0f,
         float lifetime = 1.5f
     );
+
+    //  Construtor para trilhas de partículas emitidas
+    void buildTrails();
     
 
     //  Métodos de construção dos objetos
@@ -145,6 +160,25 @@ private:
     float m_throwProgress = 0.0f;           // 0..1 progresso da animação
     float m_throwSpeed = 2.0f;              // velocidade de progresso (1/s)
 
+    //  Emissor de partículas para `Bird`
+    TrailEmitter m_birdTrailEmitter{
+        0.04f,   // emitInterval: nova partícula a cada 0.04s (~25/s)
+        0.5f,    // particleLifetime
+        0.12f,   // particleSize
+        glm::vec4(0.9f, 0.9f, 1.0f, 1.0f)  // cor: branco-azulado, esteira de ar
+    };
+    
+    //  Emissor de partículas para `Letter`
+    TrailEmitter m_letterTrailEmitter{
+        0.03f,
+        0.4f,
+        0.1f,
+        glm::vec4(1.0f, 0.9f, 0.5f, 1.0f)  // cor: dourado, "rastro mágico" da carta
+    };
+
+    //  Ponteiros aos bursts de partículas de `Bird` e `Letter`
+    ParticleBurst* m_birdTrailBurst   = nullptr;
+    ParticleBurst* m_letterTrailBurst = nullptr;
 
     //  NPCs
     std::vector<std::shared_ptr<ButterflyNPC>>  m_butterflyNPCs;

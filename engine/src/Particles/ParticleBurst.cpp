@@ -12,6 +12,28 @@ const std::vector<Particle>& ParticleBurst::particles() const
     return m_particles;
 };
 
+void ParticleBurst::addParticle(
+    const glm::vec3& position,
+    const glm::vec3& velocity,
+    const glm::vec4& color,
+    float size,
+    float lifetime
+)
+{
+    Particle p;
+
+    p.position = position;
+    p.velocity = velocity;
+
+    p.life    = lifetime;
+    p.maxLife = lifetime;
+
+    p.size  = size;
+    p.color = color;
+
+    m_particles.push_back(p);
+}
+
 ParticleBurst::ParticleBurst(
     const glm::vec3& origin,
     size_t count,
@@ -88,6 +110,9 @@ void ParticleBurst::update(float dt)
 
 bool ParticleBurst::finished() const
 {
+    if(m_persistent)
+        return false;
+
     for(const auto& p : m_particles)
     {
         if(p.life > 0.0f)

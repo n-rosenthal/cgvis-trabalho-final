@@ -1,12 +1,14 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include "Objects/Interfaces/Collidable.hpp"
 
 #include "Collider.hpp"
 #include "SphereCollider.hpp"
 #include "AABBCollider.hpp"
 #include "CapsuleCollider.hpp"
 #include "CylindricalCollider.hpp"
+
 
 /**
  * @brief   Sistema de colisão
@@ -24,6 +26,12 @@ public:
      * @return false, caso contrário
      */
     static bool intersects(const Collider& a, const Collider& b);
+
+    /**
+     * @brief   Verifica colisão entre dois GameObjects (usando seus colisores)
+     * @return  true se houver colisão entre algum par de colliders
+     */
+    static bool collidablesIntersect(const Collidable& a, const Collidable& b);
 
     /**
      * @brief   Verifica a colisão entre dois colisores esféricos

@@ -52,7 +52,10 @@ void AssetLoader::loadNextStep()
             m_scene.buildCarpNPCs();
             glfwPollEvents();
 
-            m_step = LoadingStep::DONE;
+            m_scene.buildTrails();
+
+            m_step = LoadingStep::DONE;    //  Construtor para trilhas de partículas emitidas
+    void buildTrails();
             break;
 
         default:

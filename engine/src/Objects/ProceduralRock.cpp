@@ -14,10 +14,15 @@ ProceduralRock::ProceduralRock(glm::vec3 position, float scale, int subdivisions
     if (m_drawable) m_drawable->generate();
 }
 
-std::vector<std::shared_ptr<Collider>> ProceduralRock::getColliders() {
-    return {};   // colisão por distância em Scene::resolveCollisions
+std::vector<std::shared_ptr<Collider>> ProceduralRock::getColliders() const {
+    return {std::make_shared<SphereCollider>(
+            m_position,
+            m_collisionRadius
+        )
+    };
 }
 
 void ProceduralRock::onCollision(glm::vec3 objectPosition) {}
+
 
 void ProceduralRock::updateColliders() {}

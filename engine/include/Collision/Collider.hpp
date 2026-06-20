@@ -16,6 +16,21 @@ enum class ColliderType {
     Cylinder
 };
 
+
+//  Tags são utilizadas para identificar os colisores
+//  de um determinado objeto na colisão em particular
+//  e decidir a consqueência da colisão
+enum class ColliderTag {
+    None,
+    TreeCanopy,
+    TreeTrunk,
+    Ring,
+    Mailbox,
+    House,
+    Rock,
+    Shrub
+};
+
 /**
  * @brief   Interface para colisão
  */
@@ -31,4 +46,6 @@ public:
      * @return  ColliderType
      */
     virtual ColliderType type() const = 0;
+
+    ColliderTag tag;
 };

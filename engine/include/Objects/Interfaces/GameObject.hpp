@@ -9,8 +9,9 @@
 #include <iostream>
 
 #include "Objects/Interfaces/Drawable.hpp"
+#include "Objects/Interfaces/Collidable.hpp"
 
-class GameObject {
+class GameObject  {
 public:
     /**
      * @brief Construtor padrão para um GameObject

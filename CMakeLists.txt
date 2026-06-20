@@ -32,6 +32,7 @@ set(SOURCES
 
   # Sistema de párticulas
   engine/src/Particles/ParticleBurst.cpp
+  engine/src/Particles/TrailEmitter.cpp
 
 
   # Core

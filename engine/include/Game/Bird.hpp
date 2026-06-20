@@ -60,6 +60,19 @@ public:
     void onCollision(glm::vec3 obstaclePos) override;
 
     /**
+     * @brief   Resposta "suave" de colisão, usada por obstáculos
+     *          atravessáveis (ex: arbustos): em vez de barrar o
+     *          movimento como onCollision(), desacelera o pássaro
+     *          e o empurra lateralmente, simulando atrito/atravessar
+     *          a vegetação. O som correspondente é tocado por quem
+     *          chama este método (ver Scene::resolveCollisions()).
+     * 
+     * @param   obstaclePos (glm::vec3)
+     *          posição do obstáculo atravessável
+     */
+    void onBushCollision(glm::vec3 obstaclePos);
+
+    /**
      * @brief   Implementação das consequências de uma colisão
      *          contra o terreno
      * 
@@ -83,6 +96,19 @@ public:
     glm::vec3 getForward() const;
 
     /**
+     * @brief   Direção para frente, ignorando o roll de
+     *          balanço lateral (bob) usado na animação
+     *          de caminhar. Usado pela câmera: como o roll
+     *          entra na composição da matriz de rotação
+     *          (Rz * Rx * Ry), ele também desvia o vetor
+     *          forward, não só o up — por isso a câmera
+     *          precisa desta versão "limpa".
+     * 
+     * @return  glm::vec3
+     */
+    glm::vec3 getForwardNoBob() const;
+
+    /**
      * @brief   Acessador para obter o vetor "direção para cima"
      *          de `Bird`
      * 
@@ -91,6 +117,16 @@ public:
      *          cabeça do pássaro
      */
     glm::vec3 getUp() const;
+
+    /**
+     * @brief   Direção para cima, ignorando o roll de
+     *          balanço lateral (bob) usado na animação
+     *          de caminhar. Usado pela câmera para evitar
+     *          que ela incline junto com a animação.
+     * 
+     * @return  glm::vec3
+     */
+    glm::vec3 getUpNoBob() const;
     
     /**
      * @brief   Atualiza o modelo de `Bird` conforme o estado atual
@@ -112,7 +148,7 @@ public:
      * 
      * @return std::vector<std::shared_ptr<Collider>> 
      */
-    std::vector<std::shared_ptr<Collider>> getColliders() override;
+    std::vector<std::shared_ptr<Collider>> getColliders() const override;
 
     /**
      * @brief   Acessador para obter a flag que determina
@@ -139,29 +175,6 @@ public:
      *          se modificar a câmera junto ao caminhado
      */
     float getBaseHeight() const {return m_baseY; }
-
-    /**
-     * @brief   Direção para frente, ignorando o roll de
-     *          balanço lateral (bob) usado na animação
-     *          de caminhar. Usado pela câmera: como o roll
-     *          entra na composição da matriz de rotação
-     *          (Rz * Rx * Ry), ele também desvia o vetor
-     *          forward, não só o up — por isso a câmera
-     *          precisa desta versão "limpa".
-     * 
-     * @return  glm::vec3
-     */
-    glm::vec3 getForwardNoBob() const;
-
-    /**
-     * @brief   Direção para cima, ignorando o roll de
-     *          balanço lateral (bob) usado na animação
-     *          de caminhar. Usado pela câmera para evitar
-     *          que ela incline junto com a animação.
-     * 
-     * @return  glm::vec3
-     */
-    glm::vec3 getUpNoBob() const;
 
     /**
      * @brief   Posição sem bob de `Bird` ao caminhar
