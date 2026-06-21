@@ -123,7 +123,7 @@ glm::mat4 Bird::rotationMatrixNoBob() const {
  * @return      glm::vec3 
  */
 glm::vec3 Bird::getForward() const {
-    return norm3(glm::vec3(rotationMatrix() * glm::vec4(-1, 0, 0, 0)));
+    return normalize(glm::vec3(rotationMatrix() * glm::vec4(-1, 0, 0, 0)));
 }
 
 /**
@@ -136,7 +136,7 @@ glm::vec3 Bird::getForward() const {
  * @return      glm::vec3
  */
 glm::vec3 Bird::getForwardNoBob() const {
-    return norm3(glm::vec3(rotationMatrixNoBob() * glm::vec4(-1, 0, 0, 0)));
+    return normalize(glm::vec3(rotationMatrixNoBob() * glm::vec4(-1, 0, 0, 0)));
 }
 
 /**
@@ -145,7 +145,7 @@ glm::vec3 Bird::getForwardNoBob() const {
  * @return      glm::vec3 
  */
 glm::vec3 Bird::getUp() const {
-    return norm3(glm::vec3(rotationMatrix() * glm::vec4(0, 1, 0, 0)));
+    return normalize(glm::vec3(rotationMatrix() * glm::vec4(0, 1, 0, 0)));
 }
 
 /**
@@ -154,7 +154,7 @@ glm::vec3 Bird::getUp() const {
  * @return      glm::vec3
  */
 glm::vec3 Bird::getUpNoBob() const {
-    return norm3(glm::vec3(rotationMatrixNoBob() * glm::vec4(0, 1, 0, 0)));
+    return normalize(glm::vec3(rotationMatrixNoBob() * glm::vec4(0, 1, 0, 0)));
 }
 
 /**
@@ -202,12 +202,32 @@ void Bird::updateDrawable() {
  * @return false 
  */
 bool Bird::onTerrainCollision(float terrainHeight, glm::vec3 terrainNormal) {
-    if (m_velocity.y <= 0.5f) {
-        standing = true;
-        m_velocity = glm::vec3(0.0f);
+    // Se o pássaro já está colado ao chão (standing), não faz nada
+    if (standing) {
+        // Apenas mantém a posição ajustada ao terreno (caso o terreno mude)
         m_position.y = terrainHeight + 0.6f;
-        return true;
+        return false; // não precisa de som
     }
+
+    // Verifica se está abaixo do terreno (colisão)
+    float birdBottom = m_position.y - 0.6f; // assume que o centro está 0.6 acima dos pés
+    if (birdBottom <= terrainHeight) {
+        // Coloca exatamente em cima
+        float targetY = terrainHeight + 0.6f;
+        m_position.y = glm::mix(m_position.y, targetY, 0.5f);
+        
+        // Zera a velocidade vertical e marca como pousado
+        m_velocity.y = 0.0f;
+        standing = true;
+        
+        // Se estiver descendo, para toda velocidade
+        if (m_velocity.y < 0.0f) {
+            m_velocity = glm::vec3(0.0f);
+        }
+        
+        return true; // houve colisão
+    }
+    
     return false;
 }
 

@@ -84,6 +84,10 @@ namespace Assets {
     ModelDefinition ROCK_3;
     ModelDefinition ROCK_4;
     ModelDefinition ROCK_5;
+    ModelDefinition ROCK_6;
+    ModelDefinition ROCK_7;
+    ModelDefinition ROCK_8;
+    ModelDefinition ROCK_9;
 
     // NPCs
     ModelDefinition FLYING_BIRD;
@@ -537,6 +541,59 @@ void Assets::BuildModels()
             &ROCK_5_TEXTURE
         }
     );
+
+    //  rochas que talvez funcionem
+    ROCK_6 = makeModel(
+        asset_path(
+            "models/rocks/ROCK_2.obj"
+        ),
+        {
+            "Object_34"
+        },
+        {
+            &ROCK_1_TEXTURE // note!
+        }
+    );
+
+    ROCK_7 = makeModel(
+        asset_path(
+            "models/rocks/ROCK_4.obj"
+        ),
+        {
+            "Object_26"
+        },
+        {
+            &ROCK_2_TEXTURE // note!
+        }
+    );
+
+    ROCK_8 = makeModel(
+        asset_path(
+            "models/rocks/ROCK_6.obj"
+        ),
+        {
+            "Object_18"
+        },
+        {
+            &ROCK_3_TEXTURE // note!
+        }
+    );
+
+    ROCK_9 = makeModel(
+        asset_path(
+            "models/rocks/ROCK_8.obj"
+        ),
+        {
+            "Object_4"
+        },
+        {
+            &ROCK_4_TEXTURE // note!
+        }
+    );
+
+
+
+
 
     FLYING_BIRD = makeModel(
         asset_path(

@@ -1,6 +1,3 @@
-/**
- * @file    RingDrawable.cpp
- */
 #include "Objects/Drawables/RingDrawable.hpp"
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -11,12 +8,12 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-RingDrawable::RingDrawable(float radius) : m_radius(radius) {}
+RingDrawable::RingDrawable(float radius) : m_radius(radius) {
+    buildMesh();
+    setupBuffers();
+}
 
-// buildMesh
 void RingDrawable::buildMesh() {
-    // Layout de cada vértice: position(3) + normal(3) + texcoord(2) = 8 floats
-    // Armazenamos em m_vertices (herdado de Drawable) como Vertex
     m_vertices.clear();
     m_indices.clear();
 
@@ -56,11 +53,8 @@ void RingDrawable::buildMesh() {
     m_indexCount = (int)m_indices.size();
 }
 
-// setupBuffers
-
 void RingDrawable::setupBuffers() {
     glBindVertexArray(m_buffers.VAO);
-
     glBindBuffer(GL_ARRAY_BUFFER, m_buffers.VBO);
     glBufferData(GL_ARRAY_BUFFER,
                  m_vertices.size() * sizeof(Vertex),
@@ -71,15 +65,12 @@ void RingDrawable::setupBuffers() {
                  m_indices.size() * sizeof(GLuint),
                  m_indices.data(), GL_STATIC_DRAW);
 
-    // position
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           (void*)offsetof(Vertex, position));
     glEnableVertexAttribArray(0);
-    // normal
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           (void*)offsetof(Vertex, normal));
     glEnableVertexAttribArray(1);
-    // texcoord
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           (void*)offsetof(Vertex, texcoord));
     glEnableVertexAttribArray(2);
@@ -87,16 +78,13 @@ void RingDrawable::setupBuffers() {
     glBindVertexArray(0);
 }
 
-// draw
-
 void RingDrawable::draw(const DrawContext& ctx) {
-    // Pulsação
     float pulse = 1.0f + sin(m_pulseTime * 4.0f) * 0.08f;
 
-    // Billboard: usa posição do modelo mas orienta para a câmera
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, m_position);
 
+    // Billboard: orienta o anel para a câmera
     glm::mat4 billboard = glm::inverse(m_view);
     billboard[3] = glm::vec4(0, 0, 0, 1);   // remove translação
     model *= billboard;

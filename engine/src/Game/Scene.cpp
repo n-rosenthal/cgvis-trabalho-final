@@ -25,7 +25,7 @@ static float distancePointSegment(glm::vec3 p, glm::vec3 a, glm::vec3 b) {
     glm::vec3 ab = b - a;
     float t = glm::dot(p - a, ab) / glm::dot(ab, ab);
     t = glm::clamp(t, 0.0f, 1.0f);
-    return glm::length(p - (a + t * ab));
+    return length(p - (a + t * ab));
 }
 
 
@@ -68,8 +68,8 @@ void Scene::computeParabola() {
     // Direção para a frente do pássaro (no plano horizontal)
     glm::vec3 forward = m_bird->getForward();
     forward.y = 0.0f;
-    if (glm::length(forward) < 0.001f) forward = glm::vec3(0.0f, 0.0f, -1.0f);
-    forward = glm::normalize(forward);
+    if (length(forward) < 0.001f) forward = glm::vec3(0.0f, 0.0f, -1.0f);
+    forward = normalize(forward);
 
     // Distância de lançamento (ajustável)
     float throwDistance = 12.0f;
@@ -174,7 +174,7 @@ void Scene::update(float dt, GLFWwindow* w) {
         m_birdTrailEmitter.emitAt(
             *m_birdTrailBurst,
             m_bird->getPositionNoBob(),
-            0.4f
+            1.0f
         );
     }
 
@@ -183,23 +183,29 @@ void Scene::update(float dt, GLFWwindow* w) {
         m_letterTrailEmitter.emitAt(
             *m_letterTrailBurst,
             m_letter->getPosition(),
-            0.3f
+            1.5f
         );
     }
 
-    for(auto& ring : m_rings) {
-        ring->update(dt);
-
-        if (ring->collected()) {
-            printf("Ring collected!\n");
-            spawnBurst(
-                ring->getPosition(),
-                60,
-                4.0f,
-                1.0f
-            );
+    for(auto& ring : m_rings)
+    {
+        if(ring)
+        {
+            ring->update(dt);
         }
     }
+
+    m_rings.erase(
+        std::remove_if(
+            m_rings.begin(),
+            m_rings.end(),
+            [](const std::shared_ptr<Ring>& ring)
+            {
+                return !ring || ring->isDead();
+            }
+        ),
+        m_rings.end()
+    );
 
     if (m_mailbox)
         m_mailbox->update(dt);
@@ -235,9 +241,19 @@ void Scene::updateLetter(float dt, GLFWwindow* window) {
     switch (m_letterState) {
         case LetterState::Carried:
         {
-            glm::vec3 offset = m_bird->getForward() * 2.0f - m_bird->getUp() * 0.5f;
-            m_letter->setPosition(m_bird->getPosition() + offset);
-            m_letter->setRotation(m_bird->getRotation());
+            glm::vec3 offset =
+                m_bird->getForward() * 2.0f
+                -
+                m_bird->getUp() * 0.5f;
+
+            m_letter->setPosition(
+                m_bird->getPosition() + offset
+            );
+
+            m_letter->setRotation(
+                m_bird->getRotation()
+            );
+
             break;
         }
 
@@ -250,30 +266,44 @@ void Scene::updateLetter(float dt, GLFWwindow* window) {
             break;
         }
 
-        case LetterState::Thrown: {
-            // Avança o progresso
-            m_throwProgress += m_throwSpeed * dt;
-            if (m_throwProgress >= 1.0f) {
+        case LetterState::Thrown:
+        {
+            m_throwProgress +=
+                m_throwSpeed * dt;
+
+            if (m_throwProgress >= 1.0f)
+            {
                 m_throwProgress = 1.0f;
-                m_letterState = LetterState::OnGround;
-                // Define a posição final (garantindo que fique no chão)
-                glm::vec3 finalPos = m_parabolaEnd;
-                m_letter->setPosition(finalPos);
-                m_letter->setGroundPos(glm::vec2(finalPos.x, finalPos.z));
-                // Reseta a oscilação
-                m_letterOscillationTime = 0.0f;
+
+                glm::vec3 finalPos =
+                    m_parabolaEnd;
+
+                m_letter->setPosition(
+                    finalPos
+                );
+
+                m_letterVelocity =
+                    glm::vec3(0.0f);
+
+                // deixa o sistema de colisão
+                // decidir quando ela toca o chão
+                m_letterState =
+                    LetterState::Falling;
+
                 break;
             }
 
-            // Interpola na curva de Bézier
-            float t = m_throwProgress;
-            glm::vec3 p = (1-t)*(1-t)*m_parabolaStart 
-                        + 2*(1-t)*t*m_parabolaControl 
-                        + t*t*m_parabolaEnd;
-            m_letter->setPosition(p);
+            float t =
+                m_throwProgress;
 
-            // Rotação: orienta ao longo da curva (opcional)
-            // Pode-se calcular a derivada para orientar, mas deixaremos fixa.
+            glm::vec3 p =
+                (1-t)*(1-t)*m_parabolaStart
+                +
+                2*(1-t)*t*m_parabolaControl
+                +
+                t*t*m_parabolaEnd;
+
+            m_letter->setPosition(p);
 
             break;
         }
@@ -315,50 +345,351 @@ void Scene::updateLetter(float dt, GLFWwindow* window) {
 };
 
 
+
 /**
- * @brief       Resolve as colisões do jogo
+ * @brief   Resolve colisões da cena
  */
 void Scene::resolveCollisions() {
-    const glm::vec3 birdPos  = m_bird->getPosition();
-    const glm::vec3 capsuleA = m_bird->getCollider().p0;
-    const glm::vec3 capsuleB = m_bird->getCollider().p1;
-    const float     radius   = m_bird->getCollider().radius;
+    // ============================================================
+    // Dados do Bird
+    // ============================================================
 
-    // Terreno
-    const float th = m_terrain->getHeight(birdPos.x, birdPos.z);
-    if (birdPos.y - 0.6f <= th) {
-        glm::vec3 normal = m_terrain->getNormal(birdPos.x, birdPos.z);
-        if (m_bird->onTerrainCollision(th, normal))
-            g_Sound.play("assets/audio/cartoon-boing-bouncy-big_F_major.wav");
-    }
+    const glm::vec3 birdPos = m_bird->getPosition();
+    const glm::vec3 birdVel = m_bird->getVelocity();
 
-    // Rochas
-    for (auto& rock : m_rocks) {
-        float d = distancePointSegment(rock->getPosition(), capsuleA, capsuleB);
-        if (d < radius + rock->getCollisionRadius()) {
-            g_Sound.play("assets/audio/cartoonish-stone-sfx-slow.wav");
-            m_bird->onCollision(rock->getPosition());
+    const CapsuleCollider& birdCollider =
+        m_bird->getCollider();
+
+    // ============================================================
+    // 1. Colisão Bird ↔ Terreno
+    // ============================================================
+
+    const float terrainHeight =
+        m_terrain->getHeight(
+            birdPos.x,
+            birdPos.z
+        );
+
+    if(birdPos.y - 0.6f <= terrainHeight)
+    {
+        glm::vec3 normal =
+            m_terrain->getNormal(
+                birdPos.x,
+                birdPos.z
+            );
+
+        if(m_bird->onTerrainCollision(
+            terrainHeight,
+            normal
+        ))
+        {
+            g_Sound.play(
+                "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
+            );
+
+            glm::vec3 pos =
+                birdPos - normal * 0.5f;
+
+            float speed =
+                length(birdVel);
+
+            spawnBurst(
+                pos,
+                speed * speed,
+                speed,
+                speed * speed * 0.2f
+            );
         }
     }
 
-    // --------------------------------------------------
-    // Carta no chão → pode ser capturada
-    // --------------------------------------------------
+    // ============================================================
+    // 2. Colisão Bird ↔ Objetos Estáticos
+    // ============================================================
 
-    if(
+    for (auto& obj : m_staticObjects)
+    {
+        if (!obj)
+            continue;
+
+        switch (obj->getType())
+        {
+            // ====================================================
+            // ÁRVORES
+            // ====================================================
+
+            case StaticObjectType::OAK:
+            {
+                const auto& colliders = obj->getColliders();
+
+                for (const auto& collider : colliders)
+                {
+                    if (!CollisionSystem::intersects(
+                            birdCollider,
+                            *collider))
+                    {
+                        continue;
+                    }
+
+                    switch (collider->tag)
+                    {
+                        // ----------------------------------------
+                        // Copa
+                        // ----------------------------------------
+
+                        case ColliderTag::TreeCanopy:
+                        {
+                            printf("Hit tree canopy\n");
+
+                            float speed =
+                                glm::length(birdVel);
+
+                            if (speed > 0.01f)
+                            {
+                                m_bird->setVelocity(
+                                    birdVel * 0.5f
+                                );
+                            }
+
+                            g_Sound.play(
+                                "assets/audio/cartoonish-stone-sfx-slow.wav"
+                            );
+
+                            spawnBurst(
+                                birdPos,
+                                speed * speed,
+                                speed,
+                                speed * speed * 0.2f
+                            );
+
+                            break;
+                        }
+
+                        // ----------------------------------------
+                        // Tronco
+                        // ----------------------------------------
+
+                        case ColliderTag::TreeTrunk:
+                        {
+                            glm::vec3 normal =
+                                birdPos - obj->getPosition();
+
+                            normal.y = 0.0f;
+
+                            if (glm::length(normal) > 0.001f)
+                                normal =
+                                    glm::normalize(normal);
+
+                            glm::vec3 reflected =
+                                glm::reflect(
+                                    birdVel,
+                                    normal
+                                );
+
+                            m_bird->setVelocity(
+                                reflected * 0.7f
+                            );
+
+                            g_Sound.play(
+                                "assets/audio/cartoonish-stone-sfx-slow.wav"
+                            );
+
+                            float speed =
+                                glm::length(birdVel);
+
+                            spawnBurst(
+                                birdPos,
+                                speed * speed,
+                                speed,
+                                speed * speed * 0.2f
+                            );
+
+                            break;
+                        }
+
+                        default:
+                            break;
+                    }
+                }
+
+                break;
+            }
+
+            // ====================================================
+            // ROCHAS
+            // ====================================================
+
+            case StaticObjectType::ROCK_8:
+            case StaticObjectType::ROCK_9:
+            case StaticObjectType::ROCK_7:
+            {
+                if (CollisionSystem::collidablesIntersect(
+                        *m_bird,
+                        *obj))
+                {
+                    glm::vec3 normal =
+                        birdPos - obj->getPosition();
+
+                    normal.y = 0.0f;
+
+                    if (glm::length(normal) > 0.001f)
+                        normal =
+                            glm::normalize(normal);
+
+                    glm::vec3 reflected =
+                        glm::reflect(
+                            birdVel,
+                            normal
+                        );
+
+                    m_bird->setVelocity(
+                        reflected * 0.7f
+                    );
+
+                    g_Sound.play(
+                        "assets/audio/cartoonish-stone-sfx-slow.wav"
+                    );
+
+                    int t;
+                    if (obj->getType() == StaticObjectType::ROCK_7)
+                        t = 2;
+                    else if (obj->getType() == StaticObjectType::ROCK_8)
+                        t = 4;
+                    else
+                        t = 9;
+
+                    printf("rocha_%d::colisão em (x, y, z) = (%f, %f, %f)\n",
+                        t, normal.x, normal.y, normal.z);
+
+                    float speed =
+                        glm::length(birdVel);
+
+                    spawnBurst(
+                        birdPos,
+                        speed * speed,
+                        speed,
+                        speed * speed * 0.2f
+                    );
+                }
+
+                break;
+            }
+
+            // ====================================================
+            // CASA
+            // ====================================================
+
+            case StaticObjectType::HOUSE:
+            {
+                if (CollisionSystem::collidablesIntersect(
+                        *m_bird,
+                        *obj))
+                {
+                    glm::vec3 normal =
+                        birdPos - obj->getPosition();
+
+                    normal.y = 0.0f;
+
+                    if (glm::length(normal) > 0.001f)
+                        normal =
+                            glm::normalize(normal);
+
+                    glm::vec3 reflected =
+                        glm::reflect(
+                            birdVel,
+                            normal
+                        );
+
+                    m_bird->setVelocity(
+                        reflected * 0.3f
+                    );
+
+                    printf("casa::colisão em (x, y, z) = (%f, %f, %f)\n",
+                        normal.x, normal.y, normal.z);
+
+                    g_Sound.play(
+                        "assets/audio/cartoonish-stone-sfx-slow.wav"
+                    );
+
+                    float speed =
+                        glm::length(birdVel);
+
+                    spawnBurst(
+                        birdPos,
+                        speed * speed,
+                        speed,
+                        speed * speed * 0.2f
+                    );
+                }
+
+                break;
+            }
+
+            // ====================================================
+            // MAILBOX
+            // ====================================================
+
+            case StaticObjectType::MAILBOX:
+            {
+                // Mailbox já possui lógica própria
+                break;
+            }
+
+            // ====================================================
+            // ARBUSTOS E PLANTAS
+            // ====================================================
+
+            case StaticObjectType::BUSH:
+            case StaticObjectType::SHRUB:
+            case StaticObjectType::MARINE_PLANT:
+            {
+                if (CollisionSystem::collidablesIntersect(
+                        *m_bird,
+                        *obj))
+                {
+                    float speed =
+                        glm::length(birdVel);
+
+                    m_bird->setVelocity(
+                        birdVel * 0.8f
+                    );
+
+                    spawnBurst(
+                        birdPos,
+                        speed * speed,
+                        speed,
+                        speed * speed * 0.1f
+                    );
+                }
+
+                break;
+            }
+
+            default:
+                break;
+        }
+    }
+
+    // ============================================================
+    // 3. Colisão Bird ↔ Letter (captura)
+    // ============================================================
+
+    if (
         m_letter &&
-        m_letterState == LetterState::OnGround
+        (
+            m_letterState == LetterState::OnGround ||
+            m_letterState == LetterState::Falling
+        )
     )
     {
-        float d =
-            glm::length(
-                m_letter->getPosition()
-                -
-                birdPos
-            );
-
-        if(d < radius + 2.0f)
+        if (
+            CollisionSystem::collidablesIntersect(
+                *m_bird,
+                *m_letter
+            )
+        )
         {
+            printf("[Letter] Capturada\n");
+
             m_letterState =
                 LetterState::Carried;
 
@@ -371,9 +702,16 @@ void Scene::resolveCollisions() {
         }
     }
 
-    if(
-    m_letter &&
-    m_letterState == LetterState::Falling
+    // ============================================================
+    // 4. Colisão Letter ↔ Terreno
+    // ============================================================
+
+    if (
+        m_letter &&
+        (
+            m_letterState == LetterState::Falling ||
+            m_letterState == LetterState::Thrown
+        )
     )
     {
         glm::vec3 p =
@@ -388,7 +726,7 @@ void Scene::resolveCollisions() {
         float letterRadius =
             m_letter->getSize();
 
-        if(
+        if (
             p.y <= terrainHeight + letterRadius
         )
         {
@@ -398,11 +736,28 @@ void Scene::resolveCollisions() {
 
             m_letter->setPosition(p);
 
+            // IMPORTANTE
+            m_letter->setGroundPos(
+                glm::vec2(
+                    p.x,
+                    p.z
+                )
+            );
+
             m_letterVelocity =
                 glm::vec3(0.0f);
 
             m_letterState =
                 LetterState::OnGround;
+
+            m_letterOscillationTime =
+                0.0f;
+
+            printf(
+                "[Letter] Colisão com terreno em (%f,%f)\n",
+                p.x,
+                p.z
+            );
 
             g_Sound.play(
                 "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
@@ -410,9 +765,9 @@ void Scene::resolveCollisions() {
         }
     }
 
-    // --------------------------------------------------
-    // Carta arremessada → acerta a mailbox?
-    // --------------------------------------------------
+    // ============================================================
+    // 5. Colisão Letter ↔ Mailbox
+    // ============================================================
 
     if(
         m_letter &&
@@ -420,25 +775,22 @@ void Scene::resolveCollisions() {
         m_letterState == LetterState::Thrown
     )
     {
-        constexpr float kMailboxHitRadius = 4.0f;
-
-        float d =
-            glm::length(
-                m_letter->getPosition()
-                -
-                m_mailbox->getPosition()
-            );
-
-        if(d < kMailboxHitRadius)
+        if(
+            CollisionSystem::collidablesIntersect(
+                *m_letter,
+                *m_mailbox
+            )
+        )
         {
-            // Entrega bem-sucedida: trava a carta na mailbox
+            printf("Colisão de carta com mailbox!\n");
+
             m_letterState =
                 LetterState::OnGround;
 
             m_letter->setPosition(
                 m_mailbox->getPosition()
                 +
-                glm::vec3(0.0f, 2.0f, 0.0f)
+                glm::vec3(0.0f, 5.0f, 0.0f)
             );
 
             m_letter->setGroundPos(
@@ -451,7 +803,8 @@ void Scene::resolveCollisions() {
             m_letterVelocity =
                 glm::vec3(0.0f);
 
-            m_throwProgress = 0.0f;
+            m_throwProgress =
+                0.0f;
 
             m_mailbox->activate();
 
@@ -468,19 +821,121 @@ void Scene::resolveCollisions() {
                 1.2f
             );
 
-            printf("Carta entregue! Jogo vencido.\n");
+            printf(
+                "Carta entregue! Jogo vencido.\n"
+            );
         }
     }
 
-    // Anéis — coleta e remove os mortos
+    // ============================================================
+    // 6. Colisão Bird ↔ Anéis
+    // ============================================================
+
     for (auto& ring : m_rings)
-        ring->checkCollision(birdPos);
+    {
+        if (!ring)
+            continue;
+
+        if (
+            !ring->collected() &&
+            CollisionSystem::collidablesIntersect(
+                *m_bird,
+                *ring
+            )
+        )
+        {
+            ring->collect();
+
+            glm::vec3 c =
+                ring->getPosition();
+
+            float r =
+                ring->getRadius();
+
+            std::vector<glm::vec3> points =
+            {
+                c + glm::vec3(0.0f,  r, 0.0f),
+                c + glm::vec3(0.0f, -r, 0.0f),
+                c + glm::vec3( r, 0.0f, 0.0f),
+                c + glm::vec3(-r, 0.0f, 0.0f),
+                c + glm::vec3(0.0f, 0.0f,  r),
+                c + glm::vec3(0.0f, 0.0f, -r)
+            };
+
+            constexpr float lifetime = 10.0f;
+            constexpr int   count    = 60;
+            constexpr float speed    = 1.0f;
+
+            for (const auto& p : points)
+            {
+                spawnBurst(
+                    p,
+                    count,
+                    speed,
+                    lifetime
+                );
+            }
+        }
+    }
 
     m_rings.erase(
-        std::remove_if(m_rings.begin(), m_rings.end(),
-            [](const std::shared_ptr<Ring>& r){ return r->isDead(); }),
+        std::remove_if(
+            m_rings.begin(),
+            m_rings.end(),
+            [](const std::shared_ptr<Ring>& ring)
+            {
+                return !ring || ring->isDead();
+            }
+        ),
         m_rings.end()
     );
+
+    // ============================================================
+    // 7. Colisão Letter ↔ Objetos Estáticos
+    // ============================================================
+
+    if(
+        m_letter &&
+        (
+            m_letterState == LetterState::Falling ||
+            m_letterState == LetterState::Thrown
+        )
+    )
+    {
+        for(auto& obj : m_staticObjects)
+        {
+            if(
+                CollisionSystem::collidablesIntersect(
+                    *m_letter,
+                    *obj
+                )
+            )
+            {
+                printf("Colisão de `Letter` contra `StaticObject`\n");
+
+                m_letterState =
+                    LetterState::OnGround;
+
+                glm::vec3 p =
+                    m_letter->getPosition();
+
+                p.y =
+                    obj->getPosition().y +
+                    0.5f;
+
+                m_letter->setPosition(p);
+
+                m_letterVelocity =
+                    glm::vec3(0.0f);
+
+                g_Sound.play(
+                    "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
+                );
+
+                break;
+            }
+        }
+    }
 }
 
 
@@ -523,10 +978,6 @@ void Scene::draw(Renderer& r) {
         &currentProgram
     );
 
-    printf(
-        "Current shader = %d\n",
-        currentProgram
-    );
     r.drawParticles(
         m_particleBursts
     );
@@ -650,14 +1101,15 @@ std::vector<StaticObjectDef> Scene::generateLakeObjects(int count) {
         out.emplace_back(
             StaticObjectDef{
                 .model      = model,
+                .type       = StaticObjectType::MARINE_PLANT,
                 .position   = glm::vec3(x,y,z),
                 .rotation   = rot,
                 .scale      = glm::vec3(s,s,s),
                 .colliders  = {
                     //  usa colisor esférico para `Assets::MARINE_PLANT`
                     std::make_shared<SphereCollider>(
-                        glm::vec3(0.0f,0.0f,0.0f),      //  centro do colisor essférico
-                        s/2.0f                          //  raio do colisor essférico
+                        glm::vec3(0.0f,2.0f,0.0f),      //  centro do colisor essférico
+                        2.0f                            //  raio do colisor essférico
                     )
                 }
             }
@@ -721,11 +1173,11 @@ std::vector<StaticObjectDef> Scene::generateTrees(int count) {
         auto canopy =
             //  a copa recebe um colisor esférico
             std::make_shared<SphereCollider>(
-                //  centro: (h(x,z) * 1.1))
-                glm::vec3(0.0f, s*1.1f, 0.0f),
+                //  centro: (h(x,z) * 2))
+                glm::vec3(0.0f, s*2.0f, 0.0f),
 
-                //  raio: (s * 0.55f)
-                s * 0.55f
+                //  raio:
+                1.2f * s
             );
         
         //  tag: define a consequência da colisão
@@ -740,10 +1192,10 @@ std::vector<StaticObjectDef> Scene::generateTrees(int count) {
                 glm::vec3(0.0f, s*0.5f, 0.0f),
 
                 //  raio: (s * 0.12f)
-                s*0.12f,
+                s*0.8f,
 
                 //  altura: s
-                s
+                1.5f * s
             );
 
         //  tag: define a consequência da colisão
@@ -767,6 +1219,7 @@ std::vector<StaticObjectDef> Scene::generateTrees(int count) {
         out.emplace_back(
             StaticObjectDef{
                 .model      = model,
+                .type       = StaticObjectType::OAK,
                 .position   = glm::vec3(x,y,z),
                 .rotation   = rot,
                 .scale      = glm::vec3(s, s, s),
@@ -811,7 +1264,7 @@ Scene::generateBushes(int count) {
         px(-300.f,300.f),
         pz(-300.f,300.f),
         rot(0.f,360.f),
-        scale(0.2f,0.8f);
+        scale(4.0f, 7.0f);
 
 
     //  modelos possíveis
@@ -846,7 +1299,7 @@ Scene::generateBushes(int count) {
         //      colisão "falsa" (redução da velocidade)
         auto collider = std::make_shared<SphereCollider>(
             glm::vec3(0.0f, s/2.0f, 0.0f),
-            s/2.0f
+            s/2.4f
         );
         collider->tag = ColliderTag::Shrub;
 
@@ -863,6 +1316,7 @@ Scene::generateBushes(int count) {
         out.emplace_back(
             StaticObjectDef{
                 .model      = model,
+                .type       = StaticObjectType::BUSH,
                 .position   = glm::vec3(x,y,z),
                 .rotation   = glm::vec3(0.0f,r,0.0f),
                 .scale      = glm::vec3(s, s, s),
@@ -893,66 +1347,92 @@ Scene::generateBushes(int count) {
  */
 std::vector<StaticObjectDef>
 Scene::generateRocks(int count) {
-    //  inicializa vetor de resposta
     std::vector<StaticObjectDef> out;
-
-    //  cria gerador aleatório
     std::mt19937 rng(44);
 
-    //  cria distribuições aleatórias
     std::uniform_real_distribution<float>
-        px(-300.f,300.f),
-        pz(-300.f,300.f),
-        rot(0.f,360.f),
-        scale(0.05f, 0.1f);
+        px(-300.f, 300.f),
+        pz(-300.f, 300.f),
+        rot(0.f, 360.f),
+        scale(2.0f, 6.0f);
 
-    //  modelos possíveis
     const ModelDefinition* rocks[] = {
-        // &Assets::ROCK_1,
-        &Assets::ROCK_2,
-        // &Assets::ROCK_3,
-        &Assets::ROCK_4,
-        &Assets::ROCK_5
+        // &Assets::ROCK_6,
+        // &Assets::ROCK_7,
+        &Assets::ROCK_8,
+        &Assets::ROCK_9
     };
 
-    //  considerando cada modelo de `rocks`, em [0..size-1]
-    while(out.size() < count) {
-        //  gera posições aleatórias
+    while (out.size() < count) {
         float x = px(rng);
         float z = pz(rng);
-        float y = m_terrain->getHeight(x,z);
-
-        //  rotação aleatória
-        float r = rot(rng);
-
-        //  escala aleatória
         float s = scale(rng);
-        
-        //  colisor para rochas: AABB
-        //  sempre colisor esférico com tag `ColliderTag::Rock`
-        //      colisão "falsa" (redução da velocidade)
-        auto collider = std::make_shared<AABBCollider>(
-            glm::vec3(-s/2.0f, -s/2.0f, -s/2.0f),
-            glm::vec3(s/2.0f, s/2.0f, s/2.0f)
-        );
+
+        // Posiciona a rocha com um pequeno offset para cima
+        float y = m_terrain->getHeight(x, z) + 0.5f;
+
+        float r = rot(rng);
+        auto model = rocks[rng() % 1];
+        StaticObjectType t;
+        if (model == &Assets::ROCK_8) t = StaticObjectType::ROCK_8;
+        else if (model == &Assets::ROCK_9) t = StaticObjectType::ROCK_9;
+
+        // Colisor esférico: centro levemente acima do chão, raio 3
+        auto collider =
+            std::make_shared<SphereCollider>(
+                glm::vec3(0.0f),
+                5.0f * s
+            );
         collider->tag = ColliderTag::Rock;
 
-        //  utiliza distância ao lago para decidir se prosseguiremos ou não com o objeto atual
-        float lake = lakeDistance(x,z);        
-        if(lake < 1.5f || lake > 2.0f) continue;
+        float lake = lakeDistance(x, z);
+        if (lake < 1.5f || lake > 2.0f) continue;
 
         out.emplace_back(
             StaticObjectDef{
-                .model      = rocks[rng() % 3], // 3 modelos
-                .position   = glm::vec3(x,y,z),
-                .rotation   = glm::vec3(0.0f,r,0.0f),
-                .scale      = glm::vec3(s,s,s),
+                .model      = model,
+                .type       = t,
+                .position   = glm::vec3(x, y, z),
+                .rotation   = glm::vec3(0.0f, r, 0.0f),
+                .scale      = glm::vec3(s, s, s),
                 .colliders  = { collider }
             }
         );
+    };
+
+
+    // --- Rochas no centro do lago ---
+    ModelDefinition* rock_7 = &Assets::ROCK_7;
+
+    for (int i = 0; i < 10; ++i) {
+        float x = px(rng);
+        float z = pz(rng);
+        float r = rot(rng);
+        float s = scale(rng);
+
+        float lake = lakeDistance(x, z);
+        if (lake > 0.6f) continue;
+
+        auto collider =
+            std::make_shared<CylindricalCollider>(
+                glm::vec3(0.0f),
+                2.0f * s,
+                s
+            );
+        collider->tag = ColliderTag::Rock;
+
+        out.emplace_back(
+            StaticObjectDef{
+                .model      = rock_7,
+                .type       = StaticObjectType::ROCK_7,
+                .position   = glm::vec3(x, m_terrain->getHeight(x, z), z),
+                .rotation   = glm::vec3(0.0f, r, 0.0f),
+                .scale      = glm::vec3(s, s, s)
+            }
+        );
     }
-
-
+    
+    // No construtor da rocha, após updateColliders():
     return out;
 }
 
@@ -960,77 +1440,71 @@ Scene::generateRocks(int count) {
  * @brief   Constrói os objetos estáticos do jogo
  */
 void Scene::buildStaticObjects() {
-    //  limpa objetos anteriores
     m_staticObjects.clear();
 
-    //  inicializa vetor de objetos
     std::vector<StaticObjectDef> objs;
 
-    //  invocações às funções de geração de objetos
-    //      interwoven by chamadas à glfwPollEvents()
     auto trees      = generateTrees(30);        glfwPollEvents();
     auto bushes     = generateBushes(50);       glfwPollEvents();
     auto rocks      = generateRocks(45);        glfwPollEvents();
     auto lake_objs  = generateLakeObjects(100); glfwPollEvents();
 
-    //  adiciona objetos ao vetor
     objs.insert(objs.end(), trees.begin(), trees.end());
     objs.insert(objs.end(), bushes.begin(), bushes.end());
     objs.insert(objs.end(), rocks.begin(), rocks.end());
     objs.insert(objs.end(), lake_objs.begin(), lake_objs.end());
 
-    //  adiciona agora ao vetor de objetos da cena
     for (size_t i = 0; i < objs.size(); ++i) {
-        //  extrai dados do definição
-        const auto& [model, position, rotation, scale, colliders] = objs[i];
+        const auto& [model, type, position, rotation, scale, colliders] = objs[i];
 
-        //  cria objeto
         m_staticObjects.push_back(
             std::make_shared<StaticObject>(
                 *model,
                 position,
                 rotation,
                 scale,
+                type,
                 colliders
             )
         );
 
-        // Mantém a janela responsiva durante a construção dos objetos
-        if (i % 5 == 0)
-            glfwPollEvents();
+
+        if (i % 5 == 0) glfwPollEvents();
     }
 
     glfwPollEvents();
 
-    //  Construção de outros objetos únicos
-    //  Casa
+    // --- Casa ---
     ModelDefinition* house_model = &Assets::HOUSE;
     glm::vec3 house_position = glm::vec3(245.0f, m_terrain->getHeight(245.0f, -5.0f) - 1.5f, -5.0f);
-    glm::vec3 house_rotation = glm::vec3(0.0f, glm::radians(90.0f), 0.0f);
-    glm::vec3 house_scale = glm::vec3(1.0f);
+    glm::vec3 house_rotation = glm::vec3(0.0f);
+    glm::vec3 house_scale = glm::vec3(0.2f);
 
-    //  colisor para casa : AABB
-    //  sempre colisor esférico com tag `ColliderTag::House`
-    //      colisão verdadeira
     auto house_collider = std::make_shared<AABBCollider>(
         glm::vec3(-4.0f, 0.0f, -4.0f),
         glm::vec3( 4.0f, 5.0f,  4.0f)
     );
     house_collider->tag = ColliderTag::House;
 
-    //  cria objeto
     m_staticObjects.push_back(
         std::make_shared<StaticObject>(
             *house_model,
             house_position,
             house_rotation,
             house_scale,
-            std::vector<std::shared_ptr<Collider>>
-            {
-                house_collider
-            }
+            StaticObjectType::HOUSE,
+            std::vector<std::shared_ptr<Collider>>{ house_collider }
         )
     );
+    
+
+
+
+
+    // Transforma colliders de local -> global
+    for (auto& obj : m_staticObjects) {
+        obj->updateColliders();
+    }
 }
 
 
@@ -1042,8 +1516,8 @@ void Scene::buildMailbox() {
     float x = 235.0f, z = -20.0f;
     m_mailbox = std::make_shared<Mailbox>(
         glm::vec3(x, m_terrain->getHeight(x, z), z),
-        glm::vec3(0.0f, 1.0f, glm::radians(90.0f)),
-        glm::vec3(2.0f)
+        glm::vec3(0.0f, glm::radians(45.0f), 0.0f),   // apenas Y
+        glm::vec3(2.0f)                               // escala uniforme
     );
 }
 
@@ -1086,24 +1560,35 @@ void Scene::buildLetter() {
     m_letterOscillationTime = 0.0f;
 }
 
-void Scene::buildButterflyNPCs()
-{
-    BezierPath path;
+void Scene::buildButterflyNPCs() {
+auto path = std::make_shared<BezierPath>();
 
-    path.addPoint(glm::vec3(-30.0f, 15.0f, -30.0f));
-    path.addPoint(glm::vec3(-10.0f,25.0f, 20.0f));
-    path.addPoint(glm::vec3(20.0f,25.0f, 20.0f));
-    path.addPoint(glm::vec3(30.0f,15.0f,-30.0f));
+path->addPoint(glm::vec3(68.0f,     5.0f,   88.0f));
+path->addPoint(glm::vec3(36.0f,     7.0f,   79.0f));
+path->addPoint(glm::vec3(28.0f,     6.0f,   93.0f));
+path->addPoint(glm::vec3(-23.0f,    7.0f,   87.0f));
+path->addPoint(glm::vec3(-82.0f,    5.0f,   100.0f));
+path->addPoint(glm::vec3(-125.0f,   7.0f,   65.0f));
+path->addPoint(glm::vec3(-129.0f,   5.0f,   15.0f));
+path->addPoint(glm::vec3(-178.0f,   7.0f,   13.0f));
+path->addPoint(glm::vec3(-185.0f,   5.0f,   -24.0f));
+path->addPoint(glm::vec3(-140.0f,   7.0f,   -51.0f));
+path->addPoint(glm::vec3(-90.0f,    6.0f,   -45.0f));
+path->addPoint(glm::vec3(-35.0f,    5.0f,   -81.0f));
+path->addPoint(glm::vec3(8.0f,      5.0f,   -87.0f));
+path->addPoint(glm::vec3(70.0f,     7.0f,   -66.0f));
+path->addPoint(glm::vec3(132.0f,    5.0f,   -50.0f));
+path->addPoint(glm::vec3(196.0f,    5.0f,   -13.0f));
+path->addPoint(glm::vec3(103.0f,    5.0f,   72.0f));
+path->addPoint(glm::vec3(57.0f,     7.0f,   50.0f));
+path->addPoint(glm::vec3(68.0f,     5.0f,   88.0f));
 
-    auto butterfly =
-        std::make_shared<ButterflyNPC>(
-            glm::vec3(0.0f),
-            glm::vec3(0.0f),
-            glm::vec3(2.0f)
-        );
-
-    butterfly->setPath(
-        std::make_shared<BezierPath>(path)
+auto butterfly =
+    std::make_shared<ButterflyNPC>(
+        path,
+        glm::vec3(0.0f),
+        glm::vec3(0.0f),
+        glm::vec3(2.0f)
     );
 
     m_butterflyNPCs.push_back(

@@ -14,7 +14,7 @@
 // ============================================================
 //
 
-void Application::updateDayNight()
+float Application::updateDayNight()
 {
     static bool isDayTime = true;
     static float lastCheckTime = -1.0f;
@@ -54,6 +54,9 @@ void Application::updateDayNight()
             0.2f,
             1.0f
         );
+
+    // timeOfDay simples, sem transição: 0.5 = meio-dia, 0.0 = meia-noite
+    return isDayTime ? 0.5f : 0.0f;
 }
 
 //
@@ -61,6 +64,7 @@ void Application::updateDayNight()
 // INICIALIZAÇÃO
 // ============================================================
 //
+extern SoundManager g_Sound;
 
 void Application::init(
     const char* title,
@@ -92,6 +96,14 @@ void Application::init(
             m_renderer,
             m_scene
         );
+
+    //
+    //  áudio
+    //
+    if (!g_Sound.init()) {
+        fprintf(stderr, "Erro ao inicializar áudio.\n");
+    }
+
 
     //
     // Começa na tela de loading
@@ -203,7 +215,7 @@ void Application::processFrame(float dt)
 
         case GameState::PLAYING:
         {
-            updateDayNight();
+            float timeOfDay = updateDayNight();
 
             glClear(
                 GL_COLOR_BUFFER_BIT |
@@ -215,6 +227,14 @@ void Application::processFrame(float dt)
             m_renderer.beginFrame(
                 m_scene.getCamera()
             );
+
+            // Sol fixo: alto ao meio-dia, abaixo do horizonte à noite
+            glm::vec3 sunDir =
+                (timeOfDay >= 0.5f)
+                    ? glm::vec3(0.3f, 0.8f, 0.2f)
+                    : glm::vec3(0.1f, -0.6f, 0.1f);
+
+            m_renderer.drawSkybox(sunDir, timeOfDay);
 
             m_scene.draw(
                 m_renderer

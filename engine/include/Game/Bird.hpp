@@ -161,6 +161,16 @@ public:
     bool getStanding() const {return standing; }
 
     /**
+     * @brief    Acessador para a velocidade vetorial de `Bird`
+     * 
+     * @return   glm::vec3
+     *           velocidade de `Bird`
+     */
+    glm::vec3 getVelocity() const { return m_velocity; }
+
+
+
+    /**
      * @brief   Acessador para obter o tamanho de `Bird`
      * 
      * @return  glm::vec3
@@ -201,6 +211,8 @@ public:
      */
     void setRotation(const glm::vec3& r) {m_rotation = r;}
 
+
+    void setVelocity(const glm::vec3& v) { m_velocity = v; }
 
     //  Constantes
     //  Tamanho padrão do modelo de `Bird` voando

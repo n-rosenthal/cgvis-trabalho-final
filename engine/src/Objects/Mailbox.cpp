@@ -1,4 +1,5 @@
 #include "Objects/Mailbox.hpp"
+#include "Collision/AABBCollider.hpp"   // ou o tipo de collider que desejar
 
 Mailbox::Mailbox(
     const glm::vec3& position,
@@ -7,10 +8,17 @@ Mailbox::Mailbox(
 )
 :
     StaticObject(
-        Assets::MAILBOX,
-        position,
-        rotation,
-        scale
+        Assets::MAILBOX,                     // model
+        position,                            // position
+        rotation,                            // rotation
+        scale,                               // scale
+        StaticObjectType::MAILBOX,           // type
+        std::vector<std::shared_ptr<Collider>>{
+            std::make_shared<AABBCollider>(  // collider
+                position - glm::vec3(1.0f, 0.0f, 0.8f),
+                position + glm::vec3(1.0f, 2.0f, 0.8f)
+            )
+        }
     ),
     m_basePosition(position)
 {

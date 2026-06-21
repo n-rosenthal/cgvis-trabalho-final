@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include "matrices.h"
 #include "Objects/Interfaces/Collidable.hpp"
 
 #include "Collider.hpp"
@@ -8,6 +9,7 @@
 #include "AABBCollider.hpp"
 #include "CapsuleCollider.hpp"
 #include "CylindricalCollider.hpp"
+
 
 
 /**
@@ -62,5 +64,12 @@ public:
      * @brief   Verifica a colisão entre um colisor capsular e um colisor cilíndrico
     */
     static bool capsuleCylinder(const CapsuleCollider& a, const CylindricalCollider& b);
+
+
+    //  Funções utilitárias para lidar com colisões
+    float ynormal(const glm::vec3& a, const glm::vec3& b) {
+        float y = (a - b).y;
+        
+    }
 
 };

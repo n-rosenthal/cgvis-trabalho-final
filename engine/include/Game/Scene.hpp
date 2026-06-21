@@ -56,6 +56,9 @@ struct StaticObjectDef {
     //  Modelo per se (objFile, meshes, texturas etc.)
     const ModelDefinition* model;
 
+    //  Tipo do StaticObject
+    StaticObjectType type;
+
     //  Vetores posição, rotação, escala
     glm::vec3 position;
     glm::vec3 rotation;

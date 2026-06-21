@@ -191,6 +191,10 @@ void Renderer::loadModels()
     load(Assets::ROCK_3);
     load(Assets::ROCK_4);
     load(Assets::ROCK_5);
+    load(Assets::ROCK_6);
+    load(Assets::ROCK_7);
+    load(Assets::ROCK_8);
+    load(Assets::ROCK_9);
 
     // ------------------------------------------------------------------------
     // Vegetação
@@ -290,11 +294,6 @@ void Renderer::initParticles() {
         m_particleProgram =
         LoadParticleProgram();
 
-    printf(
-        "Particle program = %u\n",
-        m_particleProgram
-    );
-
     // Necessário para que gl_PointSize, definido no vertex shader de
     // partículas, tenha efeito. Sem isso, pontos são desenhados com
     // tamanho fixo (tipicamente 1px) — efetivamente invisíveis.
@@ -341,9 +340,6 @@ void Renderer::initParticles() {
 
     glBindVertexArray(0);
 
-    //  carregou?
-    printf("Particle program = %u\n", m_particleProgram);
-
     GLint success;
         glGetProgramiv(
             m_particleProgram,
@@ -367,6 +363,10 @@ void Renderer::initParticles() {
                 info
             );
         }
+}
+
+void Renderer::initSkybox() {
+    m_skybox.init();
 }
 
 void Renderer::shutdown()
@@ -537,10 +537,6 @@ void Renderer::drawParticles(
     if(vertices.empty())
         return;
 
-    printf(
-        "Particle program = %u\n",
-        m_particleProgram
-    );
     glUseProgram(m_particleProgram);
 
     glUniformMatrix4fv(
@@ -612,6 +608,23 @@ void Renderer::drawBird(
                 : OBJ_BIRD
         )
     );
+}
+
+void Renderer::drawSkybox(const glm::vec3& sunDir, float timeOfDay)
+{
+    if (!m_skybox.isReady())
+        return;
+
+    m_skybox.draw(
+        m_projection,
+        m_view,
+        sunDir,
+        timeOfDay
+    );
+
+    // O Skybox usa o próprio shader (glUseProgram interno); religa
+    // o programa principal antes de continuar desenhando o resto da cena.
+    bindProgram();
 }
 
 void Renderer::drawTerrain(Terrain& terrain)
@@ -852,7 +865,7 @@ void Renderer::drawLoadingScreen(float progress)
         window,
         pct,
         -0.03f,
-        -0.05f,
+        -0.01f,
         1.2f
     );
 }

@@ -15,6 +15,7 @@
 //  Forward declarations
 class AssetLoader;
 
+#include "audio/AudioManager.hpp"
 #include "Game/Window.hpp"
 #include "Game/Renderer.hpp"
 #include "Game/Scene.hpp"
@@ -40,7 +41,7 @@ public:
 
 private:
     void processFrame(float dt);
-    void updateDayNight();
+    float updateDayNight();
 
     Window   m_window;
     Renderer m_renderer;

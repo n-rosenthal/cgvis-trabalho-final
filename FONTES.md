@@ -13,3 +13,5 @@
 11. [Low Poly Rock Set](https://sketchfab.com/3d-models/low-poly-rock-set-48f8612d1db1429d976f8d4f08ed0f0c#download)
 12. [Low Poly Rocks](https://sketchfab.com/3d-models/low-poly-rocks-9823ec262054408dbe26f6ddb9c0406e)
 13. [Low poly rock pack](https://sketchfab.com/3d-models/low-poly-rock-pack-d6538804ad894a778739e8343abfdf53)
+14. [Cave Crystals 1 - Base free low-poly 3d model](https://www.cgtrader.com/items/4456978/download-page)
+15. [Low-Poly STONE pack](https://sketchfab.com/3d-models/low-poly-stone-pack-e43cce5fc20c4e81bc5de7f1db7cc54b)

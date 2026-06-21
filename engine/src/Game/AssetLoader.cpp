@@ -18,7 +18,10 @@ void AssetLoader::loadNextStep()
             m_renderer.loadShaders();
             Assets::LoadAll();
             m_renderer.initParticles();
+            m_renderer.initSkybox();
             m_step = LoadingStep::TEXTURES;
+
+            
             break;
 
         case LoadingStep::TEXTURES:
@@ -54,8 +57,9 @@ void AssetLoader::loadNextStep()
 
             m_scene.buildTrails();
 
-            m_step = LoadingStep::DONE;    //  Construtor para trilhas de partículas emitidas
-    void buildTrails();
+            m_step = LoadingStep::DONE;
+    
+            //  Construtor para trilhas de partículas emitidas
             break;
 
         default:

@@ -1,4 +1,5 @@
 #include <cstdio>
+#include "matrices.h"
 
 #include "Game/Renderer.hpp"
 #include "Bezier/Butterfly/ButterflyDrawable.hpp"
@@ -18,17 +19,18 @@ void ButterflyDrawable::draw(
     const DrawContext& ctx
 ) {};
 
-void ButterflyDrawable::model(const DrawContext& ctx) {
+void ButterflyDrawable::model(const DrawContext& ctx)
+{
     glUniform1i(
         ctx.object_id_uniform,
         Renderer::OBJ_BUTTERFLY
     );
 
     GLint useTextureLoc =
-    glGetUniformLocation(
-        ctx.shader_program,
-        "useTexture"
-    );
+        glGetUniformLocation(
+            ctx.shader_program,
+            "useTexture"
+        );
 
     GLint texLoc =
         glGetUniformLocation(
@@ -47,21 +49,52 @@ void ButterflyDrawable::model(const DrawContext& ctx) {
 
     glUniform1i(texLoc, 0);
 
+    // --------------------------------------------------------
+    // Animação das asas
+    // --------------------------------------------------------
+
     float t = glfwGetTime();
 
     float flap =
         glm::radians(
-            30.0f * sin(t * 8.0f)
+            30.0f * sin(8.0f * t)
         );
 
-    glm::mat4 body(1.0f);
+    // --------------------------------------------------------
+    // Matriz base da borboleta
+    // Equivalente a:
+    //
+    // body = translate(...)
+    // body = rotateY(...)
+    // body = rotateX(...)
+    // body = scale(...)
+    // --------------------------------------------------------
 
-    body = glm::translate(body, m_position);
-    body = glm::rotate(body, m_rotation.y, glm::vec3(0,1,0));
-    body = glm::rotate(body, m_rotation.x, glm::vec3(1,0,0));
-    body = glm::scale(body, m_scale);
+    glm::mat4 body =
+        Matrix_Translate(
+            m_position.x,
+            m_position.y,
+            m_position.z
+        )
+        *
+        Matrix_Rotate_Y(
+            m_rotation.y
+        )
+        *
+        Matrix_Rotate_X(
+            m_rotation.x
+        )
+        *
+        Matrix_Scale(
+            m_scale.x,
+            m_scale.y,
+            m_scale.z
+        );
 
-    // corpo
+    // --------------------------------------------------------
+    // Corpo
+    // --------------------------------------------------------
+
     glUniformMatrix4fv(
         ctx.model_uniform,
         1,
@@ -69,15 +102,19 @@ void ButterflyDrawable::model(const DrawContext& ctx) {
         glm::value_ptr(body)
     );
 
-    DrawVirtualObject("Butterfly_tri_torso_leg_01");
-
-    // asa esquerda
-    glm::mat4 wingL = body;
-    wingL = glm::rotate(
-        wingL,
-        flap,
-        glm::vec3(0,0,1)
+    DrawVirtualObject(
+        "Butterfly_tri_torso_leg_01"
     );
+
+    // --------------------------------------------------------
+    // Asa esquerda
+    // --------------------------------------------------------
+
+    glm::mat4 wingL =
+        body *
+        Matrix_Rotate_Y(
+            flap
+        );
 
     glUniformMatrix4fv(
         ctx.model_uniform,
@@ -86,15 +123,19 @@ void ButterflyDrawable::model(const DrawContext& ctx) {
         glm::value_ptr(wingL)
     );
 
-    DrawVirtualObject("wing_01");
-
-    // asa direita
-    glm::mat4 wingR = body;
-    wingR = glm::rotate(
-        wingR,
-        -flap,
-        glm::vec3(0,0,1)
+    DrawVirtualObject(
+        "wing_01"
     );
+
+    // --------------------------------------------------------
+    // Asa direita
+    // --------------------------------------------------------
+
+    glm::mat4 wingR =
+        body *
+        Matrix_Rotate_Y(
+            -flap
+        );
 
     glUniformMatrix4fv(
         ctx.model_uniform,
@@ -103,7 +144,9 @@ void ButterflyDrawable::model(const DrawContext& ctx) {
         glm::value_ptr(wingR)
     );
 
-    DrawVirtualObject("wing_02");
+    DrawVirtualObject(
+        "wing_02"
+    );
 }
 
 void ButterflyDrawable::update(float dt) { m_animationTime += dt; };

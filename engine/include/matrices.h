@@ -156,22 +156,6 @@ inline float norm(glm::vec4 v)
     return sqrt( vx*vx + vy*vy + vz*vz );
 }
 
-inline float norm(glm::vec3 v)
-{
-    float vx = v.x;
-    float vy = v.y;
-    float vz = v.z;
-
-    return sqrt( vx*vx + vy*vy + vz*vz );
-}
-
-// Função de normalização usando a sobrecarga
-inline glm::vec3 norm3(const glm::vec3& v) {
-    glm::vec4 v4(v, 0.0f);
-    float len = norm(v4);
-    if (len > 0.0f) return v / len;
-    return v;
-}
 
 // Matriz R de "rotação de um ponto" em relação à origem do sistema de
 // coordenadas e em torno do eixo definido pelo vetor 'axis'. Esta matriz pode
@@ -215,6 +199,14 @@ inline glm::vec4 crossproduct(glm::vec4 u, glm::vec4 v)
     );
 }
 
+inline glm::vec3 cross3(glm::vec3 u, glm::vec3 v) {
+    return glm::vec3(
+        u.y*v.z - u.z*v.y, // Primeiro coeficiente
+        u.z*v.x - u.x*v.z, // Segundo coeficiente
+        u.x*v.y - u.y*v.x  // Terceiro coeficiente
+    );
+}
+
 // Produto escalar entre dois vetores u e v definidos em um sistema de
 // coordenadas ortonormal.
 inline float dotproduct(glm::vec4 u, glm::vec4 v)
@@ -234,6 +226,16 @@ inline float dotproduct(glm::vec4 u, glm::vec4 v)
         std::exit(EXIT_FAILURE);
     }
 
+    return u1*v1 + u2*v2 + u3*v3;
+}
+
+inline float dot3(glm::vec3 u, glm::vec3 v) {
+    float u1 = u.x;
+    float u2 = u.y;
+    float u3 = u.z;
+    float v1 = v.x;
+    float v2 = v.y;
+    float v3 = v.z;
     return u1*v1 + u2*v2 + u3*v3;
 }
 
@@ -286,6 +288,7 @@ inline glm::mat4 Matrix_Orthographic(float l, float r, float b, float t, float n
 
     return M;
 }
+
 
 // Função que imprime uma matriz M no terminal
 inline void PrintMatrix(glm::mat4 M)
@@ -389,6 +392,41 @@ inline void PrintMatrixVectorProductDivW(glm::mat4 M, glm::vec4 v)
     printf("[ %+0.2f  %+0.2f  %+0.2f  %+0.2f ][ %+0.2f ]   [ %+0.2f ]            [ %+0.2f ]\n", M[0][3], M[1][3], M[2][3], M[3][3], v[3], r[3], r[3]/w);
 }
 
+
+
+
+//  Métodos utilitários para colisões
+//      implementação de métodos baseados em glm
+inline glm::vec3 normalize(const glm::vec3& v) {
+    glm::vec4 v4(v, 0.0f);
+    float len = norm(v4);
+    if (len > 0.0f) return v / len;
+    return v;
+}
+
+inline glm::vec3 reflect(const glm::vec3& v, const glm::vec3& normal) {
+    glm::vec4 v4(v, 0.0f);
+    glm::vec4 n4(normal, 0.0f);
+    
+    float d = dotproduct(v4, n4);
+    return v - 2.0f * d * normal;
+}
+
+inline float length(const glm::vec3& v) {
+    return norm(glm::vec4(v, 0.0f));
+}
+
+
+
+inline glm::vec3 horizontalNormalize(const glm::vec3& v, const glm::vec3& defaultDir = glm::vec3(1.0f, 0.0f, 0.0f)) {
+    glm::vec3 horizontal = v;
+    horizontal.y = 0.0f;
+    float len = length(horizontal);
+    if (len > 0.001f)
+        return horizontal / len;
+    else
+        return defaultDir;
+}
 
 #endif // _MATRICES_H
 // vim: set spell spelllang=pt_br :

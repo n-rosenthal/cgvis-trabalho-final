@@ -1,34 +1,14 @@
 #include "Bezier/Butterfly/ButterflyNPC.hpp"
 
-ButterflyNPC::ButterflyNPC(
-    glm::vec3 position,
-    glm::vec3 rotation,
-    glm::vec3 scale
-)
-:
-    GameObject(
-        std::make_unique<ButterflyDrawable>(),
-        position,
-        rotation,
-        scale
-    ) {};
-
-void ButterflyNPC::setPath(
-    std::shared_ptr<BezierPath> path
-)
-{
-    m_mover.setPath(*path);
-}
-
 void ButterflyNPC::update(float dt)
 {
-    m_mover.update(dt);
+    PathFollower::update(dt);
 
     m_position =
-        m_mover.getPosition();
+        getPathPosition();
 
     glm::vec3 fwd =
-        m_mover.getForward();
+        getPathForward();
 
     float yaw =
         atan2(
@@ -40,8 +20,8 @@ void ButterflyNPC::update(float dt)
         atan2(
             fwd.y,
             sqrt(
-                fwd.x*fwd.x +
-                fwd.z*fwd.z
+                fwd.x * fwd.x +
+                fwd.z * fwd.z
             )
         );
 

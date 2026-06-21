@@ -131,6 +131,10 @@ namespace Assets {
     extern ModelDefinition ROCK_3;
     extern ModelDefinition ROCK_4;
     extern ModelDefinition ROCK_5;
+    extern ModelDefinition ROCK_6;
+    extern ModelDefinition ROCK_7;
+    extern ModelDefinition ROCK_8;
+    extern ModelDefinition ROCK_9;
 
     //  Pássaro voador (NPC)
     extern ModelDefinition FLYING_BIRD;

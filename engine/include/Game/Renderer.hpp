@@ -41,6 +41,8 @@ public:
     void loadShaders();
     void loadTextures();
     void loadModels();
+    void initSkybox();
+    void drawSkybox(const glm::vec3& sunDir, float timeOfDay);
     void drawLoadingScreen(float progress);
     void drawMenu();
 
@@ -105,7 +107,10 @@ public:
         OBJ_ROCK_3      = 18,
         OBJ_ROCK_4      = 19,
         OBJ_ROCK_5      = 20,
-        OBJ_HUGE_ROCK   = 21,
+        OBJ_ROCK_6      = 21,
+        OBJ_ROCK_7      = 22,
+        OBJ_ROCK_8      = 23,
+        OBJ_HUGE_ROCK   = 24,
 
         OBJ_LINE        = 99
     };
@@ -141,5 +146,5 @@ private:
     void        setModel(const glm::mat4& model)       const;
     DrawContext makeContext(ObjectId id);
 
-
+    Skybox m_skybox;
 };
