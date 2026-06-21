@@ -15,3 +15,7 @@
 13. [Low poly rock pack](https://sketchfab.com/3d-models/low-poly-rock-pack-d6538804ad894a778739e8343abfdf53)
 14. [Cave Crystals 1 - Base free low-poly 3d model](https://www.cgtrader.com/items/4456978/download-page)
 15. [Low-Poly STONE pack](https://sketchfab.com/3d-models/low-poly-stone-pack-e43cce5fc20c4e81bc5de7f1db7cc54b)
+
+##  Texturas
+### Terreno
+1. [Watercolor abstract stone texture](https://www.magnific.com/free-vector/watercolor-abstract-stone-texture_852316.htm#fromView=search&page=1&position=29&uuid=ad81149a-cd2a-429c-9f36-4a5ac7c9c10c&query=Rock+texture)

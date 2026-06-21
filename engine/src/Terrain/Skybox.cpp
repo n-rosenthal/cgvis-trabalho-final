@@ -230,6 +230,15 @@ void Skybox::draw(const glm::mat4& projection,
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_FALSE);
 
+    // O cubo é construído "de dentro para fora" (a câmera fica dentro
+    // dele), mas o Renderer habilita GL_CULL_FACE globalmente (GL_BACK,
+    // GL_CCW) em initMinimal(). Sem desativar aqui, o culling herdado
+    // descarta as faces voltadas para dentro — exatamente as que
+    // precisamos ver — e o céu nunca aparece, mesmo com shader e
+    // matrizes corretos.
+    GLboolean cullWasEnabled = glIsEnabled(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
+
     glUseProgram(m_shader);
     glUniformMatrix4fv(m_uVP,    1, GL_FALSE, glm::value_ptr(vp));
     glUniform3fv(m_uSunDir, 1, glm::value_ptr(glm::normalize(sunDir)));
@@ -238,6 +247,9 @@ void Skybox::draw(const glm::mat4& projection,
     glBindVertexArray(m_VAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
+
+    if (cullWasEnabled)
+        glEnable(GL_CULL_FACE);
 
     glDepthMask(GL_TRUE);
     glDepthFunc(GL_LESS);

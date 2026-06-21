@@ -25,6 +25,7 @@
 
 #include "Bezier/Butterfly/ButterflyNPC.hpp"
 #include "Bezier/Carp/CarpNPC.hpp"
+#include "Bezier/Duck/DuckNPC.hpp"
 
 #include "Renderer/ShaderLoader.hpp"
 #include "Loaders/TextureLoader.hpp"
@@ -47,7 +48,7 @@ namespace
 {
     constexpr float kFov  = glm::pi<float>() / 2.0f;
     constexpr float kNear = -0.1f;
-    constexpr float kFar  = -512.0f;
+    constexpr float kFar  = -1024.0f;
 }
 
 // ============================================================================
@@ -220,7 +221,14 @@ void Renderer::loadModels()
 
     load(Assets::LETTER);
 
+
+    //  ------------------------------------------------------------------------
+    // NPCs
+    // ------------------------------------------------------------------------
+
     load(Assets::BUTTERFLY);
+    load(Assets::DUCK);
+    load(Assets::FLYING_BIRD);
 
     // load(Assets::CARP);
 
@@ -367,7 +375,12 @@ void Renderer::initParticles() {
 
 void Renderer::initSkybox() {
     m_skybox.init();
+    printf(
+        "[Skybox] init() chamado, isReady() = %s\n",
+        m_skybox.isReady() ? "true" : "false"
+    );
 }
+
 
 void Renderer::shutdown()
 {
@@ -612,16 +625,27 @@ void Renderer::drawBird(
 
 void Renderer::drawSkybox(const glm::vec3& sunDir, float timeOfDay)
 {
+    static bool loggedOnce = false;
+    if (!loggedOnce) {
+        loggedOnce = true;
+        printf(
+            "[Skybox] drawSkybox chamado pela 1a vez. isReady()=%s sunDir=(%.2f,%.2f,%.2f) timeOfDay=%.2f\n",
+            m_skybox.isReady() ? "true" : "false",
+            sunDir.x, sunDir.y, sunDir.z,
+            timeOfDay
+        );
+    }
+ 
     if (!m_skybox.isReady())
         return;
-
+ 
     m_skybox.draw(
         m_projection,
         m_view,
         sunDir,
         timeOfDay
     );
-
+ 
     // O Skybox usa o próprio shader (glUseProgram interno); religa
     // o programa principal antes de continuar desenhando o resto da cena.
     bindProgram();
@@ -738,6 +762,15 @@ void Renderer::drawCarpNPC(
         makeContext(OBJ_CARP)
     );
 }
+
+void Renderer::drawDuckNPC(
+    DuckNPC& npc
+)
+{
+    npc.render(
+        makeContext(OBJ_DUCK)
+    );
+};
 
 void Renderer::setWireframe(bool enabled)
 {

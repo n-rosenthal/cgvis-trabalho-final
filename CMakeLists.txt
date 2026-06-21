@@ -72,6 +72,8 @@ set(SOURCES
   engine/src/Bezier/Butterfly/ButterflyDrawable.cpp
   engine/src/Bezier/Carp/CarpNPC.cpp
   engine/src/Bezier/Carp/CarpDrawable.cpp
+  engine/src/Bezier/Duck/DuckNPC.cpp
+  engine/src/Bezier/Duck/DuckDrawable.cpp
 
   # Main
   engine/src/main.cpp

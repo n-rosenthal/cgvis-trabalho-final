@@ -216,6 +216,11 @@ void Scene::update(float dt, GLFWwindow* w) {
     for(auto& npc : m_butterflyNPCs) {
         npc->update(dt);
     }
+
+
+    for (auto& npc : m_duckNPCs) {
+        npc->update(dt);
+    }
     
     for(auto& burst : m_particleBursts)
     {
@@ -550,12 +555,9 @@ void Scene::resolveCollisions() {
                     );
 
                     int t;
-                    if (obj->getType() == StaticObjectType::ROCK_7)
-                        t = 2;
-                    else if (obj->getType() == StaticObjectType::ROCK_8)
-                        t = 4;
-                    else
-                        t = 9;
+                    if (obj->getType() == StaticObjectType::ROCK_7)         t = 7;
+                    else if (obj->getType() == StaticObjectType::ROCK_8)    t = 8;
+                    else                                                    t = 9;
 
                     printf("rocha_%d::colisão em (x, y, z) = (%f, %f, %f)\n",
                         t, normal.x, normal.y, normal.z);
@@ -965,6 +967,10 @@ void Scene::draw(Renderer& r) {
         r.drawButterflyNPC(*npc);
     }
 
+    for (auto& npc : m_duckNPCs) {
+        r.drawDuckNPC(*npc);
+}
+
     r.drawMailbox(*m_mailbox);
 
     // --- Desenha a parábola da carta ---
@@ -1174,10 +1180,10 @@ std::vector<StaticObjectDef> Scene::generateTrees(int count) {
             //  a copa recebe um colisor esférico
             std::make_shared<SphereCollider>(
                 //  centro: (h(x,z) * 2))
-                glm::vec3(0.0f, s*2.0f, 0.0f),
+                glm::vec3(0.0f, s*3.5f, 0.0f),
 
                 //  raio:
-                1.2f * s
+                0.45f * s
             );
         
         //  tag: define a consequência da colisão
@@ -1189,13 +1195,13 @@ std::vector<StaticObjectDef> Scene::generateTrees(int count) {
             //  o tronco recebe um colisor cilíndrico
             std::make_shared<CylindricalCollider>(
                 //  centro: (h(x,z) * 0.5f))
-                glm::vec3(0.0f, s*0.5f, 0.0f),
+                glm::vec3(0.0f, 0.0f, 0.0f),
 
                 //  raio: (s * 0.12f)
-                s*0.8f,
+                s*0.2f,
 
                 //  altura: s
-                1.5f * s
+                5.0f * s
             );
 
         //  tag: define a consequência da colisão
@@ -1251,8 +1257,7 @@ std::vector<StaticObjectDef> Scene::generateTrees(int count) {
  * @return  std::vector<StaticObjectDef> 
  *                  lista de objetos construídos
  */
-std::vector<StaticObjectDef>
-Scene::generateBushes(int count) {
+std::vector<StaticObjectDef> Scene::generateBushes(int count) {
     //  inicializa vetor de resposta
     std::vector<StaticObjectDef> out;
 
@@ -1345,8 +1350,7 @@ Scene::generateBushes(int count) {
  * @return  std::vector<StaticObjectDef> 
  *                  lista de objetos construídos
  */
-std::vector<StaticObjectDef>
-Scene::generateRocks(int count) {
+std::vector<StaticObjectDef> Scene::generateRocks(int count) {
     std::vector<StaticObjectDef> out;
     std::mt19937 rng(44);
 
@@ -1354,7 +1358,7 @@ Scene::generateRocks(int count) {
         px(-300.f, 300.f),
         pz(-300.f, 300.f),
         rot(0.f, 360.f),
-        scale(2.0f, 6.0f);
+        scale(2.0f, 5.5f);
 
     const ModelDefinition* rocks[] = {
         // &Assets::ROCK_6,
@@ -1372,16 +1376,40 @@ Scene::generateRocks(int count) {
         float y = m_terrain->getHeight(x, z) + 0.5f;
 
         float r = rot(rng);
-        auto model = rocks[rng() % 1];
+        auto model = rocks[rng() % 2];
+
+
         StaticObjectType t;
-        if (model == &Assets::ROCK_8) t = StaticObjectType::ROCK_8;
+        if      (model == &Assets::ROCK_8) t = StaticObjectType::ROCK_8;
         else if (model == &Assets::ROCK_9) t = StaticObjectType::ROCK_9;
+
+        //  ROCK_9::
+        //      colisor cilíndrico (centro, r, h)
+        //      com tag `ColliderTag::Rock`
+        auto rock_9_collider =  std::make_shared<CylindricalCollider>(
+            glm::vec3(0.0f, 0.0f, 0.0f),
+            0.2f * s,
+            6.0f * s
+        );
+        rock_9_collider->tag = ColliderTag::Rock;
+
+        //  ROCK_8::
+        //      colisor esférico (centro, r)
+        //      com tag `ColliderTag::Rock`
+        auto rock_8_collider =  std::make_shared<CylindricalCollider>(
+            glm::vec3(0.0f, 0.0f, 0.0f),
+            0.2f * s,
+            6.0f * s
+        );
+        rock_8_collider->tag = ColliderTag::Rock;
+
+
 
         // Colisor esférico: centro levemente acima do chão, raio 3
         auto collider =
             std::make_shared<SphereCollider>(
                 glm::vec3(0.0f),
-                5.0f * s
+                2.0f * s
             );
         collider->tag = ColliderTag::Rock;
 
@@ -1482,7 +1510,7 @@ void Scene::buildStaticObjects() {
 
     auto house_collider = std::make_shared<AABBCollider>(
         glm::vec3(-4.0f, 0.0f, -4.0f),
-        glm::vec3( 4.0f, 5.0f,  4.0f)
+        glm::vec3( 8.0f, 10.0f, 8.0f)
     );
     house_collider->tag = ColliderTag::House;
 
@@ -1561,39 +1589,93 @@ void Scene::buildLetter() {
 }
 
 void Scene::buildButterflyNPCs() {
-auto path = std::make_shared<BezierPath>();
+    // Cria gerador aleatório
+    std::mt19937 rng(42);
+    
+    // Distribuição para variação
+    std::uniform_real_distribution<float> e(-5.5f, 5.5f);
+    
+    // Número de borboletas
+    const int numButterflies = 4;
+    
+    for (int i = 0; i < numButterflies; i++) {
+        auto path = std::make_shared<BezierPath>();
+        
+        // Adiciona pontos com variação aleatória em cada coordenada
+        path->addPoint(glm::vec3(68.0f + e(rng),  5.0f + e(rng), 88.0f + e(rng)));
+        path->addPoint(glm::vec3(36.0f + e(rng),  7.0f + e(rng), 79.0f + e(rng)));
+        path->addPoint(glm::vec3(28.0f + e(rng),  6.0f + e(rng), 93.0f + e(rng)));
+        path->addPoint(glm::vec3(-23.0f + e(rng), 7.0f + e(rng), 87.0f + e(rng)));
+        path->addPoint(glm::vec3(-82.0f + e(rng), 5.0f + e(rng), 100.0f + e(rng)));
+        path->addPoint(glm::vec3(-125.0f + e(rng),7.0f + e(rng), 65.0f + e(rng)));
+        path->addPoint(glm::vec3(-129.0f + e(rng),5.0f + e(rng), 15.0f + e(rng)));
+        path->addPoint(glm::vec3(-178.0f + e(rng),7.0f + e(rng), 13.0f + e(rng)));
+        path->addPoint(glm::vec3(-185.0f + e(rng),5.0f + e(rng), -24.0f + e(rng)));
+        path->addPoint(glm::vec3(-140.0f + e(rng),7.0f + e(rng), -51.0f + e(rng)));
+        path->addPoint(glm::vec3(-90.0f + e(rng), 6.0f + e(rng), -45.0f + e(rng)));
+        path->addPoint(glm::vec3(-35.0f + e(rng), 5.0f + e(rng), -81.0f + e(rng)));
+        path->addPoint(glm::vec3(8.0f + e(rng),   5.0f + e(rng), -87.0f + e(rng)));
+        path->addPoint(glm::vec3(70.0f + e(rng),  7.0f + e(rng), -66.0f + e(rng)));
+        path->addPoint(glm::vec3(132.0f + e(rng), 5.0f + e(rng), -50.0f + e(rng)));
+        path->addPoint(glm::vec3(196.0f + e(rng), 5.0f + e(rng), -13.0f + e(rng)));
+        path->addPoint(glm::vec3(103.0f + e(rng), 5.0f + e(rng), 72.0f + e(rng)));
+        path->addPoint(glm::vec3(57.0f + e(rng),  7.0f + e(rng), 50.0f + e(rng)));
+        
+        // Opcional: fecha o loop adicionando novamente o primeiro ponto
+        path->addPoint(glm::vec3(68.0f + e(rng), 5.0f + e(rng), 88.0f + e(rng)));
+        
+        // Cria a borboleta com o caminho individual
+        auto butterfly = std::make_shared<ButterflyNPC>(
+            path,
+            glm::vec3(0.0f),  // posição inicial (será sobrescrita)
+            glm::vec3(0.0f),  // rotação
+            glm::vec3(0.8f)   // escala
+        );
+        
+        m_butterflyNPCs.push_back(butterfly);
+    }
+}
 
-path->addPoint(glm::vec3(68.0f,     5.0f,   88.0f));
-path->addPoint(glm::vec3(36.0f,     7.0f,   79.0f));
-path->addPoint(glm::vec3(28.0f,     6.0f,   93.0f));
-path->addPoint(glm::vec3(-23.0f,    7.0f,   87.0f));
-path->addPoint(glm::vec3(-82.0f,    5.0f,   100.0f));
-path->addPoint(glm::vec3(-125.0f,   7.0f,   65.0f));
-path->addPoint(glm::vec3(-129.0f,   5.0f,   15.0f));
-path->addPoint(glm::vec3(-178.0f,   7.0f,   13.0f));
-path->addPoint(glm::vec3(-185.0f,   5.0f,   -24.0f));
-path->addPoint(glm::vec3(-140.0f,   7.0f,   -51.0f));
-path->addPoint(glm::vec3(-90.0f,    6.0f,   -45.0f));
-path->addPoint(glm::vec3(-35.0f,    5.0f,   -81.0f));
-path->addPoint(glm::vec3(8.0f,      5.0f,   -87.0f));
-path->addPoint(glm::vec3(70.0f,     7.0f,   -66.0f));
-path->addPoint(glm::vec3(132.0f,    5.0f,   -50.0f));
-path->addPoint(glm::vec3(196.0f,    5.0f,   -13.0f));
-path->addPoint(glm::vec3(103.0f,    5.0f,   72.0f));
-path->addPoint(glm::vec3(57.0f,     7.0f,   50.0f));
-path->addPoint(glm::vec3(68.0f,     5.0f,   88.0f));
+void Scene::buildDuckNPCs() {
+    int count = 6;
+    // Gerador aleatório e distribuição para variações
+    std::mt19937 rng(42);
+    std::uniform_real_distribution<float> e(-3.0f, 3.0f);
 
-auto butterfly =
-    std::make_shared<ButterflyNPC>(
-        path,
-        glm::vec3(0.0f),
-        glm::vec3(0.0f),
-        glm::vec3(2.0f)
-    );
+    // Pontos base do caminho (Y fixo)
+    std::vector<glm::vec3> basePoints = {
+        glm::vec3( 90.0f, -1.0f,  29.0f),
+        glm::vec3( 55.0f, -1.0f,  42.0f),
+        glm::vec3(-15.0f, -1.0f, -48.0f),
+        glm::vec3(-90.0f,  1.0f, -30.0f),
+        glm::vec3(-135.0f, 1.0f,  13.0f),
+        glm::vec3(-68.0f, -1.0f,  30.0f),
+        glm::vec3( 70.0f,  1.0f,  40.0f),
+        glm::vec3(125.0f, -1.0f,  -2.0f)
+    };
 
-    m_butterflyNPCs.push_back(
-        butterfly
-    );
+    for (int i = 0; i < count; ++i) {
+        auto path = std::make_shared<BezierPath>();
+
+        // Para cada ponto base, adiciona pequeno deslocamento em X e Z
+        for (const auto& pt : basePoints) {
+            float dx = e(rng);
+            float dz = e(rng);
+            glm::vec3 newPt = pt + glm::vec3(dx, 0.0f, dz); // Y inalterado
+            path->addPoint(newPt);
+        }
+
+        // Pequena variação na escala (opcional)
+        float scaleFactor = 3.0f + e(rng) * 0.2f;
+        auto duck = std::make_shared<DuckNPC>(
+            path,
+            glm::vec3(0.0f),   // posição inicial (será sobrescrita)
+            glm::vec3(0.0f),   // rotação calculada pelo update
+            glm::vec3(scaleFactor)
+        );
+
+        m_duckNPCs.push_back(duck);
+    }
 }
 
 void Scene::buildCarpNPCs()

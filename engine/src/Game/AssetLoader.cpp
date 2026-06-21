@@ -52,7 +52,7 @@ void AssetLoader::loadNextStep()
             glfwPollEvents();
 
             m_scene.buildButterflyNPCs();
-            m_scene.buildCarpNPCs();
+            m_scene.buildDuckNPCs();
             glfwPollEvents();
 
             m_scene.buildTrails();

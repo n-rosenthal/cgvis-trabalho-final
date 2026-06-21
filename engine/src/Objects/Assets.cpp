@@ -584,7 +584,7 @@ void Assets::BuildModels()
             "models/rocks/ROCK_8.obj"
         ),
         {
-            "Object_4"
+            "Object_18"
         },
         {
             &ROCK_4_TEXTURE // note!
@@ -609,10 +609,10 @@ void Assets::BuildModels()
 
     DUCK = makeModel(
         asset_path(
-            "models/duck/low_poly_duck.obj"
+            "models/low_poly_duck/low_poly_duck.obj"
         ),
         {
-            "Material.003"
+            "duck"
         },
         {
             &DUCK_TEXTURE

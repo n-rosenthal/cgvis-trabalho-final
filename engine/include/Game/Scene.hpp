@@ -43,6 +43,7 @@
 #include "Bezier/BezierMover.hpp"
 #include "Bezier/Butterfly/ButterflyNPC.hpp"
 #include "Bezier/Carp/CarpNPC.hpp"
+#include "Bezier/Duck/DuckNPC.hpp"
 
 //  Partículas
 #include "Particles/ParticleBurst.hpp"
@@ -115,6 +116,7 @@ public:
 
     void buildButterflyNPCs();
     void buildCarpNPCs();
+    void buildDuckNPCs();
 
     //  Acessadores para os objetos da cena
     const std::optional<Bird>& getBird() const { return m_bird; }
@@ -186,4 +188,5 @@ private:
     //  NPCs
     std::vector<std::shared_ptr<ButterflyNPC>>  m_butterflyNPCs;
     std::vector<std::shared_ptr<CarpNPC>>       m_carpNPCs;
+    std::vector<std::shared_ptr<DuckNPC>>       m_duckNPCs;
 };
