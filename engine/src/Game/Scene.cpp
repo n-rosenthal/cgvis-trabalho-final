@@ -142,6 +142,11 @@ void Scene::update(float dt, GLFWwindow* w) {
         if (!gPressed && gHeld) {
             // --- Soltar G: iniciar o lançamento ---
             if (m_parabolaActive) {
+                
+            g_Sound.play(
+                "assets/audio/dragon-studio-hawk-call-sound-effect-hawk-cry-364472.mp3"
+            );
+
                 m_letterState = LetterState::Thrown;
                 m_parabolaActive = false;
                 m_throwProgress = 0.0f;
@@ -352,32 +357,33 @@ void Scene::updateLetter(float dt, GLFWwindow* window) {
 
         case LetterState::OnGround:
         {
-            // --- Floating oscillation ---
-            // Accumulate time
+            //  animação de oscilação vertical de `Letter`
+            //  tempo de animação
             m_letterOscillationTime += dt;
 
-            // Get parameters from the letter
+            // varr. `Letter`
             glm::vec2 ground = m_letter->getGroundPos();
             float h = m_letter->getFloatHeight();
             float d = m_letter->getAmplitude();
             float phase = m_letter->getPhase();
 
-            // Compute vertical offset: sin wave
-            float omega = 1.5f;              // angular frequency (rad/s)
+            // offset vertical a partir de onda senoidal
+            float omega = 1.5f;              // freq. angular ômega (rad/s)
             float offset = d * sin(omega * m_letterOscillationTime + phase);
 
-            // Get terrain height at the ground position
+            //  obtém altura do terreno em (x, z)
             float terrainY = m_terrain->getHeight(ground.x, ground.y);
 
-            // Set new position
+            //  nova posição
             float y = terrainY + h + offset;
             m_letter->setPosition(glm::vec3(ground.x, y, ground.y));
 
-            // --- Continuous rotation around Y axis ---
+            // rotação contínua sobre Y
             glm::vec3 rot = m_letter->getRotation();
             float rotSpeed = 0.8f;          // radians per second
             rot.y += rotSpeed * dt;
-            // Keep rotation in range (optional)
+            
+            //  intervalo de rotação
             if (rot.y > 2.0f * M_PI) rot.y -= 2.0f * M_PI;
             m_letter->setRotation(rot);
 
@@ -425,9 +431,6 @@ void Scene::resolveCollisions() {
             normal
         ))
         {
-            g_Sound.play(
-                "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
-            );
 
             glm::vec3 pos =
                 birdPos - normal * 0.5f;
@@ -485,7 +488,7 @@ void Scene::resolveCollisions() {
                             if (speed > 0.01f) { m_bird->setVelocity(birdVel * 0.5f); }
                             if (m_collisionSoundCooldown <= 0.0f) {
                                 g_Sound.play(
-                                    "assets/audio/crushing-leafs-cinematic-fx_E_minor.wav"
+                                    "assets/audio/tanweraman-leaves-rustling-2-329002.mp3"
                                 );
                                 m_collisionSoundCooldown = 1.21f;
                             }
@@ -743,7 +746,7 @@ void Scene::resolveCollisions() {
                 glm::vec3(0.0f);
 
             g_Sound.play(
-                "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
+                "assets/audio/alexzavesa-cartoon-4-468375.mp3"
             );
         }
     }
@@ -842,7 +845,7 @@ void Scene::resolveCollisions() {
                 )
             );
 
-            m_letter->setFloatHeight(6.0f);
+            m_letter->setFloatHeight(9.5f);
 
             m_letterVelocity =
                 glm::vec3(0.0f);
@@ -856,7 +859,7 @@ void Scene::resolveCollisions() {
             m_cameraMode = CameraMode::WinScreen;
 
             g_Sound.play(
-                "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
+                "assets/audio/cartoon-music-game-sfx-cartoon-game-upgrade-494470.mp3"
             );
 
             // Central burst at mailbox
@@ -919,7 +922,7 @@ void Scene::resolveCollisions() {
             constexpr float speed    = 1.0f;
 
             g_Sound.play(
-                "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
+                "assets/audio/drum-roll-and-bell_112bpm.wav"
             );
 
             for (const auto& p : points)
@@ -1074,9 +1077,9 @@ void Scene::spawnBurst(
  */
 void Scene::buildTerrain() {
     m_terrain = std::make_unique<Terrain>(
-        180.0f,
-        180.0f,
-        4.0f
+        190.0f,
+        190.0f,
+        4.5f
     );
 
     assert(m_terrain);
@@ -1445,25 +1448,24 @@ std::vector<StaticObjectDef> Scene::generateRocks(int count) {
         //      colisor cilíndrico (centro, r, h)
         //      com tag `ColliderTag::Rock`
         auto rock_9_collider =
-            std::make_shared<CylindricalCollider>(
-                glm::vec3(0.0f),
-                1.1f,
-                4.7f
+            std::make_shared<SphereCollider>(
+                glm::vec3(0.0f, s, 0.0f),
+                2.5f * s
             );
         rock_9_collider->tag = ColliderTag::Rock;
 
         //  ROCK_8::
         //      colisor esférico (centro, r)
         //      com tag `ColliderTag::Rock`
-        auto rock_8_collider =  std::make_shared<CylindricalCollider>(
-            glm::vec3(0.0f, 0.0f, 0.0f),
-            2.0f * s,
-            4.0f * s
-        );
-        rock_8_collider->tag = ColliderTag::Rock;
+        auto rock_8 =
+            std::make_shared<SphereCollider>(
+                glm::vec3(0.0f, s, 0.0f),
+                2.5f * s
+            );
+        rock_8->tag = ColliderTag::Rock;
 
         auto collider = t == StaticObjectType::ROCK_8
-            ? rock_8_collider
+            ? rock_8
             : rock_9_collider;
 
         float lake = lakeDistance(x, z);
@@ -1473,7 +1475,7 @@ std::vector<StaticObjectDef> Scene::generateRocks(int count) {
             StaticObjectDef{
                 .model      = model,
                 .type       = t,
-                .position   = glm::vec3(x, y, z),
+                .position   = glm::vec3(x, m_terrain->getHeight(x, z), z) - glm::vec3(0.0f, 0.5f, 0.0f),
                 .rotation   = glm::vec3(0.0f, r, 0.0f),
                 .scale      = glm::vec3(s, s, s),
                 .colliders  = { collider }
@@ -1495,10 +1497,9 @@ std::vector<StaticObjectDef> Scene::generateRocks(int count) {
         if (lake > 0.6f) { i--; continue; }
 
         auto collider =
-            std::make_shared<CylindricalCollider>(
-                glm::vec3(0.0f),
-                2.5f * s,
-                2.0f * s
+            std::make_shared<SphereCollider>(
+                glm::vec3(0.0f, s, 0.0f),
+                2.5f * s
             );
         collider->tag = ColliderTag::Rock;
 
@@ -1506,7 +1507,7 @@ std::vector<StaticObjectDef> Scene::generateRocks(int count) {
             StaticObjectDef{
                 .model      = rock_7,
                 .type       = StaticObjectType::ROCK_7,
-                .position   = glm::vec3(x, m_terrain->getHeight(x, z), z),
+                .position   = glm::vec3(x, m_terrain->getHeight(x, z), z) - glm::vec3(0.0f, 0.5f, 0.0f),
                 .rotation   = glm::vec3(0.0f, r, 0.0f),
                 .scale      = glm::vec3(s, s, s),
                 .colliders  = { collider }
@@ -1563,8 +1564,8 @@ void Scene::buildStaticObjects() {
     glm::vec3 house_scale = glm::vec3(0.2f);
 
     auto house_collider = std::make_shared<AABBCollider>(
-        glm::vec3(-4.0f, 0.0f, -4.0f),
-        glm::vec3( 8.0f, 10.0f, 8.0f)
+        glm::vec3(-8.0f, 0.0f, -8.0f),
+        glm::vec3( 16.0f, 18.0f, 16.0f)
     );
     house_collider->tag = ColliderTag::House;
 
@@ -1606,31 +1607,61 @@ void Scene::buildMailbox() {
 /**
  * @brief   Constrói os anéis de objetivo do jogo
  */
-void Scene::buildRings() {
-    // Posições (x, offset_y, z) — offset_y é somado à altura do terreno
-    const std::vector<glm::vec3> positions = {
-        {-140.0f, 30.0f, -150.0f},
-        { -90.0f, 40.0f, -100.0f},
-        { -40.0f, 50.0f,  -50.0f},
-        {  10.0f, 50.0f,    0.0f},
-        {  60.0f, 40.0f,   50.0f},
-        { 110.0f, 30.0f,  100.0f},
-        { 150.0f, 20.0f,  150.0f},
+void Scene::buildRings()
+{
+    const std::vector<glm::vec3> positions =
+    {
+        // saída da área inicial
+        {-300.0f, 20.0f,  -10.0f},
+        {-250.0f, 25.0f,   -5.0f},
+
+        // aproximação do vale
+        {-190.0f, 30.0f,   10.0f},
+        {-140.0f, 35.0f,   35.0f},
+
+        // borda norte do lago
+        { -90.0f, 40.0f,   70.0f},
+        { -30.0f, 45.0f,   95.0f},
+
+        // atravessando região central
+        {  40.0f, 50.0f,   85.0f},
+        { 100.0f, 45.0f,   55.0f},
+
+        // descendo em direção ao destino
+        { 150.0f, 40.0f,   20.0f},
+        { 190.0f, 35.0f,  -10.0f},
+
+        // aproximação final
+        { 220.0f, 25.0f,  -20.0f}
     };
 
-    //  construção dos anéis
-    for (const auto& p : positions) {
-        float groundY = m_terrain->getHeight(p.x, p.z);
-        m_rings.push_back(std::make_shared<Ring>(glm::vec3(p.x, groundY + p.y, p.z)));
-    };
-};
+    for (const auto& p : positions)
+    {
+        float groundY =
+            m_terrain->getHeight(
+                p.x,
+                p.z
+            );
+
+        m_rings.push_back(
+            std::make_shared<Ring>(
+                glm::vec3(
+                    p.x,
+                    groundY + p.y,
+                    p.z
+                )
+            )
+        );
+    }
+}
 
 
 /**
  *  @brief  construtor para a letter
+ * m_bird->setPosition(glm::vec3(-345.0f, m_terrain->getHeight(-345.0f, -5.0f) + 0.5f, -5.0f));
  */
 void Scene::buildLetter() {
-    float x = -250.0f, z = 2.0f;
+    float x = -340.0f, z = -5.0f;
     float terrainY = m_terrain->getHeight(x, z);
     m_letter = std::make_shared<Letter>(glm::vec3(x, terrainY + 2.0f, z));
     m_letter->setGroundPos(glm::vec2(x, z));

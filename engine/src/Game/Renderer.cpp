@@ -884,53 +884,165 @@ void Renderer::drawLoadingScreen(float progress)
 
 void Renderer::drawMenu()
 {
+    float textscale = 2.0f;
+
     GLFWwindow* window =
         glfwGetCurrentContext();
 
-    // Título
-    TextRendering_PrintString(
-        window,
-        "O VOO DA CARTA",
-        -0.35f,
-        0.6f,
-        2.2f
+    auto textWidth =
+        [&](const std::string& str, float scale)
+        {
+            int width, height;
+            glfwGetWindowSize(
+                window,
+                &width,
+                &height
+            );
+
+            scale *= textscale;
+
+            float sx =
+                scale /
+                static_cast<float>(width);
+
+            float w = 0.0f;
+
+            for (char c : str)
+            {
+                for (
+                    size_t j = 0;
+                    j < dejavufont.glyphs_count;
+                    ++j
+                )
+                {
+                    if (
+                        dejavufont.glyphs[j].codepoint ==
+                        static_cast<uint32_t>(c)
+                    )
+                    {
+                        w +=
+                            dejavufont.glyphs[j].advance_x
+                            * sx;
+                        break;
+                    }
+                }
+            }
+
+            return w;
+        };
+
+    auto printCentered =
+        [&](const std::string& str,
+            float y,
+            float scale)
+        {
+            float w =
+                textWidth(
+                    str,
+                    scale
+                );
+
+            TextRendering_PrintString(
+                window,
+                str,
+                -w * 0.5f,
+                y,
+                scale
+            );
+        };
+
+    // =====================================================
+    // TÍTULO
+    // =====================================================
+
+    printCentered(
+        "  CARRIER BIRD SIMULATOR",
+        0.70f,
+        2.6f
     );
 
-    // Instruções de controle
-    TextRendering_PrintString(
-        window,
-        "WASD - mover   |   ESPACO - subir   |   SHIFT - descer",
-        -0.55f,
+    printCentered(
+        "JOANA & NICOLAS",
+        0.52f,
+        1.6f
+    );
+
+    printCentered(
+        "   Computacao Grafica e Visualizacao",
+        0.38f,
+        1.1f
+    );
+
+    printCentered(
+        "INF01047 | 2026",
+        0.28f,
+        1.1f
+    );
+
+    // =====================================================
+    // CONTROLES
+    // =====================================================
+
+    printCentered(
+        "CONTROLES",
         0.05f,
-        1.0f
+        1.3f
     );
 
-    TextRendering_PrintString(
-        window,
-        "G - soltar/pegar carta   |   MOUSE - olhar ao redor",
-        -0.5f,
+    printCentered(
+        "  W / A / S / D  -  MOVIMENTO",
         -0.05f,
         1.0f
     );
 
-    // "Pressione ENTER" piscando
+    printCentered(
+        "  ESPACO  -  BATER AS ASAS | SUBIR",
+        -0.14f,
+        1.0f
+    );
+
+    printCentered(
+        "  SHIFT  -  DESCER",
+        -0.23f,
+        1.0f
+    );
+
+    printCentered(
+        "  G  -  PEGAR OU ENTREGAR CARTA",
+        -0.32f,
+        1.0f
+    );
+
+    // =====================================================
+    // OBJETIVO
+    // =====================================================
+
+    printCentered(
+        "   ATRAVESSE OS ANEIS E ENTREGUE A CARTA",
+        -0.46f,
+        1.1f
+    );
+
+    // =====================================================
+    // PISCAR ENTER
+    // =====================================================
+
     static double startTime =
         glfwGetTime();
 
     double elapsed =
-        glfwGetTime() - startTime;
+        glfwGetTime() -
+        startTime;
 
     bool visible =
         fmod(elapsed, 1.0) < 0.6;
 
     if (visible)
     {
-        TextRendering_PrintString(
-            window,
-            "PRESSIONE ENTER PARA COMECAR",
-            -0.4f,
-            -0.4f,
-            1.3f
+        printCentered(
+            "  PRESSIONE ENTER PARA COMECAR",
+            -0.70f,
+            1.5f
         );
     }
 }

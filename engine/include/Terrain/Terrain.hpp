@@ -70,6 +70,7 @@ private:
     float sampleHeight    (float x, float z) const;
     float sampleHeightFull(float x, float z) const;
     float borderMountains (float x, float z) const;
+    float outerMountains  (float x, float z) const;
     float lakeBasin       (float x, float z) const;
     float addIslands      (float x, float z) const;
     float innerField      (float x, float z) const;

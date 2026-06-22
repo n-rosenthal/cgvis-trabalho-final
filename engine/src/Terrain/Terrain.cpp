@@ -126,52 +126,165 @@ float Terrain::borderMountains(float x, float z) const
 {
     float d = ellipticDistance(x, z);
 
-    // montanhas começam após a elipse central
-    float borderFactor =
+    // =====================================
+    // Cordilheira interna
+    // =====================================
+
+    float innerFactor =
         glm::smoothstep(
             0.65f,
-            1.00f,
+            0.82f,
             d
         );
 
-    
-    borderFactor =
-        borderFactor * borderFactor;
+    innerFactor *= innerFactor;
 
-    if (borderFactor < 0.001f)
+    // =====================================
+    // Cordilheira externa
+    // =====================================
+
+    float outerFactor =
+        glm::smoothstep(
+            0.80f,
+            1.25f,
+            d
+        );
+
+    outerFactor *= outerFactor;
+
+    if (
+        innerFactor < 0.001f &&
+        outerFactor < 0.001f
+    )
+    {
         return 0.0f;
+    }
 
-    float fx0 = x * (3.2f / m_halfW);
-    float fz0 = z * (3.2f / m_halfD);
+    // =====================================
+    // Domain warp
+    // =====================================
+
+    float fx0 =
+        x * (3.2f / m_halfW);
+
+    float fz0 =
+        z * (3.2f / m_halfD);
 
     float warpAmp = 0.70f;
 
-    float wx2 =
-        fbm(fx0 + 0.3f, fz0 + 1.7f, 4) * warpAmp;
+    float wx =
+        fbm(
+            fx0 + 0.3f,
+            fz0 + 1.7f,
+            4
+        ) * warpAmp;
 
-    float wz2 =
-        fbm(fx0 + 5.2f, fz0 + 3.4f, 4) * warpAmp;
+    float wz =
+        fbm(
+            fx0 + 5.2f,
+            fz0 + 3.4f,
+            4
+        ) * warpAmp;
 
-    float fx = fx0 + wx2;
-    float fz = fz0 + wz2;
+    float fx = fx0 + wx;
+    float fz = fz0 + wz;
 
-    float n = fbm(fx, fz, 7);
+    // =====================================
+    // Cordilheira interna
+    // =====================================
 
-    float ridge =
-        1.0f - std::abs(2.0f * n - 1.0f);
+    float innerNoise =
+        fbm(
+            fx,
+            fz,
+            7
+        );
 
-    ridge = ridge * ridge * ridge;
+    float innerRidge =
+        1.0f -
+        std::abs(
+            2.0f * innerNoise - 1.0f
+        );
 
-    n = glm::mix(n, ridge, 0.55f);
+    innerRidge =
+        innerRidge *
+        innerRidge *
+        innerRidge;
 
-    float angle = std::atan2(z, x);
+    innerNoise =
+        glm::mix(
+            innerNoise,
+            innerRidge,
+            0.55f
+        );
+
+    // =====================================
+    // Cordilheira externa
+    // =====================================
+
+    float outerNoise =
+        fbm(
+            fx * 1.8f,
+            fz * 1.8f,
+            8
+        );
+
+    float outerRidge =
+        1.0f -
+        std::abs(
+            2.0f * outerNoise - 1.0f
+        );
+
+    outerRidge =
+        outerRidge *
+        outerRidge *
+        outerRidge *
+        outerRidge;
+
+    outerNoise =
+        glm::mix(
+            outerNoise,
+            outerRidge,
+            0.80f
+        );
+
+    // =====================================
+    // Variação angular
+    // =====================================
+
+    float angle =
+        std::atan2(z, x);
 
     float aspect =
-        0.85f + 0.15f * std::cos(angle * 2.0f);
+        0.85f +
+        0.15f *
+        std::cos(
+            angle * 2.0f
+        );
 
-    return borderFactor * aspect *
-        (75.0f * n + 10.0f);
-}
+    // =====================================
+    // Alturas
+    // =====================================
+
+    float innerHeight =
+        innerFactor *
+        aspect *
+        (
+            75.0f * innerNoise +
+            10.0f
+        );
+
+    float outerHeight =
+        outerFactor *
+        (
+            140.0f * outerNoise +
+            20.0f
+        );
+
+    return
+        innerHeight +
+        outerHeight;
+};
 
 // ============================================================================
 //  Lake basin  –  elliptical, with a soft noise-perturbed shore
