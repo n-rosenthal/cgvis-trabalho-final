@@ -51,6 +51,19 @@ void Camera::update(
     };
 
 /**
+ * @brief   Posiciona a c\u00e2mera num ponto de vista fixo relativo a `target`.
+ *          Usado para modos de c\u00e2mera especiais (carta em voo, tela de vit\u00f3ria).
+ *
+ * @param target     ponto de interesse (a c\u00e2mera olha para c\u00e1)
+ * @param armOffset  deslocamento da c\u00e2mera relativo ao alvo (ex: {0, 6, 12})
+ */
+void Camera::lookAt(const glm::vec3& target, const glm::vec3& armOffset)
+{
+    m_position = target + armOffset;
+    m_target   = target;
+};
+
+/**
  * @brief Acessador à matriz view da câmera
  * 
  * @return glm::mat4

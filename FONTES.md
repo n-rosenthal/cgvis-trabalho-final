@@ -19,3 +19,8 @@
 ##  Texturas
 ### Terreno
 1. [Watercolor abstract stone texture](https://www.magnific.com/free-vector/watercolor-abstract-stone-texture_852316.htm#fromView=search&page=1&position=29&uuid=ad81149a-cd2a-429c-9f36-4a5ac7c9c10c&query=Rock+texture)
+
+## Áudio
+[Leaves Rustling 2 by TanwerAman](https://pixabay.com/sound-effects/search/crunching-leaves/);
+[Cartoon game - upgrade by TanwerAman](https://pixabay.com/sound-effects/search/cartoon/?pagi=2);
+[Hawk Call Sound Effect / Hawk Cry by DRAGON-STUDIO](https://pixabay.com/sound-effects/search/falcon/)

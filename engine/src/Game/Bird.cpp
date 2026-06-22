@@ -63,20 +63,12 @@ Bird::Bird() :
 
     //  Colisor do pássaro
     m_collider(
-        //  Pontos extremos
-        glm::vec3(
-            0.0f,
-            -1.5f,
-            0.0f
-        ),
-        glm::vec3(
-            0.0f,
-            1.5f,
-            0.0f
-        ),
+        glm::vec3(0.0f, -1.5f, 0.0f),
+        glm::vec3(0.0f, 1.5f, 0.0f),
         1.0f )
 {
-    //  Inicializar o pássaro utilizando o modelo padrão (voando)
+    //  Ajuste yaw inicial para que o pássaro nasça voltado para a frente do jogador
+    m_yaw = glm::radians(180.0f);
     m_currentModel =
         &Assets::BIRD_STANDING_MODEL;
 }
@@ -268,135 +260,287 @@ void Bird::onBushCollision(glm::vec3 obstaclePos) {
     }
 }
 
-/**
- * @brief   Atualizador dinâmico para o pássaro
- * 
- * @param dt 
- * @param window 
- */
-void Bird::update(float dt, GLFWwindow* window, float terrainHeight, glm::vec3 terrainNormal) {
-    // Depuração
+void Bird::update(
+    float dt,
+    GLFWwindow* window,
+    float terrainHeight,
+    glm::vec3 terrainNormal
+)
+{
     g_DebugBirdPosition = m_position;
     g_DebugBirdVelocity = m_velocity;
-    g_DebugBirdSpeed = m_speed;
+    g_DebugBirdSpeed    = m_speed;
     g_DebugBirdRotation = m_rotation;
 
-    // ==========================================
-    //  ESTADO: ANDANDO (standing)
-    // ==========================================
-    if (standing) {
-        // --- Controles de movimento no chão ---
+    // =====================================================
+    // MODO ANDANDO
+    // =====================================================
+
+    if (standing)
+    {
         float yawInput = 0.0f;
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) yawInput += 1.0f;
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) yawInput -= 1.0f;
+
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            yawInput += 1.0f;
+
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            yawInput -= 1.0f;
+
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            yawInput *= 0.5f;
 
         float forwardInput = 0.0f;
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) forwardInput += 1.0f;
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) forwardInput -= 1.0f;
 
-        // Aplica rotação (yaw)
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            forwardInput += 1.0f;
+
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            forwardInput -= 1.0f;
+
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            forwardInput *= 0.5f;
+
         m_yaw += yawInput * kYawSpeed * dt;
 
-        // Movimento (velocidade limitada)
         glm::vec3 forward = getForward();
+
         float speed = forwardInput * WALK_SPEED;
+
         m_position += forward * speed * dt;
 
-        // --- Animação de "bob" vertical e rotação lateral (roll) ---
+        // -----------------------------------------
+        // Bob animation
+        // -----------------------------------------
+
         m_walkTime += dt;
-        float bobVertical   = BOB_AMPLITUDE * sin(BOB_FREQUENCY * m_walkTime * 2.0f * M_PI);
-        float bobRoll       = BOB_AMPLITUDE_LATERAL * sin(BOB_FREQUENCY * m_walkTime * 2.0f * M_PI);
 
-        // Posição vertical
-        m_baseY = terrainHeight + 0.5f;
-        m_position.y = m_baseY + bobVertical;
+        float bobVertical =
+            BOB_AMPLITUDE *
+            sin(BOB_FREQUENCY * m_walkTime * 2.0f * M_PI);
 
-        // Pitch sempre zero no chão
+        float bobRoll =
+            BOB_AMPLITUDE_LATERAL *
+            sin(BOB_FREQUENCY * m_walkTime * 2.0f * M_PI);
+
+        m_baseY =
+            terrainHeight + 0.5f;
+
+        m_position.y =
+            m_baseY + bobVertical;
+
         m_pitch = 0.0f;
-        // Roll oscilante (balanço lateral)
-        m_roll = bobRoll;
+        m_roll  = bobRoll;
 
-        // Zera velocidade (evita acúmulo de inércia do voo)
-        m_velocity = glm::vec3(0.0f);
+        // -----------------------------------------
+        // Decolagem
+        // -----------------------------------------
 
-        // --- Decolar com ESPAÇO ---
-        bool flapPressed = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
-        if (flapPressed && !m_flapHeld) {
+        bool flapPressed =
+            glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+
+        if (flapPressed && !m_flapHeld)
+        {
             standing = false;
-            m_velocity.y = FLAP_IMPULSE_VERTICAL;
-            m_velocity += forward * FLAP_IMPULSE_FORWARD;
+
+            m_velocity = glm::vec3(0.0f);
+
+            m_velocity.y =
+                FLAP_IMPULSE_VERTICAL * 1.2f;
+
+            m_velocity +=
+                forward *
+                (FLAP_IMPULSE_FORWARD * 1.5f);
         }
+
         m_flapHeld = flapPressed;
 
-        // --- Aplica rotação final (com offset para alinhar o modelo) ---
-        const float MODEL_OFFSET = -M_PI / 2.0f;   // como estava antes
-        m_rotation = glm::vec3(0.0f, m_yaw + MODEL_OFFSET, 0.0f); // standing
+        // -----------------------------------------
+        // Rotação do modelo em solo
+        // -----------------------------------------
+
+        const float MODEL_OFFSET =
+            -M_PI / 2.0f;
+
+        m_rotation =
+            glm::vec3(
+                0.0f,
+                m_yaw + MODEL_OFFSET,
+                0.0f
+            );
+
         setRotation(m_rotation);
 
         updateDrawable();
         updateColliders();
+
         return;
     }
 
-    // ==========================================
-    //  ESTADO: VOANDO
-    // ==========================================
-    // --- Flap (SPACE) durante o voo ---
-    bool flapPressed = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
-    if (flapPressed && !m_flapHeld) {
-        m_velocity.y += FLAP_IMPULSE_VERTICAL;
-        m_speed += 2.0f;  // acelera um pouco
-    }
-    m_flapHeld = flapPressed;
+    // =====================================================
+    // MODO VOANDO
+    // =====================================================
 
-    // --- Aceleração (W/S) ---
+    bool flapPressedFlying =
+        glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+
+    if (flapPressedFlying && !m_flapHeld)
+    {
+        m_velocity.y += FLAP_IMPULSE_VERTICAL;
+        m_speed += 2.0f;
+    }
+
+    m_flapHeld = flapPressedFlying;
+
+    // -----------------------------------------
+    // Aceleração
+    // -----------------------------------------
+
     float speedInput = 0.0f;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) speedInput += 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) speedInput -= 1.0f;
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        speedInput += 1.0f;
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        speedInput -= 1.0f;
 
     m_speed += speedInput * ACCELERATION * dt;
-    m_speed = glm::clamp(m_speed, SPEED_MIN, SPEED_MAX);
 
-    // --- Yaw (A/D) ---
+    m_speed =
+        glm::clamp(
+            m_speed,
+            SPEED_MIN,
+            SPEED_MAX
+        );
+
+    // -----------------------------------------
+    // Yaw
+    // -----------------------------------------
+
     float yawInput = 0.0f;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) yawInput += 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) yawInput -= 1.0f;
+
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        yawInput += 1.0f;
+
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        yawInput -= 1.0f;
+
     m_yaw += yawInput * kYawSpeed * dt;
 
-    // --- Pitch automático (baseado na velocidade) ---
-    float verticalSpeed   = m_velocity.y;
-    float horizontalSpeed = glm::length(glm::vec2(m_velocity.x, m_velocity.z));
+    // -----------------------------------------
+    // Pitch automático
+    // -----------------------------------------
 
-    if (horizontalSpeed > 0.1f) {
-        float targetPitch = atan2(verticalSpeed, horizontalSpeed);
-        m_pitch = glm::mix(m_pitch, targetPitch, 0.05f);
-    } else {
-        // Se estiver parado horizontalmente, tende a zero
-        m_pitch = glm::mix(m_pitch, 0.0f, 0.05f);
+    float verticalSpeed =
+        m_velocity.y;
+
+    float horizontalSpeed =
+        glm::length(
+            glm::vec2(
+                m_velocity.x,
+                m_velocity.z
+            )
+        );
+
+    if (horizontalSpeed > 0.1f)
+    {
+        float targetPitch =
+            atan2(
+                verticalSpeed,
+                horizontalSpeed
+            );
+
+        m_pitch =
+            glm::mix(
+                m_pitch,
+                targetPitch,
+                0.05f
+            );
     }
-    m_pitch = glm::clamp(m_pitch, -kPitchMax, kPitchMax);
+    else
+    {
+        m_pitch =
+            glm::mix(
+                m_pitch,
+                0.0f,
+                0.05f
+            );
+    }
 
-    // --- Roll (curva) ---
-    float rollTarget = -yawInput * kRollTarget;
-    m_roll += (rollTarget - m_roll) * kRollSmooth * dt;
+    m_pitch =
+        glm::clamp(
+            m_pitch,
+            -kPitchMax,
+            kPitchMax
+        );
 
-    // --- Física ---
-    glm::vec3 forward = getForward();
-    glm::vec3 desired = forward * m_speed;
+    // -----------------------------------------
+    // Roll
+    // -----------------------------------------
 
-    m_velocity.x = glm::mix(m_velocity.x, desired.x, kVelBlendXZ * dt);
-    m_velocity.z = glm::mix(m_velocity.z, desired.z, kVelBlendXZ * dt);
-    m_velocity.y = glm::mix(m_velocity.y, desired.y, kVelBlendY * dt);
-    m_velocity.y += m_speed * m_speed * kLiftCoeff * dt;
-    m_velocity.y -= kGravity * dt;
+    float rollTarget =
+        -yawInput * kRollTarget;
 
-    m_position += m_velocity * dt;
+    m_roll +=
+        (rollTarget - m_roll) *
+        kRollSmooth *
+        dt;
+
+    // -----------------------------------------
+    // Física
+    // -----------------------------------------
+
+    glm::vec3 forward =
+        getForward();
+
+    glm::vec3 desired =
+        forward * m_speed;
+
+    m_velocity.x =
+        glm::mix(
+            m_velocity.x,
+            desired.x,
+            kVelBlendXZ * dt
+        );
+
+    m_velocity.z =
+        glm::mix(
+            m_velocity.z,
+            desired.z,
+            kVelBlendXZ * dt
+        );
+
+    m_velocity.y =
+        glm::mix(
+            m_velocity.y,
+            desired.y,
+            kVelBlendY * dt
+        );
+
+    m_velocity.y +=
+        m_speed *
+        m_speed *
+        kLiftCoeff *
+        dt;
+
+    m_velocity.y -=
+        kGravity *
+        dt;
+
+    m_position +=
+        m_velocity * dt;
+
     clampPosition();
 
-    m_baseY = m_position.y;
+    m_baseY =
+        m_position.y;
 
-    // --- Aplica rotação final (sem offset) ---
-    m_rotation = glm::vec3(m_pitch, m_yaw, m_roll);
+    m_rotation =
+        glm::vec3(
+            m_pitch,
+            m_yaw,
+            m_roll
+        );
+
     setRotation(m_rotation);
 
     updateDrawable();

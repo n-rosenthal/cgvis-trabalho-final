@@ -53,6 +53,18 @@ public:
     );
 
     /**
+     * @brief Modo orbital: olha fixo para um ponto de interesse.
+     *        A câmera fica num raio fixo acima e atrás do ponto.
+     *
+     * @param target    posição do alvo
+     * @param armOffset deslocamento relativo ao alvo (ex: 0,5,12)
+     */
+    void lookAt(
+        const glm::vec3& target,
+        const glm::vec3& armOffset
+    );
+
+    /**
      * @brief Acessador à matriz view da câmera
      * 
      * @return glm::mat4

@@ -145,6 +145,8 @@ void Scene::update(float dt, GLFWwindow* w) {
                 m_letterState = LetterState::Thrown;
                 m_parabolaActive = false;
                 m_throwProgress = 0.0f;
+                // Câmera segue a carta
+                m_cameraMode = CameraMode::FollowLetter;
             }
         }
     } else {
@@ -160,12 +162,42 @@ void Scene::update(float dt, GLFWwindow* w) {
     // --------------------------------------------------
     updateLetter(dt, w);
 
-    m_camera.update(
-        m_bird->getPositionNoBob(),   // posição base
-        m_bird->getForwardNoBob(),    // direção para onde o pássaro olha, sem o roll de bob
-        m_bird->getUpNoBob(),         // vetor "para cima", sem o roll de bob (não usado por Camera::update, mantido por clareza)
-        dt
-    );
+    // --------------------------------------------------
+    // Camera update
+    // --------------------------------------------------
+    switch (m_cameraMode)
+    {
+        case CameraMode::FollowBird:
+            m_camera.update(
+                m_bird->getPositionNoBob(),
+                m_bird->getForwardNoBob(),
+                m_bird->getUpNoBob(),
+                dt
+            );
+            break;
+
+        case CameraMode::FollowLetter:
+        {
+            // Orbita acima e ao lado da carta, olhando para ela
+            glm::vec3 lpos = m_letter->getPosition();
+            m_camera.lookAt(lpos, glm::vec3(0.0f, 8.0f, 12.0f));
+            // Se a carta pousar, volta para o pássaro
+            if (m_letterState == LetterState::OnGround ||
+                m_letterState == LetterState::Falling)
+            {
+                m_cameraMode = CameraMode::FollowBird;
+            }
+            break;
+        }
+
+        case CameraMode::WinScreen:
+        {
+            // Câmera olha para a mailbox de cima, ligeiramente afastada
+            glm::vec3 mpos = m_mailbox->getPosition();
+            m_camera.lookAt(mpos, glm::vec3(0.0f, 10.0f, 15.0f));
+            break;
+        }
+    }
 
 
     // --------------------------------------------------
@@ -820,19 +852,26 @@ void Scene::resolveCollisions() {
 
             m_mailbox->activate();
 
+            // Câmera foca na mailbox — tela de vitória
+            m_cameraMode = CameraMode::WinScreen;
+
             g_Sound.play(
                 "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
             );
 
+            // Central burst at mailbox
             spawnBurst(
-                m_mailbox->getPosition()
-                +
-                glm::vec3(0.0f, 2.0f, 0.0f),
+                m_mailbox->getPosition() + glm::vec3(0.0f, 2.0f, 0.0f),
                 80,
                 5.0f,
                 1.2f,
                 Colors::MAIL
             );
+            // Additional decorative bursts around mailbox using existing palette
+            glm::vec3 mbPos = m_mailbox->getPosition();
+            spawnBurst(mbPos + glm::vec3(0.0f, 2.5f, 0.0f), 40, 4.0f, 1.0f, Colors::RING);
+            spawnBurst(mbPos + glm::vec3(2.0f, 2.0f, 0.0f), 30, 3.5f, 0.9f, Colors::TREE);
+            spawnBurst(mbPos + glm::vec3(-2.0f, 2.0f, 0.0f), 30, 3.5f, 0.9f, Colors::TRUNK);
 
             printf(
                 "Carta entregue! Jogo vencido.\n"
@@ -876,8 +915,12 @@ void Scene::resolveCollisions() {
             };
 
             constexpr float lifetime = 10.0f;
-            constexpr int   count    = 60;
+            constexpr int   count    = 120;
             constexpr float speed    = 1.0f;
+
+            g_Sound.play(
+                "assets/audio/cartoon-boing-bouncy-big_F_major.wav"
+            );
 
             for (const auto& p : points)
             {

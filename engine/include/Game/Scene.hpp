@@ -52,6 +52,13 @@
 
 class Renderer;  // forward
 
+// Camera mode determines which object the camera follows
+enum class CameraMode {
+    FollowBird,    // default: behind the bird
+    FollowLetter,  // while letter is in flight
+    WinScreen,     // letter hit the mailbox
+};
+
 
 //  Definição de um modelo estático na cena virtual
 struct StaticObjectDef {
@@ -150,6 +157,9 @@ private:
     std::shared_ptr<Letter>                         m_letter;
 
     std::shared_ptr<Mailbox>                        m_mailbox;
+
+    // -------- Camera --------
+    CameraMode m_cameraMode = CameraMode::FollowBird;
 
     //  CARTA, PARÁBOLA
     //  Estado atual da carta

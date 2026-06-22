@@ -19,7 +19,7 @@ extern SoundManager g_Sound;
 namespace
 {
     constexpr float kTimeOfDay = 0.5f;  // meio-dia, fixo
-    const glm::vec3 kSunDir(0.3f, 0.8f, 0.2f);
+    const glm::vec3 kSunDir(0.3f, 0.5f, 0.2f);
 }
 
 //
