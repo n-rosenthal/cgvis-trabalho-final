@@ -1,4 +1,5 @@
 #include "Terrain/Skybox.hpp"
+#include "GLFW/glfw3.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <stdexcept>
@@ -222,6 +223,8 @@ void Skybox::draw(const glm::mat4& projection,
 {
     if (!m_shader) return;
 
+    glfwPollEvents();
+
     // Strip translation from view so the sky box stays at the camera origin
     glm::mat4 viewNoTranslation = glm::mat4(glm::mat3(view));
     glm::mat4 vp = projection * viewNoTranslation;
@@ -253,4 +256,6 @@ void Skybox::draw(const glm::mat4& projection,
 
     glDepthMask(GL_TRUE);
     glDepthFunc(GL_LESS);
+
+    glfwPollEvents();
 }

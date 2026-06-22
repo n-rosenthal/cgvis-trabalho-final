@@ -10,36 +10,26 @@
 class CylindricalCollider : public Collider
 {
 public:
+    glm::vec3 localCenter; // relativo ao objeto
+    glm::vec3 center;      // posição no mundo
 
-    glm::vec3 center;
     float radius;
     float height;
-
 public:
-
-    /**
-     * @brief Construtor padrão.
-     */
-    CylindricalCollider()
-        : center(0.0f),
-          radius(1.0f),
-          height(1.0f)
-    {
-    }
-
-    /**
-     * @brief Construtor parametrizado.
-     */
     CylindricalCollider(
         const glm::vec3& c,
         float r,
         float h
     )
-        : center(c),
-          radius(r),
-          height(h)
+    :
+        localCenter(c),
+        center(c),
+        radius(r),
+        height(h)
     {
     }
+
+    
 
     ColliderType type() const override
     {

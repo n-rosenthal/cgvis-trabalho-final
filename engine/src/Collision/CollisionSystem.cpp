@@ -134,6 +134,16 @@ bool CollisionSystem::intersects(
         );
     }
 
+    if (
+    a.type() == ColliderType::Cylinder &&
+    b.type() == ColliderType::Capsule
+    ) {
+        return capsuleCylinder(
+            static_cast<const CapsuleCollider&>(b),
+            static_cast<const CylindricalCollider&>(a)
+        );
+    }
+
     return false;
 }
 

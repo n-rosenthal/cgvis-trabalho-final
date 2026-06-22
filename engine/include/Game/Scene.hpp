@@ -48,6 +48,7 @@
 //  Partículas
 #include "Particles/ParticleBurst.hpp"
 #include "Particles/TrailEmitter.hpp"
+#include "Particles/Colors.hpp"
 
 class Renderer;  // forward
 
@@ -91,8 +92,9 @@ public:
     void spawnBurst(
         const glm::vec3& position,
         int count,
-        float speed = 8.0f,
-        float lifetime = 1.5f
+        float speed,
+        float lifetime,
+        const glm::vec4& color = glm::vec4(1.0f)
     );
 
     //  Construtor para trilhas de partículas emitidas
@@ -115,7 +117,6 @@ public:
     void buildStaticObjects();
 
     void buildButterflyNPCs();
-    void buildCarpNPCs();
     void buildDuckNPCs();
 
     //  Acessadores para os objetos da cena
@@ -128,6 +129,9 @@ public:
 
     //  Acessador para a câmera
     const Camera& getCamera() const { return m_camera; }
+
+
+    float m_collisionSoundCooldown = 0.0f;
 
 
 private:
@@ -187,6 +191,5 @@ private:
 
     //  NPCs
     std::vector<std::shared_ptr<ButterflyNPC>>  m_butterflyNPCs;
-    std::vector<std::shared_ptr<CarpNPC>>       m_carpNPCs;
     std::vector<std::shared_ptr<DuckNPC>>       m_duckNPCs;
 };

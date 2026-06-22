@@ -18,5 +18,5 @@ private:
 
     float m_t = 0.0f;
 
-    float m_speed = 0.05f;
+    float m_speed = 0.017f;
 };

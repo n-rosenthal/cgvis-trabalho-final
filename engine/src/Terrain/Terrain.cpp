@@ -606,9 +606,7 @@ glm::vec4 Terrain::sampleColor(
     );
 }
 
-// ============================================================================
 //  Noise helpers
-// ============================================================================
 float Terrain::fade(float t) { return t*t*t*(t*(t*6.f-15.f)+10.f); }
 float Terrain::lerp(float a, float b, float t) { return a + t*(b-a); }
 float Terrain::grad(int hash, float x, float y) {
@@ -644,20 +642,31 @@ float Terrain::fbm(float x, float z, int octaves) const
     return val / maxV;
 }
 
-// ============================================================================
 //  Build terrain mesh
-//  The inner field offset is baked into sampleHeight via the full pipeline.
-//  We call innerField here and add it before the lake basin clamp so hills
-//  don't bleed into the lake.
-// ============================================================================
 float Terrain::sampleHeightFull(float x, float z) const
 {
     float y     = borderMountains(x, z);
     float basin = lakeBasin(x, z);
-    // Inner field only applied outside the lake zone
     if (basin >= 1e5f) y += innerField(x, z);
     if (basin < y) y = basin;
     y += addIslands(x, z);
+
+    // spawn: área =flat= em (-345, -5)
+    float dx = x - (-345.0f);
+    float dz = z - (-5.0f);
+    float dist = std::sqrt(dx*dx + dz*dz);
+    if (dist < 15.0f) {
+        float spawnHeight = 43.0f;
+        if (dist <= 10.0f) {
+            y = spawnHeight;
+        } else {
+            // suavização
+            float t = (dist - 5.0f) / 10.0f;
+            t = t * t * (3.0f - 2.0f * t); // smoothstep
+            y = spawnHeight + t * (y - spawnHeight);
+        }
+    }
+
     return y;
 }
 

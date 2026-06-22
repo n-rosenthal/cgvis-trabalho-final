@@ -203,9 +203,7 @@ void Renderer::loadModels()
 
     load(Assets::OAK);
 
-    load(Assets::BUSH);
     load(Assets::STYLED_SHRUB);
-    load(Assets::BUXUS);
     load(Assets::SHRUB);
 
     load(Assets::MARINE_PLANT);
@@ -228,9 +226,6 @@ void Renderer::loadModels()
 
     load(Assets::BUTTERFLY);
     load(Assets::DUCK);
-    load(Assets::FLYING_BIRD);
-
-    // load(Assets::CARP);
 
     load(Assets::HOUSE);
     load(Assets::MAILBOX);
@@ -625,17 +620,7 @@ void Renderer::drawBird(
 
 void Renderer::drawSkybox(const glm::vec3& sunDir, float timeOfDay)
 {
-    static bool loggedOnce = false;
-    if (!loggedOnce) {
-        loggedOnce = true;
-        printf(
-            "[Skybox] drawSkybox chamado pela 1a vez. isReady()=%s sunDir=(%.2f,%.2f,%.2f) timeOfDay=%.2f\n",
-            m_skybox.isReady() ? "true" : "false",
-            sunDir.x, sunDir.y, sunDir.z,
-            timeOfDay
-        );
-    }
- 
+    glfwPollEvents();
     if (!m_skybox.isReady())
         return;
  
@@ -645,6 +630,8 @@ void Renderer::drawSkybox(const glm::vec3& sunDir, float timeOfDay)
         sunDir,
         timeOfDay
     );
+
+    glfwPollEvents();
  
     // O Skybox usa o próprio shader (glUseProgram interno); religa
     // o programa principal antes de continuar desenhando o resto da cena.
@@ -754,14 +741,6 @@ void Renderer::drawButterflyNPC(
     );
 }
 
-void Renderer::drawCarpNPC(
-    CarpNPC& npc
-)
-{
-    npc.render(
-        makeContext(OBJ_CARP)
-    );
-}
 
 void Renderer::drawDuckNPC(
     DuckNPC& npc

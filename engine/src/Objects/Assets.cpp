@@ -33,7 +33,6 @@ namespace Assets {
 
     // Arbustos
     TextureDefinition BUSH_TEXTURE;
-    TextureDefinition BUXUS_TEXTURE;
     TextureDefinition SHRUB_TEXTURE;
     TextureDefinition STYLED_SHRUB_TEXTURE;
 
@@ -48,7 +47,6 @@ namespace Assets {
     TextureDefinition ROCK_5_TEXTURE;
 
     // NPCs
-    TextureDefinition FLYING_BIRD_TEXTURE;
     TextureDefinition DUCK_TEXTURE;
     TextureDefinition BUTTERFLY_ALBEDO_TRANSPARENCY;
 
@@ -71,7 +69,6 @@ namespace Assets {
 
     // Arbustos
     ModelDefinition BUSH;
-    ModelDefinition BUXUS;
     ModelDefinition SHRUB;
     ModelDefinition STYLED_SHRUB;
 
@@ -90,7 +87,6 @@ namespace Assets {
     ModelDefinition ROCK_9;
 
     // NPCs
-    ModelDefinition FLYING_BIRD;
     ModelDefinition DUCK;
     ModelDefinition BUTTERFLY;
 
@@ -224,25 +220,6 @@ void Assets::LoadTextures()
         );
 
     // =====================================================
-    // BUSH
-    // =====================================================
-
-    BUSH_TEXTURE =
-        makeTextureAsset(
-            "textures/bush/vetka_kusta_0.png",
-            false
-        );
-
-    // =====================================================
-    // BUXUS
-    // =====================================================
-
-    BUXUS_TEXTURE =
-        makeTextureAsset(
-            "textures/buxus/Buxus_Base_color.png"
-        );
-
-    // =====================================================
     // SHRUB
     // =====================================================
 
@@ -298,14 +275,6 @@ void Assets::LoadTextures()
             "textures/rocks/rock6_lp_1001_BaseColor.png"
         );
 
-    // =====================================================
-    // FLYING BIRD
-    // =====================================================
-
-    FLYING_BIRD_TEXTURE =
-        makeTextureAsset(
-            "textures/flying_bird/BirdUVTexture.jpeg"
-        );
 
     // =====================================================
     // DUCK
@@ -419,29 +388,7 @@ void Assets::BuildModels()
         }
     );
 
-    BUSH = makeModel(
-        asset_path(
-            "models/bush/bush.obj"
-        ),
-        {
-            "vetka_kusta.004"
-        },
-        {
-            &BUSH_TEXTURE
-        }
-    );
 
-    BUXUS = makeModel(
-        asset_path(
-            "models/buxus/buxus.obj"
-        ),
-        {
-            "Bush_low"
-        },
-        {
-            &BUXUS_TEXTURE
-        }
-    );
 
     SHRUB = makeModel(
         asset_path(
@@ -591,21 +538,6 @@ void Assets::BuildModels()
         }
     );
 
-
-
-
-
-    FLYING_BIRD = makeModel(
-        asset_path(
-            "models/flying_bird/flying_bird.obj"
-        ),
-        {
-            "blinn2"
-        },
-        {
-            &FLYING_BIRD_TEXTURE
-        }
-    );
 
     DUCK = makeModel(
         asset_path(

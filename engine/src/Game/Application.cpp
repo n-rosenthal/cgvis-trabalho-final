@@ -5,58 +5,21 @@
 
 #include "Game/Application.hpp"
 #include "Game/AssetLoader.hpp"
-
-#include <ctime>
+#include "audio/AudioManager.hpp"
+extern SoundManager g_Sound;
 
 //
 // ============================================================
-// DIA / NOITE
+// CÉU
 // ============================================================
+// O ciclo dia/noite foi removido: o skybox agora fornece um céu
+// fixo (sempre o mesmo horário), constante ao longo do jogo.
 //
 
-float Application::updateDayNight()
+namespace
 {
-    static bool isDayTime = true;
-    static float lastCheckTime = -1.0f;
-
-    float current =
-        static_cast<float>(glfwGetTime());
-
-    if (current - lastCheckTime > 1.0f)
-    {
-        lastCheckTime = current;
-
-        time_t now = time(nullptr);
-        tm* t = localtime(&now);
-
-        int hour = t->tm_hour;
-
-        bool actualDayTime =
-            !(hour >= 18 || hour < 6);
-
-        isDayTime =
-            g_ManualDayNight
-            ? g_DayTime
-            : actualDayTime;
-    }
-
-    if (isDayTime)
-        glClearColor(
-            0.9f,
-            0.9f,
-            1.0f,
-            1.0f
-        );
-    else
-        glClearColor(
-            0.1f,
-            0.1f,
-            0.2f,
-            1.0f
-        );
-
-    // timeOfDay simples, sem transição: 0.5 = meio-dia, 0.0 = meia-noite
-    return isDayTime ? 0.5f : 0.0f;
+    constexpr float kTimeOfDay = 0.5f;  // meio-dia, fixo
+    const glm::vec3 kSunDir(0.3f, 0.8f, 0.2f);
 }
 
 //
@@ -64,7 +27,6 @@ float Application::updateDayNight()
 // INICIALIZAÇÃO
 // ============================================================
 //
-extern SoundManager g_Sound;
 
 void Application::init(
     const char* title,
@@ -98,18 +60,12 @@ void Application::init(
         );
 
     //
-    //  áudio
-    //
-    if (!g_Sound.init()) {
-        fprintf(stderr, "Erro ao inicializar áudio.\n");
-    }
-
-
-    //
     // Começa na tela de loading
     //
     m_state =
         GameState::LOADING;
+
+    g_Sound.init();
 
     m_lastTime =
         static_cast<float>(
@@ -215,10 +171,7 @@ void Application::processFrame(float dt)
 
         case GameState::PLAYING:
         {
-            float timeOfDay = updateDayNight();
-
             glClear(
-                GL_COLOR_BUFFER_BIT |
                 GL_DEPTH_BUFFER_BIT
             );
 
@@ -228,13 +181,7 @@ void Application::processFrame(float dt)
                 m_scene.getCamera()
             );
 
-            // Sol fixo: alto ao meio-dia, abaixo do horizonte à noite
-            glm::vec3 sunDir =
-                (timeOfDay >= 0.5f)
-                    ? glm::vec3(0.3f, 0.8f, 0.2f)
-                    : glm::vec3(0.1f, -0.6f, 0.1f);
-
-            m_renderer.drawSkybox(sunDir, timeOfDay);
+            m_renderer.drawSkybox(kSunDir, kTimeOfDay);
 
             m_scene.draw(
                 m_renderer

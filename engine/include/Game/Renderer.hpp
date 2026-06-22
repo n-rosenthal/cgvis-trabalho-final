@@ -26,7 +26,6 @@ class Mailbox;
 
 //  NPCs
 class ButterflyNPC;
-class CarpNPC;
 class DuckNPC;
 
 //  Partículas
@@ -68,7 +67,6 @@ public:
 
     //  NPCs
     void drawButterflyNPC(ButterflyNPC& npc);
-    void drawCarpNPC(CarpNPC& npc);
     void drawDuckNPC(DuckNPC& npc);
 
     // Utilitários
@@ -99,7 +97,6 @@ public:
 
         //  NPCs
         OBJ_BUTTERFLY   = 13,
-        OBJ_CARP        = 14,
         OBJ_DUCK        = 30,
 
 

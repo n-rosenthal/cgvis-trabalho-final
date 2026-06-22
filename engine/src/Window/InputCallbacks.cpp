@@ -106,13 +106,13 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
 
     }
 
-    // Se o usuário apertar a tecla L, alternamos dia/noite manualmente além da lógica automática.
-    if (key == GLFW_KEY_L && action == GLFW_PRESS)
-    {
-        g_ManualDayNight = true;
-        g_DayTime = !g_DayTime;
-        fprintf(stdout,"Iluminacao do mundo trocada.\n");
-    }
+    // // Se o usuário apertar a tecla L, alternamos dia/noite manualmente além da lógica automática.
+    // if (key == GLFW_KEY_L && action == GLFW_PRESS)
+    // {
+    //     g_ManualDayNight = true;
+    //     g_DayTime = !g_DayTime;
+    //     fprintf(stdout,"Iluminacao do mundo trocada.\n");
+    // }
 
     // Se o usuário apertar a tecla R, recarregamos os shaders dos arquivos "shader_fragment.glsl" e "shader_vertex.glsl".
     if (key == GLFW_KEY_R && action == GLFW_PRESS)

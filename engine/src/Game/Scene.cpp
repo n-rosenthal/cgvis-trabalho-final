@@ -107,6 +107,11 @@ void Scene::computeParabola() {
  *              ponteiro para a janela 
  */
 void Scene::update(float dt, GLFWwindow* w) {
+    m_collisionSoundCooldown -= dt;
+
+    if (m_collisionSoundCooldown < 0.0f)
+        m_collisionSoundCooldown = 0.0f;
+
     m_bird->update(dt,
                     w, 
                     m_terrain->getHeight(m_bird->getPosition().x, m_bird->getPosition().z),
@@ -441,31 +446,26 @@ void Scene::resolveCollisions() {
                         // Copa
                         // ----------------------------------------
 
-                        case ColliderTag::TreeCanopy:
-                        {
-                            printf("Hit tree canopy\n");
-
+                        case ColliderTag::TreeCanopy: {
                             float speed =
                                 glm::length(birdVel);
 
-                            if (speed > 0.01f)
-                            {
-                                m_bird->setVelocity(
-                                    birdVel * 0.5f
+                            if (speed > 0.01f) { m_bird->setVelocity(birdVel * 0.5f); }
+                            if (m_collisionSoundCooldown <= 0.0f) {
+                                g_Sound.play(
+                                    "assets/audio/crushing-leafs-cinematic-fx_E_minor.wav"
                                 );
+                                m_collisionSoundCooldown = 1.21f;
                             }
-
-                            g_Sound.play(
-                                "assets/audio/cartoonish-stone-sfx-slow.wav"
-                            );
-
+                            
                             spawnBurst(
                                 birdPos,
                                 speed * speed,
                                 speed,
-                                speed * speed * 0.2f
+                                speed * speed * 0.2f,
+                                Colors::TREE
                             );
-
+                            
                             break;
                         }
 
@@ -484,19 +484,20 @@ void Scene::resolveCollisions() {
                                 normal =
                                     glm::normalize(normal);
 
-                            glm::vec3 reflected =
-                                glm::reflect(
-                                    birdVel,
-                                    normal
-                                );
+                            glm::vec3 impulse =
+                                normal * 20.0f
+                                + glm::vec3(0.0f, 10.0f, 0.0f);
 
                             m_bird->setVelocity(
-                                reflected * 0.7f
+                                impulse
                             );
 
-                            g_Sound.play(
-                                "assets/audio/cartoonish-stone-sfx-slow.wav"
-                            );
+                            if (m_collisionSoundCooldown <= 0.0f) {
+                                g_Sound.play(
+                                    "assets/audio/cartoonish-stone-sfx-slow.wav"
+                                );
+                                m_collisionSoundCooldown = 1.21f;
+                            }
 
                             float speed =
                                 glm::length(birdVel);
@@ -505,7 +506,8 @@ void Scene::resolveCollisions() {
                                 birdPos,
                                 speed * speed,
                                 speed,
-                                speed * speed * 0.2f
+                                speed * speed * 0.2f,
+                                Colors::TRUNK
                             );
 
                             break;
@@ -540,27 +542,26 @@ void Scene::resolveCollisions() {
                         normal =
                             glm::normalize(normal);
 
-                    glm::vec3 reflected =
-                        glm::reflect(
-                            birdVel,
-                            normal
-                        );
+                    glm::vec3 impulse =
+                        normal * 20.0f
+                        + glm::vec3(0.0f, 10.0f, 0.0f);
 
                     m_bird->setVelocity(
-                        reflected * 0.7f
+                        impulse
                     );
 
-                    g_Sound.play(
-                        "assets/audio/cartoonish-stone-sfx-slow.wav"
-                    );
+                    if (m_collisionSoundCooldown <= 0.0f) {
+                        g_Sound.play(
+                            "assets/audio/cartoonish-stone-sfx-slow.wav"
+                        );
+                        m_collisionSoundCooldown = 1.2f;
+                    }
 
+                    //  ----------------------------------------
                     int t;
                     if (obj->getType() == StaticObjectType::ROCK_7)         t = 7;
                     else if (obj->getType() == StaticObjectType::ROCK_8)    t = 8;
                     else                                                    t = 9;
-
-                    printf("rocha_%d::colisão em (x, y, z) = (%f, %f, %f)\n",
-                        t, normal.x, normal.y, normal.z);
 
                     float speed =
                         glm::length(birdVel);
@@ -569,7 +570,8 @@ void Scene::resolveCollisions() {
                         birdPos,
                         speed * speed,
                         speed,
-                        speed * speed * 0.2f
+                        speed * speed * 0.2f,
+                        Colors::ROCK
                     );
                 }
 
@@ -595,22 +597,23 @@ void Scene::resolveCollisions() {
                         normal =
                             glm::normalize(normal);
 
-                    glm::vec3 reflected =
-                        glm::reflect(
-                            birdVel,
-                            normal
-                        );
+                    glm::vec3 impulse =
+                        normal * 20.0f
+                        + glm::vec3(0.0f, 10.0f, 0.0f);
 
                     m_bird->setVelocity(
-                        reflected * 0.3f
+                        impulse
                     );
 
                     printf("casa::colisão em (x, y, z) = (%f, %f, %f)\n",
                         normal.x, normal.y, normal.z);
 
-                    g_Sound.play(
-                        "assets/audio/cartoonish-stone-sfx-slow.wav"
-                    );
+                    if (m_collisionSoundCooldown <= 0.0f) {
+                        g_Sound.play(
+                            "assets/audio/cartoonish-stone-sfx-slow.wav"
+                        );
+                        m_collisionSoundCooldown = 1.2f;
+                    }
 
                     float speed =
                         glm::length(birdVel);
@@ -619,7 +622,8 @@ void Scene::resolveCollisions() {
                         birdPos,
                         speed * speed,
                         speed,
-                        speed * speed * 0.2f
+                        speed * speed * 0.2f,
+                        Colors::ROCK
                     );
                 }
 
@@ -655,11 +659,19 @@ void Scene::resolveCollisions() {
                         birdVel * 0.8f
                     );
 
+                    if (m_collisionSoundCooldown <= 0.0f) {
+                        g_Sound.play(
+                            "assets/audio/crushing-leafs-cinematic-fx_E_minor.wav"
+                        );
+                        m_collisionSoundCooldown = 1.2f;
+                    }
+
                     spawnBurst(
                         birdPos,
                         speed * speed,
                         speed,
-                        speed * speed * 0.1f
+                        speed * speed * 0.1f,
+                        Colors::TREE
                     );
                 }
 
@@ -786,21 +798,19 @@ void Scene::resolveCollisions() {
         {
             printf("Colisão de carta com mailbox!\n");
 
-            m_letterState =
-                LetterState::OnGround;
+            m_letterState = LetterState::OnGround;
 
-            m_letter->setPosition(
-                m_mailbox->getPosition()
-                +
-                glm::vec3(0.0f, 5.0f, 0.0f)
-            );
+            glm::vec3 mailboxPos =
+                m_mailbox->getPosition();
 
             m_letter->setGroundPos(
                 glm::vec2(
-                    m_mailbox->getPosition().x,
-                    m_mailbox->getPosition().z
+                    mailboxPos.x,
+                    mailboxPos.z
                 )
             );
+
+            m_letter->setFloatHeight(6.0f);
 
             m_letterVelocity =
                 glm::vec3(0.0f);
@@ -820,7 +830,8 @@ void Scene::resolveCollisions() {
                 glm::vec3(0.0f, 2.0f, 0.0f),
                 80,
                 5.0f,
-                1.2f
+                1.2f,
+                Colors::MAIL
             );
 
             printf(
@@ -874,7 +885,8 @@ void Scene::resolveCollisions() {
                     p,
                     count,
                     speed,
-                    lifetime
+                    lifetime,
+                    Colors::RING
                 );
             }
         }
@@ -990,11 +1002,14 @@ void Scene::draw(Renderer& r) {
     
 }
 
+
+
 void Scene::spawnBurst(
     const glm::vec3& position,
     int count,
     float speed,
-    float lifetime
+    float lifetime,
+    const glm::vec4& color
 )
 {
     m_particleBursts.push_back(
@@ -1002,7 +1017,8 @@ void Scene::spawnBurst(
             position,
             count,
             speed,
-            lifetime
+            lifetime,
+            color
         )
     );
 }
@@ -1015,9 +1031,9 @@ void Scene::spawnBurst(
  */
 void Scene::buildTerrain() {
     m_terrain = std::make_unique<Terrain>(
-        130.5,
-        90.5,
-        6.0f
+        180.0f,
+        180.0f,
+        4.0f
     );
 
     assert(m_terrain);
@@ -1201,7 +1217,7 @@ std::vector<StaticObjectDef> Scene::generateTrees(int count) {
                 s*0.2f,
 
                 //  altura: s
-                5.0f * s
+            7.0f * s
             );
 
         //  tag: define a consequência da colisão
@@ -1276,8 +1292,7 @@ std::vector<StaticObjectDef> Scene::generateBushes(int count) {
     const ModelDefinition* bushObjects[] =
     {
         &Assets::STYLED_SHRUB,
-        &Assets::SHRUB,
-        &Assets::BUSH
+        // &Assets::SHRUB
     };
     
 
@@ -1315,7 +1330,7 @@ std::vector<StaticObjectDef> Scene::generateBushes(int count) {
         )   continue;
 
         //  seleciona o modelo
-        auto model = bushObjects[rng()%3];
+        auto model = bushObjects[rng()%1];
 
         //  adiciona ao vetor de resposta
         out.emplace_back(
@@ -1386,11 +1401,12 @@ std::vector<StaticObjectDef> Scene::generateRocks(int count) {
         //  ROCK_9::
         //      colisor cilíndrico (centro, r, h)
         //      com tag `ColliderTag::Rock`
-        auto rock_9_collider =  std::make_shared<CylindricalCollider>(
-            glm::vec3(0.0f, 0.0f, 0.0f),
-            0.2f * s,
-            6.0f * s
-        );
+        auto rock_9_collider =
+            std::make_shared<CylindricalCollider>(
+                glm::vec3(0.0f),
+                1.1f,
+                4.7f
+            );
         rock_9_collider->tag = ColliderTag::Rock;
 
         //  ROCK_8::
@@ -1398,20 +1414,14 @@ std::vector<StaticObjectDef> Scene::generateRocks(int count) {
         //      com tag `ColliderTag::Rock`
         auto rock_8_collider =  std::make_shared<CylindricalCollider>(
             glm::vec3(0.0f, 0.0f, 0.0f),
-            0.2f * s,
-            6.0f * s
+            2.0f * s,
+            4.0f * s
         );
         rock_8_collider->tag = ColliderTag::Rock;
 
-
-
-        // Colisor esférico: centro levemente acima do chão, raio 3
-        auto collider =
-            std::make_shared<SphereCollider>(
-                glm::vec3(0.0f),
-                2.0f * s
-            );
-        collider->tag = ColliderTag::Rock;
+        auto collider = t == StaticObjectType::ROCK_8
+            ? rock_8_collider
+            : rock_9_collider;
 
         float lake = lakeDistance(x, z);
         if (lake < 1.5f || lake > 2.0f) continue;
@@ -1439,13 +1449,13 @@ std::vector<StaticObjectDef> Scene::generateRocks(int count) {
         float s = scale(rng);
 
         float lake = lakeDistance(x, z);
-        if (lake > 0.6f) continue;
+        if (lake > 0.6f) { i--; continue; }
 
         auto collider =
             std::make_shared<CylindricalCollider>(
                 glm::vec3(0.0f),
-                2.0f * s,
-                s
+                2.5f * s,
+                2.0f * s
             );
         collider->tag = ColliderTag::Rock;
 
@@ -1455,7 +1465,8 @@ std::vector<StaticObjectDef> Scene::generateRocks(int count) {
                 .type       = StaticObjectType::ROCK_7,
                 .position   = glm::vec3(x, m_terrain->getHeight(x, z), z),
                 .rotation   = glm::vec3(0.0f, r, 0.0f),
-                .scale      = glm::vec3(s, s, s)
+                .scale      = glm::vec3(s, s, s),
+                .colliders  = { collider }
             }
         );
     }
@@ -1638,79 +1649,54 @@ void Scene::buildButterflyNPCs() {
 
 void Scene::buildDuckNPCs() {
     int count = 6;
-    // Gerador aleatório e distribuição para variações
-    std::mt19937 rng(42);
-    std::uniform_real_distribution<float> e(-3.0f, 3.0f);
 
-    // Pontos base do caminho (Y fixo)
+    // Gerador aleatório e distribuição com variação maior
+    std::mt19937 rng(42);
+    std::uniform_real_distribution<float> e(-12.0f, 12.0f);  // afasta mais os patos entre si
+
+    // Centro do lago (elíptico) no plano XZ
+    const glm::vec2 center(-30.0f, 0.0f);
+
+    // Pontos base definem um percurso elíptico/oval dentro do lago
+    // (todos com Y fixo entre -1 e 1)
     std::vector<glm::vec3> basePoints = {
-        glm::vec3( 90.0f, -1.0f,  29.0f),
-        glm::vec3( 55.0f, -1.0f,  42.0f),
-        glm::vec3(-15.0f, -1.0f, -48.0f),
-        glm::vec3(-90.0f,  1.0f, -30.0f),
-        glm::vec3(-135.0f, 1.0f,  13.0f),
-        glm::vec3(-68.0f, -1.0f,  30.0f),
-        glm::vec3( 70.0f,  1.0f,  40.0f),
-        glm::vec3(125.0f, -1.0f,  -2.0f)
+        // Início no lado leste
+        glm::vec3(center.x + 50.0f, -3.5f, center.y +  0.0f),
+        // Norte
+        glm::vec3(center.x + 30.0f,  -3.0f, center.y + 40.0f),
+        // Oeste
+        glm::vec3(center.x - 40.0f,  -3.0f, center.y + 30.0f),
+        // Sudoeste
+        glm::vec3(center.x - 50.0f, -3.5f, center.y - 20.0f),
+        // Sul
+        glm::vec3(center.x - 10.0f,  -3.0f, center.y - 45.0f),
+        // Sudeste
+        glm::vec3(center.x + 40.0f,  -3.0f, center.y - 30.0f),
+        // Fecha o ciclo (volta ao primeiro)
+        glm::vec3(center.x + 50.0f, -3.5f, center.y +  0.0f)
     };
 
     for (int i = 0; i < count; ++i) {
         auto path = std::make_shared<BezierPath>();
 
-        // Para cada ponto base, adiciona pequeno deslocamento em X e Z
+        // Para cada ponto base, adiciona um deslocamento aleatório em X e Z
         for (const auto& pt : basePoints) {
             float dx = e(rng);
             float dz = e(rng);
-            glm::vec3 newPt = pt + glm::vec3(dx, 0.0f, dz); // Y inalterado
+            glm::vec3 newPt = pt + glm::vec3(dx, 0.0f, dz);
             path->addPoint(newPt);
         }
 
-        // Pequena variação na escala (opcional)
-        float scaleFactor = 3.0f + e(rng) * 0.2f;
+        // Variação na escala (para dar diversidade)
+        float s = 0.5f + abs(e(rng)) * 0.1f;
+
         auto duck = std::make_shared<DuckNPC>(
             path,
-            glm::vec3(0.0f),   // posição inicial (será sobrescrita)
-            glm::vec3(0.0f),   // rotação calculada pelo update
-            glm::vec3(scaleFactor)
+            glm::vec3(0.0f),  // posição inicial (será sobrescrita)
+            glm::vec3(0.0f),  // rotação calculada pelo update
+            glm::vec3(s)
         );
 
         m_duckNPCs.push_back(duck);
     }
-}
-
-void Scene::buildCarpNPCs()
-{
-//     BezierPath path;
-
-//     path.addPoint(glm::vec3(-20,1,-15));
-//     path.addPoint(glm::vec3(-10,3, 20));
-//     path.addPoint(glm::vec3( 10,3, 20));
-//     path.addPoint(glm::vec3( 20,1,-15));
-//     path.addPoint(glm::vec3( 10,2,-25));
-//     path.addPoint(glm::vec3(-10,2,-25));
-//     path.addPoint(glm::vec3(-20,1,-15));
-
-//     for(int i = 0; i < 5; i++)
-//     {
-//         auto carp =
-//             std::make_shared<CarpNPC>(
-//                 glm::vec3(
-//                     i * 2.0f,
-//                     0.0f,
-//                     i * 1.5f
-//                 ),
-//                 glm::vec3(0.0f),
-//                 glm::vec3(1.5f)
-//             );
-
-//         carp->setPath(
-//             std::make_shared<BezierPath>(
-//                 path
-//             )
-//         );
-
-//         m_carpNPCs.push_back(
-//             carp
-//         );
-//     }
 }

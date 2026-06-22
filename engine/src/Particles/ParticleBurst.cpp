@@ -7,6 +7,13 @@ float RandomFloat(float a, float b) {
     return a + r;
 };
 
+glm::vec3 randomUnitVector() {
+    float x = RandomFloat(-1.0f, 1.0f);
+    float y = RandomFloat(-1.0f, 1.0f);
+    float z = RandomFloat(-1.0f, 1.0f);
+    return glm::normalize(glm::vec3(x, y, z));
+}
+
 const std::vector<Particle>& ParticleBurst::particles() const
 {
     return m_particles;
@@ -38,47 +45,29 @@ ParticleBurst::ParticleBurst(
     const glm::vec3& origin,
     size_t count,
     float speed,
-    float lifetime
+    float lifetime,
+    const glm::vec4& color
 )
 {
-    m_particles.reserve(count);
-
-    for(size_t i=0;i<count;i++)
+    for(size_t i = 0; i < count; ++i)
     {
-        glm::vec3 dir;
-
-        while(glm::length(dir) < 0.0001f)
-        {
-            dir = glm::vec3(
-                RandomFloat(-1.f,1.f),
-                RandomFloat(-1.f,1.f),
-                RandomFloat(-1.f,1.f)
-            );
-        }
-
-        dir = glm::normalize(dir);
+        glm::vec3 dir = randomUnitVector();
 
         Particle p;
 
         p.position = origin;
         p.velocity = dir * speed;
 
+        p.color = color;
+
         p.life = lifetime;
         p.maxLife = lifetime;
 
-        p.size = 0.1f;
-
-        p.color =
-            glm::vec4(
-                1.f,
-                0.8f,
-                0.2f,
-                1.f
-            );
+        p.size = 0.2f;
 
         m_particles.push_back(p);
     }
-};
+}
 
 void ParticleBurst::update(float dt)
 {

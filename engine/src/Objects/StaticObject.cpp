@@ -73,7 +73,7 @@ void StaticObject::updateColliders() {
             case ColliderType::Cylinder: {
                 auto cylinder = std::dynamic_pointer_cast<CylindricalCollider>(coll);
                 if (cylinder) {
-                    cylinder->center += m_position;
+                    cylinder->center = m_position;
                 }
                 break;
             }

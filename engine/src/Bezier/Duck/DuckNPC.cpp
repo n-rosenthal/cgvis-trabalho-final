@@ -2,16 +2,21 @@
 
 void DuckNPC::update(float dt)
 {
-    // Atualiza a posição ao longo do caminho
     PathFollower::update(dt);
 
-    // Obtém posição e direção do caminho
     m_position = getPathPosition();
     glm::vec3 fwd = getPathForward();
 
-    // Calcula os ângulos de rotação (yaw e pitch) a partir do vetor forward
-    float yaw   = atan2(fwd.z, fwd.x);
-    float pitch = atan2(fwd.y, sqrt(fwd.x * fwd.x + fwd.z * fwd.z));
+    if (glm::length(fwd) < 0.001f) return;
+
+    // Corrige o yaw: alinha o eixo +Z do modelo com a direção do movimento
+    float yaw = atan2(fwd.x, fwd.z);   // ← principal alteração
+    yaw += glm::pi<float>();
+
+    // Se ainda estiver de costas, descomente a linha abaixo:
+    yaw += glm::pi<float>();
+
+    float pitch = atan2(fwd.y, sqrt(fwd.x*fwd.x + fwd.z*fwd.z));
 
     m_rotation = glm::vec3(-pitch, yaw, 0.0f);
 }

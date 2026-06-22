@@ -11,7 +11,8 @@ public:
         const glm::vec3& origin,
         size_t count,
         float speed,
-        float lifetime
+        float lifetime,
+        const glm::vec4& color = glm::vec4(1.0f)
     );
 
     /**
