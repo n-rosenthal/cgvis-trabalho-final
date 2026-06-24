@@ -4,7 +4,9 @@
 
 ## Descrição da Aplicação
 O projeto consiste em um jogo 3D desenvolvido em C++ utilizando OpenGL. O jogador controla um pássaro em um ambiente virtual composto por terreno, vegetação, rochas e outros elementos da cena.
+
 O objetivo é explorar o cenário, atravessar anéis espalhados pelo mapa e entregar a carta em sua destinação final. 
+
 O projeto utiliza conceitos fundamentais de Computação Gráfica, incluindo modelagem, transformações geométricas, iluminação, texturização, sistemas de colisões e renderização em tempo real.
 
 ---
