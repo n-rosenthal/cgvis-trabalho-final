@@ -148,3 +148,22 @@ void RingDrawable::draw(const DrawContext& ctx) {
 #+end_src
 
 e os anéis continuaram funcionando, na primeira tentativa!!
+
+* Parte 2: /na qual pedimos ajuda ao amigo para procurar outras funções/
+Ao indagar "quais outras funções você acredita que poderiam também ser proibitivas em um trabalho de Computação Gráfica?", ChatGPT sugeriu uma série de funções que deverão ser investigadas com =ripgrep=:
+
+#+begin_example verbatim
+rg -n \
+"gluLookAt|gluOrtho2D|gluPickMatrix|gluProject|gluUnProject|\
+glm::lookAt|glm::ortho|glm::perspective|glm::pickMatrix|\
+glm::translate|glm::scale|glm::rotate|\
+glm::inverse|glm::transpose|\
+glm::eulerAngle|glm::yawPitchRoll|\
+glm::quat|glm::toMat4|glm::mat4_cast|\
+glm::affineInverse|glm::inverseTranspose|\
+glm::project|glm::unProject|\
+glm::frustum" \
+.
+#+end_example
+
+e com isto descobrimos que o /header/ de =Drawable= ainda utilizava =glm::rotate=, =glm::translate= etc. O método =Drawable::model()= foi corrigido.

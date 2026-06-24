@@ -88,8 +88,6 @@ Camera g_Camera;
 // Classe `Ring`: anéis através dos quais o pássaro deve voar
 #include "Objects/Ring.hpp"
 
-// Class `Building`: construções/edifícios retangulares
-#include "Objects/Building.hpp"
 
 //  Sistema de Colisões
 #include "Collision/CollisionSystem.hpp"

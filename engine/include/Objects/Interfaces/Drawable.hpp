@@ -114,13 +114,23 @@ public:
     }
 
     virtual void model(const DrawContext& ctx) {
-        glm::mat4 m(1.0f);
+        glm::mat4 T = Matrix_Translate(
+            m_position.x,
+            m_position.y,
+            m_position.z
+        );
 
-        m = glm::translate(m, m_position);
-        m = glm::rotate(m, m_rotation.y, glm::vec3(0,1,0));
-        m = glm::rotate(m, m_rotation.x, glm::vec3(1,0,0));
-        m = glm::rotate(m, m_rotation.z, glm::vec3(0,0,1));
-        m = glm::scale(m, m_scale);
+        glm::mat4 Ry = Matrix_Rotate_Y(m_rotation.y);
+        glm::mat4 Rx = Matrix_Rotate_X(m_rotation.x);
+        glm::mat4 Rz = Matrix_Rotate_Z(m_rotation.z);
+
+        glm::mat4 S = Matrix_Scale(
+            m_scale.x,
+            m_scale.y,
+            m_scale.z
+        );
+
+        glm::mat4 m = T * Ry * Rx * Rz * S;
 
         glUniformMatrix4fv(
             ctx.model_uniform,

@@ -42,7 +42,6 @@
 //  Objetos dinâmicos: NPCs
 #include "Bezier/BezierMover.hpp"
 #include "Bezier/Butterfly/ButterflyNPC.hpp"
-#include "Bezier/Carp/CarpNPC.hpp"
 #include "Bezier/Duck/DuckNPC.hpp"
 
 //  Partículas
