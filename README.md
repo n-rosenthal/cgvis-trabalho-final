@@ -1,6 +1,6 @@
 # Trabalho Final de Computação Gráfica: *Bird Carrier Simulator*
 
-![./docs/imagens/bird-carrier-simulator-1.png]
+![pássaro controlado pelo usuário sobrevoando o terreno](./docs/imagens/bird-carrier-simulator-1.png)
 
 ## Descrição da Aplicação
 O projeto consiste em um jogo 3D desenvolvido em C++ utilizando OpenGL. O jogador controla um pássaro em um ambiente virtual composto por terreno, vegetação, rochas e outros elementos da cena.
@@ -30,22 +30,7 @@ Fases de desenvolvimento e aspectos do projeto implementados pela dupla:
 * Documentação e validação do projeto.
 
 ---
-
-## Imagens
-
-### Cena principal
-
-![Cena principal](images/gameplay1.png)
-
-### Navegação pelo cenário
-
-![Gameplay](images/gameplay2.png)
-
----
-![./docs/imagens/bird-carrier-simulator-2.png]
-
 ## Manual de Utilização
-
 ### Objetivo
 
 Controlar o pássaro através do cenário, atravessar os anéis distribuídos pelo mapa e localizar a levar a carta de sua posição inicial até a caixa do correio, que se encontra ao final do caminho dos anéis. Arremessar a carta no local esperado.
@@ -63,11 +48,9 @@ Controlar o pássaro através do cenário, atravessar os anéis distribuídos pe
 | G      | Soltar a carta     |
 | Esc    | Encerrar aplicação |
 
-> Ajuste a tabela acima para refletir exatamente os controles implementados no projeto.
-
 ---
 
-![./docs/imagens/bird-carrier-simulator-3.png]
+![pássaro sobre o lago central](./docs/imagens/bird-carrier-simulator-2.png)
 
 ## Tecnologias Utilizadas
 
@@ -130,7 +113,7 @@ ou o executável correspondente gerado pelo sistema operacional.
 
 ---
 
-![./docs/imagens/bird-carrier-simulator-4.png]
+![pássaro próximo à casa e à caixa do correio, objetivo final](./docs/imagens/bird-carrier-simulator-4.png)
 
 
 ## Funcionalidades Implementadas
@@ -149,3 +132,6 @@ ou o executável correspondente gerado pelo sistema operacional.
 * Curvas de Bézier para determinação do percurso dos NPCs no jogo;
 * Interface de jogo básica, com tela de carregamento (enquanto são carregadas as texturas, modelos, shaders etc), menu principal simples; e
 * Lógica de jogo razoável, ainda que simples, com início, meio e fim.
+
+
+![pássaro sobrevoando o lago, reflexo solar](./docs/imagens/bird-carrier-simulator-3.png)
