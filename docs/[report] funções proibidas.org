@@ -1,0 +1,150 @@
+* Utilizando =ripgrep= para identificar usos das funções
+#+begin_example verbatim
+nrdc@nrdc:~/org/roam/projects/academia/computer-graphics/src/trabalho-final/cgvis-trabalho-final/engine/src$ rg -n \
+"gluLookAt|gluOrtho2D|gluPickMatrix|gluProject|gluUnProject|glm::lookAt|glm::ortho|glm::perspective|glm::pickMatrix|glm::rotate|glm::scale|glm::translate" \
+.
+./Objects/Building.cpp
+24:        glm::translate(
+
+./Objects/Drawables/RingDrawable.cpp
+85:    model = glm::translate(model, m_position);
+92:    model = glm::scale(model, glm::vec3(m_animScale * pulse));
+
+./main.cpp
+45:#include <glm/gtc/matrix_transform.hpp> // glm::lookAt, glm::translate, etc.
+
+./Bezier/Carp/CarpDrawable.cpp
+77:        glm::translate(
+88:        glm::rotate(
+97:        glm::rotate(
+106:        glm::scale(
+#+end_example
+
+A maioria das correções é trivial porque os objetos que utilizavam essas funções não chegaram a fazer parte da versão final do jogo. 
+
+=CarpDrawable= é a implementação da /interface/ =Drawable= (isto é, a parte /desenhável/ ou /renderizável em cena virtual/ de =CarpNPC=, a primeira tentativa de um NPC cujo movimento baseava-se sobre curva de Bézier). =CarpNPC=, entretanto, não chegou à fase final do desenvolvimento *porque era um modelo extremamente pesado*, com => 90k= triângulos. Então, deletamos =CarpDrawable{.cpp, .hpp}= e =CarpNPC{.cpp, .hpp}=, pois são artefatos do desenvolvimento e já deveriam ter sido excluídos.
+
+=Building.cpp=, igualmente, não chegou à fase final do desenvolvimento. Correspondia as nossas primeiras tentativas de produzir modelos para construir edifícios, castelos etc. Nossa abordagem seguiu outro caminho; este é um artefato do desenvolvimento.
+
+=main.cpp= inclui a biblioteca de transformações matriciais e comenta as funções =glm::lookAt=, =glm::translate=. Entretanto, essas funções não são chamadas em =main.cpp=. Tanto o comentário quanto a diretiva serão excluídos.
+
+Por fim, =RingDrawable.cpp= utiliza sim as funções =glm::translate()= e =glm::scale()=.
+Como os anéis faziam parte de nossa referência, foram uma das primeiras estruturas não triviais que tentamos implementar. São /billboards/ através dos quais o pássaro controlado pelo jogador deve atravessar. Deve ser reimplementado!
+
+* Limpando =RingDrawable.cpp=
+Como mencionado anteriormente para o caso de =CarpDrawable=, a /interface/ =Drawable= define a estrutura básica necessária para que um objeto possa ser desenhado na cena virtual, incluindo geração de malha, computação de normais, configuração de /buffers/ OpenGL e construção da matriz de modelagem.
+
+#+begin_src cpp
+/**
+*   Interface `Drawable`
+*   Um objeto que implementa a interface `Drawable` é um objeto que
+*   possui os campos e os métodos necessários para ser renderizado
+*   na cena virtual.
+*
+*   1.  campo `buffers` (struct `Buffers`) para armazenar buffers OpenGL
+*   2.  campo `vertices` (vetor de structs `Vertex`) para armazenar os vértices da malha de triângulos do objeto
+*   3.  campo `indices` (vetor de índices aos triângulos)
+*   4.  método  `buildMesh()`: geração da malha de triângulos
+*   5.  método  `computeNormals()`: computação dos vetores normais para todos os vértices
+*   6.  método  `setupBuffers()`: setting e envio dos buffers aos shaders OpenGL
+*   7.  método `generate()`: wrapper que invoca os métodos [4, 6] sequencialmente
+*   8.  método `model()`: modelagem, idêntica a todos os objetos
+*   9.  método `draw()`: único a cada objeto
+*/
+#+end_src
+
+A inspeção do código com =ripgrep= revelou que as únicas ocorrências remanescentes de *funções proibidas* na versão final do projeto encontram-se em =RingDrawable::draw()=, método responsável pela renderização dos anéis presentes na cena. Eis =RingDrawable::draw()=:
+
+#+begin_src cpp
+void RingDrawable::draw(const DrawContext& ctx) {
+    float pulse = 1.0f + sin(m_pulseTime * 4.0f) * 0.08f;
+
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, m_position);
+
+    // Billboard: orienta o anel para a câmera
+    glm::mat4 billboard = glm::inverse(m_view);
+    billboard[3] = glm::vec4(0, 0, 0, 1);   // remove translação
+    model *= billboard;
+
+    model = glm::scale(model, glm::vec3(m_animScale * pulse));
+
+    glUniformMatrix4fv(ctx.model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(ctx.object_id_uniform, ctx.object_id);
+
+    glBindVertexArray(m_buffers.VAO);
+    glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(0);
+};
+#+end_src
+
+O método executa três operações principais sobre a matriz de modelagem do anel:
+1. Translação para a posição desejada na cena;
+2. Aplicação da orientação de billboard, fazendo o anel permanecer voltado para a câmera; e
+3. Escalamento para produzir a animação pulsante.
+
+Como já vimos, chamadas problemáticas são precisamente =glm::translate()= e =glm::scale()=, utilizadas para construir a matriz de modelagem. O restante da função consiste apenas na configuração de uniformes e na emissão dos comandos de desenho para o OpenGL. Lançando mão de =matrices.h=, a limpeza é trivial:
+
+#+begin_src cpp
+void RingDrawable::draw(const DrawContext& ctx) {
+    //  animação de pulsação para o billboard
+    float pulse = 1.0f + sin(m_pulseTime * 4.0f) * 0.08f;
+
+    //  a escala atual é o produto escala da animação
+    //  pelo ponto na onda em que estamos
+    float scale = m_animScale * pulse;
+
+    //  Definição de uma matriz de translação
+    //      para a posição (x, y, z) desejada  
+    glm::mat4 T = Matrix_Translate(m_position.x, m_position.y, m_position.z);
+
+    //  R^{-1} = R^{T}
+    //  podemos resolver assim o problema sem ter que adicionar
+    //  a câmera como um parâmetro para o método
+    glm::mat4 billboard =
+        Matrix(
+            m_view[0][0], m_view[0][1], m_view[0][2], 0.0f,
+            m_view[1][0], m_view[1][1], m_view[1][2], 0.0f,
+            m_view[2][0], m_view[2][1], m_view[2][2], 0.0f,
+            0.0f,         0.0f,         0.0f,         1.0f
+        );
+
+    //  definimos uma matriz de escalonamento homogêneo
+    glm::mat4 S = Matrix_Scale(scale, scale, scale);
+
+    //  aplicamos as matrizes da direita para esquerda
+    glm::mat4 model =
+        T * billboard * S;
+
+    //  config. uniforme do modelo
+    glUniformMatrix4fv(
+        ctx.model_uniform,
+        1,
+        GL_FALSE,
+        glm::value_ptr(model)
+    );
+
+    glUniform1i(
+        ctx.object_id_uniform,
+        ctx.object_id
+    );
+
+    //  liga vértices
+    glBindVertexArray(
+        m_buffers.VAO
+    );
+
+    //  desenha
+    glDrawElements(
+        GL_TRIANGLES,
+        m_indexCount,
+        GL_UNSIGNED_INT,
+        nullptr
+    );
+
+    //  desliga
+    glBindVertexArray(0);
+}
+#+end_src
+
+e os anéis continuaram funcionando, na primeira tentativa!!

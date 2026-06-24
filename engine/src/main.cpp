@@ -42,7 +42,6 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec4.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp> // glm::lookAt, glm::translate, etc.
 
 // Headers da biblioteca para carregar modelos obj
 #include <tiny_obj_loader.h>

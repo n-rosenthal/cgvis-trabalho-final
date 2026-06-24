@@ -79,22 +79,61 @@ void RingDrawable::setupBuffers() {
 }
 
 void RingDrawable::draw(const DrawContext& ctx) {
+    //  animação de pulsação para o billboard
     float pulse = 1.0f + sin(m_pulseTime * 4.0f) * 0.08f;
 
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, m_position);
+    //  a escala atual é o produto escala da animação
+    //  pelo ponto na onda em que estamos
+    float scale = m_animScale * pulse;
 
-    // Billboard: orienta o anel para a câmera
-    glm::mat4 billboard = glm::inverse(m_view);
-    billboard[3] = glm::vec4(0, 0, 0, 1);   // remove translação
-    model *= billboard;
+    //  Definição de uma matriz de translação
+    //      para a posição (x, y, z) desejada  
+    glm::mat4 T = Matrix_Translate(m_position.x, m_position.y, m_position.z);
 
-    model = glm::scale(model, glm::vec3(m_animScale * pulse));
+    //  R^{-1} = R^{T}
+    //  podemos resolver assim o problema sem ter que adicionar
+    //  a câmera como um parâmetro para o método
+    glm::mat4 billboard =
+        Matrix(
+            m_view[0][0], m_view[0][1], m_view[0][2], 0.0f,
+            m_view[1][0], m_view[1][1], m_view[1][2], 0.0f,
+            m_view[2][0], m_view[2][1], m_view[2][2], 0.0f,
+            0.0f,         0.0f,         0.0f,         1.0f
+        );
 
-    glUniformMatrix4fv(ctx.model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    glUniform1i(ctx.object_id_uniform, ctx.object_id);
+    //  definimos uma matriz de escalonamento homogêneo
+    glm::mat4 S = Matrix_Scale(scale, scale, scale);
 
-    glBindVertexArray(m_buffers.VAO);
-    glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, nullptr);
+    //  aplicamos as matrizes da direita para esquerda
+    glm::mat4 model =
+        T * billboard * S;
+
+    //  config. uniforme do modelo
+    glUniformMatrix4fv(
+        ctx.model_uniform,
+        1,
+        GL_FALSE,
+        glm::value_ptr(model)
+    );
+
+    glUniform1i(
+        ctx.object_id_uniform,
+        ctx.object_id
+    );
+
+    //  liga vértices
+    glBindVertexArray(
+        m_buffers.VAO
+    );
+
+    //  desenha
+    glDrawElements(
+        GL_TRIANGLES,
+        m_indexCount,
+        GL_UNSIGNED_INT,
+        nullptr
+    );
+
+    //  desliga
     glBindVertexArray(0);
 }
