@@ -24,7 +24,6 @@
 #include "Particles/ParticleBurst.hpp"
 
 #include "Bezier/Butterfly/ButterflyNPC.hpp"
-#include "Bezier/Carp/CarpNPC.hpp"
 #include "Bezier/Duck/DuckNPC.hpp"
 
 #include "Renderer/ShaderLoader.hpp"

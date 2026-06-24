@@ -2,8 +2,9 @@
 #include <glm/common.hpp>
 #include <algorithm>
 #include <float.h> 
+#include "matrices.h"
 
-#include "Collision/CollisionSystem.hpp"
+#include "Collision/collisions.hpp"
 
 #include "Collision/Collider.hpp"
 #include "Collision/SphereCollider.hpp"
@@ -154,7 +155,7 @@ bool CollisionSystem::sphereSphere(
     const SphereCollider& a,
     const SphereCollider& b
 ) {
-    return glm::distance(a.center, b.center) <= a.radius + b.radius;
+    return distance(a.center, b.center) <= a.radius + b.radius;
 }
 
 /**
@@ -166,10 +167,7 @@ bool CollisionSystem::sphereAABB(
 ) {
     glm::vec3 closestPoint;
 
-    closestPoint.x =
-        glm::clamp(
-            sphere.center.x,
-            box.minCorner.x,
+    closestPoint.x = glm::clamp(sphere.center.x, box.minCorner.x,
             box.maxCorner.x
         );
 
@@ -191,7 +189,7 @@ bool CollisionSystem::sphereAABB(
         sphere.center - closestPoint;
 
     float distanceSquared =
-        glm::dot(delta, delta);
+        dot(delta, delta);
 
     return distanceSquared <=
            sphere.radius * sphere.radius;
@@ -208,14 +206,14 @@ bool CollisionSystem::sphereCapsule(
     const CapsuleCollider& capsule
 ) {
     glm::vec3 ab = capsule.p1 - capsule.p0;
-    float ab2 = glm::dot(ab, ab);
+    float ab2 = dot(ab, ab);
     float t = 0.0f;
     if (ab2 > 1e-6f) {
-        t = glm::dot(sphere.center - capsule.p0, ab) / ab2;
+        t = dot(sphere.center - capsule.p0, ab) / ab2;
         t = glm::clamp(t, 0.0f, 1.0f);
     }
     glm::vec3 closestPoint = capsule.p0 + t * ab;
-    float dist = glm::distance(sphere.center, closestPoint);
+    float dist = distance(sphere.center, closestPoint);
     return dist <= sphere.radius + capsule.radius;
 }
 
@@ -235,7 +233,7 @@ bool CollisionSystem::aabbCapsule(
             float t = (float)i / STEPS;
             glm::vec3 point = p0 + t * (p1 - p0);
             glm::vec3 clamped = glm::clamp(point, aabb.minCorner, aabb.maxCorner);
-            float dist = glm::distance(point, clamped);
+            float dist = distance(point, clamped);
             if (dist < bestDist) {
                 bestDist = dist;
                 best = point;
@@ -244,9 +242,9 @@ bool CollisionSystem::aabbCapsule(
         return best;
     };
 
-    glm::vec3 closest = closestPointOnSegmentToAABB(capsule.p0, capsule.p1);
-    glm::vec3 clamped = glm::clamp(closest, aabb.minCorner, aabb.maxCorner);
-    float dist = glm::distance(closest, clamped);
+    glm::vec3 closest   = closestPointOnSegmentToAABB(capsule.p0, capsule.p1);
+    glm::vec3 clamped   = glm::clamp(closest, aabb.minCorner, aabb.maxCorner);
+    float dist          = distance(closest, clamped);
     return dist <= capsule.radius;
 }
 
@@ -260,11 +258,11 @@ bool CollisionSystem::capsuleCapsule(
     glm::vec3 u = a.p1 - a.p0;
     glm::vec3 v = b.p1 - b.p0;
     glm::vec3 w = a.p0 - b.p0;
-    float a_ = glm::dot(u, u);
-    float b_ = glm::dot(u, v);
-    float c_ = glm::dot(v, v);
-    float d_ = glm::dot(u, w);
-    float e_ = glm::dot(v, w);
+    float a_ = dot(u, u);
+    float b_ = dot(u, v);
+    float c_ = dot(v, v);
+    float d_ = dot(u, w);
+    float e_ = dot(v, w);
     float D = a_ * c_ - b_ * b_;
 
     float sc, tc;
@@ -282,7 +280,7 @@ bool CollisionSystem::capsuleCapsule(
     glm::vec3 closestA = a.p0 + sc * u;
     glm::vec3 closestB = b.p0 + tc * v;
 
-    float dist = glm::distance(closestA, closestB);
+    float dist = distance(closestA, closestB);
     return dist <= a.radius + b.radius;
 }
 
@@ -298,100 +296,38 @@ bool CollisionSystem::capsuleCapsule(
  * @return false, caso contrário
  */
 bool CollisionSystem::capsuleCylinder(const CapsuleCollider& a, const CylindricalCollider& b) {
-    // =========================================
     // Eixo do cilindro
-    // =========================================
+    glm::vec2 cylinderXZ(b.center.x, b.center.z);
+    glm::vec2 aXZ(a.p0.x, a.p0.z);
+    glm::vec2 bXZ(a.p1.x, a.p1.z);
 
-    glm::vec2 cylinderXZ(
-        b.center.x,
-        b.center.z
-    );
-
-    glm::vec2 aXZ(
-        a.p0.x,
-        a.p0.z
-    );
-
-    glm::vec2 bXZ(
-        a.p1.x,
-        a.p1.z
-    );
-
-    // =========================================
     // Ponto mais próximo do eixo do cilindro
     // ao segmento da cápsula (projeção XZ)
-    // =========================================
-
-    glm::vec2 ab = bXZ - aXZ;
-
-    float ab2 = glm::dot(ab, ab);
-
+    glm::vec2 ab    = bXZ - aXZ;
+    float ab2       = dot(ab, ab);
+    
     float t = 0.0f;
 
-    if (ab2 > 1e-6f)
-    {
-        t =
-            glm::dot(
-                cylinderXZ - aXZ,
-                ab
-            ) / ab2;
+    if (ab2 > 1e-6f) {
+        t = dot(cylinderXZ - aXZ, ab) / ab2;
 
-        t = glm::clamp(
-            t,
-            0.0f,
-            1.0f
-        );
+        t = glm::clamp(t, 0.0f, 1.0f);
     }
 
-    glm::vec2 closestXZ =
-        aXZ + t * ab;
+    glm::vec2 closestXZ = aXZ + t * ab;
 
-    // =========================================
     // Distância horizontal
-    // =========================================
-
-    float horizontalDistance =
-        glm::distance(
-            closestXZ,
-            cylinderXZ
-        );
-
-    if (
-        horizontalDistance >
-        a.radius + b.radius
-    )
-    {
-        return false;
-    }
-
-    // =========================================
+    float horizontalDistance = distance(closestXZ, cylinderXZ);
+    if (horizontalDistance > a.radius + b.radius) return false;
+    
     // Verificação vertical
-    // =========================================
+    float capsuleMinY = std::min(a.p0.y, a.p1.y) - a.radius;
+    float capsuleMaxY = std::max(a.p0.y, a.p1.y) + a.radius;
 
-    float capsuleMinY =
-        std::min(
-            a.p0.y,
-            a.p1.y
-        ) - a.radius;
-
-    float capsuleMaxY =
-        std::max(
-            a.p0.y,
-            a.p1.y
-        ) + a.radius;
-
-    float cylinderMinY =
-        b.center.y -
-        b.height * 0.5f;
-
-    float cylinderMaxY =
-        b.center.y +
-        b.height * 0.5f;
-
-    bool overlapY =
-        capsuleMaxY >= cylinderMinY &&
-        capsuleMinY <= cylinderMaxY;
-
+    float cylinderMinY  = b.center.y - b.height * 0.5f;
+    float cylinderMaxY  = b.center.y + b.height * 0.5f;
+    
+    bool overlapY       = capsuleMaxY >= cylinderMinY && capsuleMinY <= cylinderMaxY;
     return overlapY;
 }
 

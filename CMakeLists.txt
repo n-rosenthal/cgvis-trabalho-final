@@ -48,7 +48,7 @@ set(SOURCES
   engine/src/Terrain/Skybox.cpp
 
   # Sistema de colisão
-  engine/src/Collision/CollisionSystem.cpp
+  engine/src/Collision/collisions.cpp
 
   # Drawables: parte renderizável dos objetos
   engine/src/Objects/ObjDrawable.cpp
@@ -61,7 +61,6 @@ set(SOURCES
   engine/src/Game/Bird.cpp
   engine/src/Objects/Ring.cpp
   engine/src/Objects/ProceduralRock.cpp
-  engine/src/Objects/Building.cpp
   engine/src/Objects/Letter.cpp
   engine/src/Objects/Mailbox.cpp
 
@@ -70,8 +69,6 @@ set(SOURCES
   engine/src/Bezier/BezierMover.cpp
   engine/src/Bezier/Butterfly/ButterflyNPC.cpp
   engine/src/Bezier/Butterfly/ButterflyDrawable.cpp
-  engine/src/Bezier/Carp/CarpNPC.cpp
-  engine/src/Bezier/Carp/CarpDrawable.cpp
   engine/src/Bezier/Duck/DuckNPC.cpp
   engine/src/Bezier/Duck/DuckDrawable.cpp
 

@@ -7,7 +7,7 @@
 #include "Game/Scene.hpp"
 #include "Game/Renderer.hpp"
 #include "audio/AudioManager.hpp"
-#include "Collision/CollisionSystem.hpp"
+#include "Collision/collisions.hpp"
 
 #include <tuple>
 #include <algorithm>

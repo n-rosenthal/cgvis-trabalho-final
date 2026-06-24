@@ -415,9 +415,6 @@ inline glm::vec3 reflect(const glm::vec3& v, const glm::vec3& normal) {
 inline float length(const glm::vec3& v) {
     return norm(glm::vec4(v, 0.0f));
 }
-
-
-
 inline glm::vec3 horizontalNormalize(const glm::vec3& v, const glm::vec3& defaultDir = glm::vec3(1.0f, 0.0f, 0.0f)) {
     glm::vec3 horizontal = v;
     horizontal.y = 0.0f;
@@ -426,6 +423,10 @@ inline glm::vec3 horizontalNormalize(const glm::vec3& v, const glm::vec3& defaul
         return horizontal / len;
     else
         return defaultDir;
+}
+
+inline float distance(const glm::vec3& a, const glm::vec3& b) {
+    return length(a - b);
 }
 
 #endif // _MATRICES_H

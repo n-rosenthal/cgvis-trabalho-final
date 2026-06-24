@@ -90,7 +90,7 @@ Camera g_Camera;
 
 
 //  Sistema de Colisões
-#include "Collision/CollisionSystem.hpp"
+#include "Collision/collisions.hpp"
 
 
 #include "Game/Application.hpp"
