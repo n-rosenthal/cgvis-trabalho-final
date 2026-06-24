@@ -167,3 +167,33 @@ glm::frustum" \
 #+end_example
 
 e com isto descobrimos que o /header/ de =Drawable= ainda utilizava =glm::rotate=, =glm::translate= etc. O método =Drawable::model()= foi corrigido.
+
+#+begin_example verbatim
+rg -n \
+"gluLookAt|gluOrtho2D|gluPickMatrix|gluProject|gluUnProject|\
+glm::lookAt|glm::ortho|glm::perspective|glm::pickMatrix|\
+glm::translate|glm::scale|glm::rotate|\
+glm::inverse" \
+.
+#+end_example
+
+/came out clean!/ (exceto por uma documentação antiga, e pelas próprios funções da GLM).
+
+#+begin_example verbatim
+rg -n \
+"glm/gtc/matrix_transform.hpp|\
+glm/gtx/transform.hpp|\
+glm/gtx/quaternion.hpp|\
+glm/gtx/euler_angles.hpp" \
+.
+#+end_example
+
+alguns módulos importavam =glm/gtc/matrix_transform.hpp=, mas nenhuma função era utilizada. eu acredito que isto tenha sido um artefato produzido por /code completion/ no VSCode.
+
+por fim, ChatGPT também sugeriu o absurdo comando
+
+#+begin_example
+rg -n "glm::" .
+#+end_example
+
+mas parece que não existem mais *funções proibidas*. No início, foram utilizadas para /bootstrap/ do trabalho, iniciar logo o desenvolvimento e conseguir colocar modelos na cena virtual. Elas foram abandonadas conforme nosso conhecimento progrediu, excetuando-se aqueles casos de esquecimento. (=glm::clamp()= deveria ser implementada por nós? achamos que não, pois =clamp()= é só =min(max(x , *minval*), *maxval*)= e, apesar de importante, não é propriamente uma função de modelagem ou de /view/ ou de renderização... apesar de ser uma função básica sobre vetores?).

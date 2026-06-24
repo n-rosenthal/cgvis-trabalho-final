@@ -1,6 +1,5 @@
 #include "Terrain/Skybox.hpp"
 #include "GLFW/glfw3.h"
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <stdexcept>
 #include <cstdio>
@@ -57,22 +56,20 @@ void main()
 {
     vec3 dir = normalize(vDir);
 
-    // -- Day/night cycle brightness ------------------------------------------
+    // Day/night cycle brightness
     // daylight in [0.18, 0.82]; smooth dawn/dusk at edges
     float daylight = smoothstep01(0.15, 0.25, uTOD)
                    * (1.0 - smoothstep01(0.75, 0.85, uTOD));
 
-    // -- Sun parameters -------------------------------------------------------
+    //  Sun parameters
     float cosS  = dot(dir, normalize(uSunDir));   // [-1, 1]
     float sunElev = uSunDir.y;                    // -1=below, 1=overhead
 
-    // Sun disc (sharp) + inner halo + outer glow
     float disc  = smoothstep01(0.9998, 1.0,    cosS);
     float halo1 = smoothstep01(0.990,  0.9998, cosS) * 0.45;
     float halo2 = smoothstep01(0.970,  0.990,  cosS) * 0.12;
     float sunGlow = disc + halo1 + halo2;
 
-    // -- Sky gradient ---------------------------------------------------------
     float horizon = smoothstep01(-0.08, 0.30, dir.y);  // 0 at horizon, 1 at zenith
 
     // Daytime colours
@@ -82,7 +79,6 @@ void main()
     vec3 skyday   = mix(mix(horizDay, midBlue, horizon * 0.6),
                         zenith, horizon * horizon);
 
-    // Dusk/dawn tint: orange band near horizon when sun is low
     float duskFactor = (1.0 - abs(sunElev)) * (1.0 - abs(sunElev));   // peaks at horizon
     duskFactor *= smoothstep01(0.0, 0.5, daylight);                    // only near sunrise/set
     float horizBand  = smoothstep01(0.15, -0.05, dir.y)               // near-horizon band
@@ -90,29 +86,23 @@ void main()
     vec3 duskColor   = vec3(1.0, 0.45, 0.10);
     skyday += duskColor * duskFactor * horizBand * 0.75;
 
-    // Night colours: dark navy sky, slight blue-grey
     vec3 skynight = vec3(0.01, 0.02, 0.08) + vec3(0.03, 0.04, 0.08) * (1.0 - horizon);
 
     vec3 sky = mix(skynight, skyday, daylight);
 
-    // -- Sun colour (warm at horizon, white at zenith) -----------------------
     float sunWarmth  = clamp(1.0 - sunElev, 0.0, 1.0);
     vec3  sunColor   = mix(vec3(1.0, 1.0, 0.95),          // white overhead
                            vec3(1.0, 0.55, 0.10),          // orange at horizon
                            sunWarmth * sunWarmth);
-    // Dim sun near night
     sunColor *= daylight * 0.98 + 0.02;
 
     // -- Compose ---------------------------------------------------------------
     vec3 col = sky + sunColor * sunGlow;
 
-    // Slight ground fog: darken below the horizon
     float belowHorizon = smoothstep01(0.0, -0.15, dir.y);
     col = mix(col, vec3(0.55, 0.62, 0.68) * daylight, belowHorizon * 0.6);
 
-    // Stars (simple hash-based for night sky, only above horizon)
     if (daylight < 0.9 && dir.y > 0.0) {
-        // Cheap star field via fract noise
         vec3 d = abs(dir);
         float starHash = fract(sin(dot(floor(dir * 180.0),
                                        vec3(127.1, 311.7, 74.3))) * 43758.5);

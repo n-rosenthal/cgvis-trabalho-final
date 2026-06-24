@@ -2,8 +2,6 @@
 
 #include "Game/Window.hpp" //   variáveis de depuração do pássaro no menu de debug
 
-#include <glm/gtc/matrix_transform.hpp>
-
 namespace {
     // Parâmetros do andar
     static constexpr float WALK_SPEED = 1.3f;
