@@ -32,6 +32,10 @@ Fases de desenvolvimento e aspectos do projeto implementados pela dupla:
 * Documentação e validação do projeto.
 
 ---
+## Uso de IA
+A dupla utilizou a IA no auxilio de algunas atividades, algumas das LLM utilizadas inclui CHATGPT, copilot, SWE ( Windsurf IDE). Os prompts utlizados podem ser encontrados no código e também no arquivo [prompts](https://github.com/n-rosenthal/cgvis-trabalho-final/blob/main/PROMPTS.md)
+
+---
 ## Manual de Utilização
 ### Objetivo
 
